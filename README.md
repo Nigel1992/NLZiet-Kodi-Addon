@@ -85,7 +85,7 @@ Pull requests, bug reports, and feature suggestions are welcome! See [CONTRIBUTI
 
 ## 📄 License
 
-MIT. See [LICENSE](LICENSE).
+Creative Commons Attribution-NonCommercial 4.0 International. See [LICENSE](LICENSE).
 
 ---
 
