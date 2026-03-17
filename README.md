@@ -13,6 +13,10 @@
 
 ---
 
+> ⚠️ **Warning:** This add-on is under constant development. Some features may be broken or incomplete. Please see the To-Do section below for known issues and planned improvements. Use at your own risk and check back for frequent updates!
+
+---
+
 ## ✨ Features
 
 - <span style="color:#E60000;">**Live TV**</span>: Stream all supported NLZiet channels with EPG info.
