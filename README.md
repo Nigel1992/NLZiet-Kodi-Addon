@@ -24,8 +24,7 @@ Join our friendly Discord to discuss the add-on, get help, suggest features, and
 > ⚠️ **Warning:** This add-on is under constant development. Some features may be broken or incomplete. Please see the To-Do section below for known issues and planned improvements. Use at your own risk and check back for frequent updates!
 >
 > 🚧 **Known Limitations:**
-> - **Search is currently not working** (placeholder only).
-> - **Categories for movies and series** will be added in a future update.
+> > - **Categories for movies and series** will be added in a future update.
 > - **Full EPG guide** and advanced TV features are planned but not yet available.
 
 ---
