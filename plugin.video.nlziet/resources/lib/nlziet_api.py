@@ -303,8 +303,34 @@ class NLZietAPI:
                 'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
             }
             token = self.get_access_token()
+            # If we have a cookie-session but no tokens yet, try to obtain tokens
+            if not token and getattr(self, 'token', None) == 'cookie-session':
+                try:
+                    tokens = self.perform_pkce_authorize_and_exchange()
+                    if tokens and tokens.get('access_token'):
+                        token = tokens.get('access_token')
+                except Exception:
+                    token = None
+
             if token:
                 headers['Authorization'] = 'Bearer ' + token
+
+            # include active profile id when present (mirror other endpoints)
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            # debug: record headers being sent for troubleshooting
+            try:
+                self._append_debug(f"Search headers: {headers}")
+            except Exception:
+                pass
             # include active profile id in handshake when known
             try:
                 if os.path.exists(self.profile_file):
@@ -933,20 +959,26 @@ class NLZietAPI:
         if not query:
             return []
         try:
-            # map incoming content_type to API contentType param
+            # map incoming content_type to API contentType params (allow repeated keys)
             ct = (content_type or 'all').lower()
             if ct in ('episodes', 'episode', 'ep'):
-                api_content_type = 'Episode'
+                api_content_types = ['Episode']
+            elif ct in ('movies', 'movie'):
+                api_content_types = ['Movie']
+            elif ct in ('series', 'tvshow', 'tv', 'show'):
+                api_content_types = ['Series']
             else:
-                api_content_type = 'Movie,Series'
+                api_content_types = ['Movie', 'Series']
 
-            params = {
-                'searchTerm': query,
-                'contentType': api_content_type,
-                'limit': '999',
-                'offset': '0',
-            }
-            url = urllib.parse.urljoin(self.base_url, '/v9/search') + '?' + urllib.parse.urlencode(params)
+            params = [
+                ('searchTerm', query),
+                ('limit', '999'),
+                ('offset', '0'),
+            ]
+            for v in api_content_types:
+                params.append(('contentType', v))
+
+            url = urllib.parse.urljoin(self.base_url, '/v9/search') + '?' + urllib.parse.urlencode(params, doseq=True)
             headers = {
                 'User-Agent': self.user_agent,
                 'Accept': 'application/json, text/plain, */*',
@@ -957,8 +989,35 @@ class NLZietAPI:
                 'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
             }
             token = self.get_access_token()
+            # If we have a cookie-session but no tokens yet, try to obtain tokens
+            if not token and getattr(self, 'token', None) == 'cookie-session':
+                try:
+                    tokens = self.perform_pkce_authorize_and_exchange()
+                    if tokens and tokens.get('access_token'):
+                        token = tokens.get('access_token')
+                except Exception:
+                    token = None
+
             if token:
                 headers['Authorization'] = 'Bearer ' + token
+
+            # include active profile id when present
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            # debug: record headers being sent for troubleshooting
+            try:
+                self._append_debug(f"Search headers: {headers}")
+            except Exception:
+                pass
+
             req = urllib.request.Request(url, headers=headers)
             with self._open_with_opener(self.opener, req, timeout=20) as r:
                 data = json.load(r)
@@ -1022,10 +1081,17 @@ class NLZietAPI:
                                     expires_in = f'Expires in {minutes}m'
                     results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
                 return results
-        except Exception:
-            return [
-                {'id': 'demo-sintel', 'title': 'Sintel (demo)', 'thumb': '', 'type': 'movie'},
-            ]
+        except Exception as e:
+            try:
+                xbmc.log(f"NLZiet search error for query={query}: {e}", xbmc.LOGERROR)
+            except Exception:
+                pass
+            try:
+                import traceback
+                self._append_debug(f"Search exception for query={query}: {traceback.format_exc()}")
+            except Exception:
+                pass
+            return []
 
     def get_stream_info(self, content_id, context='OnDemand', playerName='BitmovinWeb', sourceType='Dash', preferLowLatency='false'):
         if not content_id:

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.nlziet" name="NLZiet" version="0.0.1" provider-name="you">
+<addon id="plugin.video.nlziet" name="NLZiet" version="0.0.2" provider-name="you">
   <requires>
     <import addon="xbmc.python" version="3.0.0" />
     <import addon="inputstream.adaptive" version="2.6.18" />
