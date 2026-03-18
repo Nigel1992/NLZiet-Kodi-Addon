@@ -13,6 +13,14 @@
 
 ---
 
+## 💬 Community
+
+Join our friendly Discord to discuss the add-on, get help, suggest features, and meet other users — everyone is welcome. Click below to join:
+
+[Join our Discord](https://discord.gg/GHAxWChXpn)
+
+---
+
 > ⚠️ **Warning:** This add-on is under constant development. Some features may be broken or incomplete. Please see the To-Do section below for known issues and planned improvements. Use at your own risk and check back for frequent updates!
 >
 > 🚧 **Known Limitations:**
@@ -85,14 +93,6 @@
 ## 🤝 Contributing
 
 Pull requests, bug reports, and feature suggestions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
----
-
-## 💬 Community
-
-Join our friendly Discord to discuss the add-on, get help, suggest features, and meet other users — everyone is welcome. Click below to join:
-
-[Join our Discord](https://discord.gg/GHAxWChXpn)
 
 ---
 
