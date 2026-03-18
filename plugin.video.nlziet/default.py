@@ -369,6 +369,49 @@ def do_search():
     password = ADDON.getSetting('password')
     api = NLZietAPI(username=username, password=password)
     results = api.search(query)
+    # If the API search failed or returned no results, try fallback endpoints
+    if not results:
+        fb = []
+        ql = (query or '').lower()
+        try:
+            sers = api.get_series_list(limit=200) or []
+            for s in sers:
+                try:
+                    t = (s.get('title') or '')
+                    if ql and ql in t.lower():
+                        fb.append(s)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        try:
+            movs = api.get_movies() or []
+            for m in movs:
+                try:
+                    t = (m.get('title') or '')
+                    if ql and ql in t.lower():
+                        fb.append(m)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        try:
+            chs = api.get_channels() or []
+            for c in chs:
+                try:
+                    t = (c.get('title') or '')
+                    if ql and ql in t.lower():
+                        fb.append(c)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        if fb:
+            results = fb
+        else:
+            xbmcgui.Dialog().notification('NLZiet', f'No results for "{query}"', xbmcgui.NOTIFICATION_INFO)
+            xbmcplugin.endOfDirectory(HANDLE)
+            return
     for item in results:
         info = None
         try:
@@ -416,7 +459,42 @@ def do_search():
                             }
         except Exception:
             info = None
-        add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=item.get('thumb'), info=info)
+        # decide how to present the search result based on its detected type
+        content_id = item.get('id') or item.get('contentId') or item.get('content_id')
+        itype = item.get('type') or ''
+        itype_l = (str(itype).lower() if itype else '')
+
+        # If the inline type is not present try to fetch detail to detect it
+        if not itype_l and content_id:
+            try:
+                det = api.get_content_detail(content_id) or {}
+                raw = det.get('raw') or {}
+                itype_l = (str(raw.get('type') or '')).lower()
+            except Exception:
+                itype_l = itype_l
+
+        title = item.get('title') or item.get('name') or content_id or 'Result'
+        thumb = item.get('thumb') or item.get('posterUrl')
+
+        # Series / TV show -> open series detail (folder)
+        if 'series' in itype_l or 'tvshow' in itype_l:
+            add_directory_item(title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info)
+        # Episode -> playable
+        elif 'episode' in itype_l:
+            add_directory_item(title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+        # Movie -> playable
+        elif 'movie' in itype_l or 'film' in itype_l:
+            add_directory_item(title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+        # Channel / Live -> play as live
+        elif 'channel' in itype_l or 'live' in itype_l:
+            add_directory_item(title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info)
+        else:
+            # fallback: treat as series if a seriesId exists, otherwise play
+            sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
+            if sid:
+                add_directory_item(title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info)
+            else:
+                add_directory_item(title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
