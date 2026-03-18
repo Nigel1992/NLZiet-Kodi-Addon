@@ -88,6 +88,14 @@ Pull requests, bug reports, and feature suggestions are welcome! See [CONTRIBUTI
 
 ---
 
+## 💬 Community
+
+Join our friendly Discord to discuss the add-on, get help, suggest features, and meet other users — everyone is welcome. Click below to join:
+
+[Join our Discord](https://discord.gg/GHAxWChXpn)
+
+---
+
 ## 📄 License
 
 Creative Commons Attribution-NonCommercial 4.0 International. See [LICENSE](LICENSE).

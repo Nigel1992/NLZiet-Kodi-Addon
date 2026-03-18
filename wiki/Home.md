@@ -18,3 +18,9 @@ NLZiet Kodi Addon is an unofficial addon for Kodi that brings NLZiet live TV, se
 For the latest release and installation instructions, visit the [GitHub Releases page](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 ---
+
+## 💬 Community
+
+Have questions, want help, or want to chat about features and contributions? Join our friendly Discord — everyone is welcome. Click below to join:
+
+[Join our Discord](https://discord.gg/GHAxWChXpn)
