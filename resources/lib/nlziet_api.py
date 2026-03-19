@@ -128,6 +128,14 @@ class NLZietAPI:
 
     def _append_debug(self, text):
         try:
+            # Only write HTTP debug logs when the debug toggle is enabled
+            try:
+                dbg_val = self.addon.getSetting('debug_http')
+            except Exception:
+                dbg_val = None
+            if not str(dbg_val or '').lower() in ('true', '1', 'yes'):
+                return
+
             d = os.path.dirname(self.debug_file)
             if d:
                 os.makedirs(d, exist_ok=True)
