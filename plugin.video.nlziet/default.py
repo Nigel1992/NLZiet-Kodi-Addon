@@ -1,5 +1,6 @@
 import sys
 import urllib.parse
+import os
 import xbmc
 import xbmcaddon
 import xbmcgui
@@ -36,7 +37,14 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None):
     url = build_url(query)
     li = xbmcgui.ListItem(label=title)
     if thumb:
-        li.setArt({'thumb': thumb, 'icon': thumb})
+        # Provide multiple art keys so different skins can pick the one they use
+        try:
+            li.setArt({'thumb': thumb, 'icon': thumb, 'poster': thumb, 'fanart': thumb})
+        except Exception:
+            try:
+                li.setArt({'thumb': thumb, 'icon': thumb})
+            except Exception:
+                pass
     if info:
         li.setInfo('video', info)
         # set a short summary for skins that display a second label
@@ -53,12 +61,43 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None):
 
 
 def main_menu():
-    add_directory_item('Login (set credentials in settings)', {'mode': 'login'})
-    add_directory_item('Manage profiles', {'mode': 'profiles'})
-    add_directory_item('Search', {'mode': 'search'})
-    add_directory_item('Series', {'mode': 'series'})
-    add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'})
-    add_directory_item('Channels', {'mode': 'browse', 'type': 'channels'})
+    try:
+        addon_path = ADDON.getAddonInfo('path') or ''
+    except Exception:
+        addon_path = ''
+
+    # prefer png then svg then fallback to addon's icon.png
+    def _pick_icon(name):
+        candidates = [
+            os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png'),
+            os.path.join(addon_path, 'resources', 'media', f'menu_{name}.svg'),
+            os.path.join(addon_path, 'icon.png'),
+        ]
+        for c in candidates:
+            try:
+                if c and os.path.exists(c):
+                    return c
+            except Exception:
+                continue
+        return None
+
+    # Explicit PNG-first picker (prefer exact menu_{name}.png when available)
+    def _pick_png(name):
+        try:
+            png = os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')
+            if png and os.path.exists(png):
+                return png
+        except Exception:
+            pass
+        return _pick_icon(name)
+
+    add_directory_item('Login (set credentials in settings)', {'mode': 'login'}, thumb=_pick_png('login'))
+    add_directory_item('Manage profiles', {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+    add_directory_item('Search', {'mode': 'search'}, thumb=_pick_png('search'))
+    add_directory_item('Series', {'mode': 'series'}, thumb=_pick_png('series'))
+    add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'}, thumb=_pick_png('movies'))
+    # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
+    add_directory_item('Channels', {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -269,7 +308,13 @@ def do_login():
 
 
 def manage_profiles():
-    """List available profiles and let the user switch the active profile."""
+    """List available profiles and let the user switch the active profile.
+
+    This renders a directory of profiles where the currently active profile
+    is displayed in green. Selecting a profile will activate it and re-open
+    the list so the active profile remains highlighted until another is
+    chosen.
+    """
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     api = NLZietAPI(username=username, password=password)
@@ -286,29 +331,111 @@ def manage_profiles():
         xbmcgui.Dialog().notification('NLZiet', 'No profiles available. Please login first.', xbmcgui.NOTIFICATION_INFO)
         return
 
-    labels = []
-    ids = []
+    current_pid = ADDON.getSetting('profile_id') or ''
+    # Build a directory listing: active profile is colored/marked
     for p in profiles:
         name = p.get('displayName') or p.get('name') or p.get('profileName') or p.get('id') or str(p)
         pid = p.get('id') or p.get('profileId') or p.get('profile_id') or name
-        labels.append(name)
-        ids.append(pid)
+        try:
+            # Compare as strings to be tolerant of types
+            is_active = str(pid) == str(current_pid)
+        except Exception:
+            is_active = False
 
-    sel = xbmcgui.Dialog().select('Select NLZIET profile', labels)
-    if sel is None or sel < 0:
+        # Build a local path to bundled icons
+        try:
+            addon_path = ADDON.getAddonInfo('path') or ''
+        except Exception:
+            addon_path = ''
+
+        # Prefer a PNG asset, then SVG, then the addon's icon.png
+        candidates = [
+            os.path.join(addon_path, 'resources', 'media', 'emoji_google_active.png'),
+            os.path.join(addon_path, 'resources', 'media', 'emoji_google_active.svg'),
+            os.path.join(addon_path, 'icon.png'),
+        ]
+        active_icon = None
+        for c in candidates:
+            try:
+                if c and os.path.exists(c):
+                    active_icon = c
+                    break
+            except Exception:
+                continue
+
+        # For active profile use the bundled Google-style icon as the thumb
+        if is_active:
+            # Keep the color tag when an icon is available; no emoji prefix
+            title = _make_color_tag('FF27AE60', name) if active_icon else name
+            thumb = active_icon
+            info_obj = {'plotoutline': 'Active'}
+        else:
+            # Use bundled inactive icon when available so inactive profiles show an icon
+            candidates_inactive = [
+                os.path.join(addon_path, 'resources', 'media', 'emoji_google_inactive.png'),
+                os.path.join(addon_path, 'resources', 'media', 'emoji_google_inactive.svg'),
+                os.path.join(addon_path, 'icon.png'),
+            ]
+            inactive_icon = None
+            for c in candidates_inactive:
+                try:
+                    if c and os.path.exists(c):
+                        inactive_icon = c
+                        break
+                except Exception:
+                    continue
+            title = name
+            thumb = inactive_icon
+            info_obj = None
+
+        # Selecting an item triggers the 'select_profile' route with the profile id
+        add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj)
+
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def select_profile(profile_id):
+    """Activate the given profile id and re-render the profiles list."""
+    if not profile_id:
+        xbmcgui.Dialog().notification('NLZiet', 'Missing profile id', xbmcgui.NOTIFICATION_ERROR)
         return
 
-    chosen_pid = ids[sel]
-    result = api.select_profile(chosen_pid)
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    try:
+        result = api.select_profile(profile_id)
+    except Exception as e:
+        xbmc.log(f"NLZiet select_profile error: {e}", xbmc.LOGERROR)
+        result = None
+
     if result:
+        # persist selection
         try:
-            ADDON.setSetting('profile_id', str(chosen_pid))
-            ADDON.setSetting('profile_name', labels[sel])
+            ADDON.setSetting('profile_id', str(profile_id))
+            # attempt to look up a friendly name
+            profiles = api.get_profiles() or []
+            profile_name = ''
+            for p in profiles:
+                if str(p.get('id')) == str(profile_id) or str(p.get('profileId')) == str(profile_id):
+                    profile_name = p.get('displayName') or p.get('name') or p.get('profileName') or ''
+                    break
+            ADDON.setSetting('profile_name', profile_name or str(profile_id))
         except Exception:
             pass
-        xbmcgui.Dialog().notification('NLZiet', f'Profile switched to {labels[sel]}', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', f'Profile switched to {ADDON.getSetting("profile_name") or profile_id}', xbmcgui.NOTIFICATION_INFO)
     else:
         xbmcgui.Dialog().notification('NLZiet', 'Profile switch failed', xbmcgui.NOTIFICATION_ERROR)
+
+    # Replace the current container with the profiles listing so we don't
+    # push an extra history entry. This prevents Back from cycling
+    # through profile selections and instead returns to the main menu.
+    try:
+        profiles_url = build_url({'mode': 'profiles'})
+        xbmc.executebuiltin('Container.Update(%s,replace)' % profiles_url)
+    except Exception:
+        # Fallback: if the builtin fails, render profiles directly.
+        manage_profiles()
 
 
 def apply_profile():
@@ -848,6 +975,8 @@ def router(paramstring):
         do_search()
     elif mode == 'profiles':
         manage_profiles()
+    elif mode == 'select_profile':
+        select_profile(params.get('profile_id'))
     elif mode == 'apply_profile':
         apply_profile()
     elif mode == 'series':

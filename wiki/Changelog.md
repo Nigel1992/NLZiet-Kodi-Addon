@@ -2,6 +2,23 @@
 
 This file documents notable changes to the NLZiet Kodi Addon. For packaged releases see the [GitHub Releases page](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
+## [0.0.3] - 2026-03-19
+
+### Added
+- Persistent profile UI: active profile displays green and remains highlighted until changed.
+- Prefer bundled PNG menu icons (`menu_*.png`) for main menu items (login, profiles, search, series, movies, channels); `menu_tv.png` used as a Channels fallback.
+- `CREDITS.md` with Lucide icon attribution.
+
+### Changed
+- Non-active profiles now use `emoji_google_inactive.png` as their thumb; active profiles use `emoji_google_active.png` and show `Active` in supported skins.
+- `select_profile` now updates the container with `Container.Update(...,replace)` to avoid adding navigation history so Back returns to the main menu instead of cycling profiles.
+- Added a PNG-first icon picker (`_pick_png()`) in `main_menu()`.
+
+### Fixed
+- Back navigation no longer toggles between previously selected profiles.
+
+---
+
 ## [0.0.2] - 2026-03-19
 
 ### Added
