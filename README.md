@@ -59,7 +59,8 @@ Join our friendly Discord to discuss the add-on, get help, suggest features, and
 1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 2. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded zip.
 3. Configure your NLZiet credentials in the add-on settings.
-4. Install and set-up `inputstream.adaptive` for DRM playback.
+4. Press login in the main menu.
+5. Install and set-up `inputstream.adaptive` for DRM playback.
 
 ---
 
