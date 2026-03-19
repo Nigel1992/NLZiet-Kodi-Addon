@@ -56,11 +56,34 @@ Join our friendly Discord to discuss the add-on, get help, suggest features, and
 
 ## 🚀 Installation
 
+Quick install (recommended)
+
 1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
-2. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded zip.
-3. Configure your NLZiet credentials in the add-on settings.
-4. Press login in the main menu.
-5. Install and set-up `inputstream.adaptive` for DRM playback.
+2. If this is a third-party add-on for you, enable installation from unknown sources: go to Settings → System → Add-ons and enable **Unknown sources**.
+3. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded ZIP to install the add-on.
+4. Open the NLZiet add-on, go to its Settings, enter your NLZiet credentials and press **Login** from the main menu.
+
+Enable DRM playback (InputStream Adaptive + Widevine)
+
+1. Enable InputStream Adaptive
+  - Go to **Add-ons > My add-ons > VideoPlayer InputStream**.
+  - Select **InputStream Adaptive**. If it is not installed, install it from the Kodi Add-on Repository.
+  - Click **Enable** (or **Open**) so Kodi can use it for adaptive DRM streams.
+
+2. Install Widevine CDM (use InputStream Helper — recommended)
+  - Install **InputStream Helper**: go to **Add-ons > Install from repository > Kodi Add-on Repository > Program add-ons > InputStream Helper** and install it.
+  - Open **InputStream Helper** (Add-ons > Program add-ons > InputStream Helper) and choose **Install/Update Widevine CDM**.
+  - Follow the on-screen prompts. InputStream Helper will download the correct Widevine CDM for your device and install it in the right location for Kodi.
+  - Reboot Kodi after installation if prompted.
+
+3. Test playback
+  - Play a DRM-protected title from NLZiet. The add-on will automatically use `inputstream.adaptive` and Widevine for playback when available.
+
+Notes & troubleshooting
+- Widevine availability depends on your device and OS. InputStream Helper will report if Widevine cannot be installed for your platform.
+- If playback fails, enable debug logging (Settings → System → Logging), reproduce the issue, and check the Kodi log for lines mentioning `inputstream.adaptive` or `widevine`.
+- InputStream Helper also shows the path where the CDM was installed; use that information if you need to perform an advanced/manual install.
+- For headless or minimal systems (LibreELEC/CoreELEC), prefer InputStream Helper or consult your distribution's wiki for device-specific Widevine instructions.
 
 ---
 
