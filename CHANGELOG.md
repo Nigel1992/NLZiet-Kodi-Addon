@@ -2,6 +2,24 @@
 
 All notable changes to this project are recorded in this file.
 
+## [0.0.4] - 2026-03-19
+
+### Added
+- Grouped search folders: search now presents per-group folders (e.g. "Series: X", "Movies: X") when results span multiple groups.
+- `search_group` route to view results filtered to a single group.
+- Landscape thumbnail selection helper (`_pick_landscape_thumb`) to prefer wide/landscape artwork.
+
+### Changed
+- Episode labeling prefers `S{n}:A{m}` subtitle codes and uses the subtitle remainder as the episode title when present; falls back to subtitle-only or the API formatted label.
+- Menu icons now prefer bundled PNGs first; inactive profiles use the bundled inactive icon.
+- Active profile stays highlighted (green) until another is selected; profile changes use `Container.Update(...,replace)` to avoid history cycling.
+- HTTP debug logging is now gated behind the `debug_http` setting.
+
+### Fixed
+- Search presentation and routing refinements; clearer grouping and improved fallback behavior.
+
+----
+
 ## [0.0.2] - 2026-03-19
 
 ### Added
