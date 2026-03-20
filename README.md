@@ -66,13 +66,13 @@
 
 ## 📝 To-Do
 
-- [ ] **Fix issue where only 50 movies/series are shown** (pagination/limit handling)
-- [ ] **Episodes use episode title instead of count** (show SxxExx or Afl. N when possible)
-- [ ] **Fix subfolders in series option** (better season/episode navigation)
+- [X] **Fix issue where only 50 movies/series are shown** (pagination/limit handling)
+- [X] **Episodes use episode title instead of count** (show SxxExx or Afl. N when possible)
+- [X] **Fix subfolders in series option** (better season/episode navigation)
 - [ ] **Improve error messages and user feedback**
 - [ ] **Add Dutch/English language toggle**
 - [ ] **Better artwork and fanart for all content**
-- [ ] **Settings: allow custom API endpoint for advanced users**
+- [X] **Settings: allow custom API endpoint for advanced users**
 - [ ] **Add more debug and diagnostic tools**
 - [ ] **Accessibility improvements for screen readers**
 - [ ] **Add more unit/integration tests**
