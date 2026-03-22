@@ -13,6 +13,9 @@
   <category label="Advanced">
     <setting id="api_base_url" type="text" label="API base URL (optional)" default="https://api.nlziet.nl" />
   </category>
+  <category label="Playback">
+    <setting id="subtitles_default" type="bool" label="Enable subtitles by default" default="false" />
+  </category>
   <category label="Debug">
     <setting id="debug_http" type="bool" label="Enable HTTP debug logging" default="false" />
   </category>

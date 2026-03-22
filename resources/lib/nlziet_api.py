@@ -47,6 +47,8 @@ class NLZietAPI:
         self.stream_cookie_file = os.path.join(cookie_dir, 'stream_cookies')
         self.profile_file = os.path.join(cookie_dir, 'profile.json')
         self.token_file = os.path.join(cookie_dir, 'tokens.json')
+        # Local My List storage (fallback when server-side My List is unavailable)
+        self.mylist_file = os.path.join(cookie_dir, 'mylist.json')
 
         self.cookie_jar = http.cookiejar.LWPCookieJar()
         try:
@@ -533,6 +535,114 @@ class NLZietAPI:
                 json.dump(self.tokens, f)
         except Exception:
             pass
+
+    # --- My List: local persistence fallback ---------------------------------
+    def _save_my_list(self, items):
+        try:
+            # ensure directory exists
+            d = os.path.dirname(self.mylist_file)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(self.mylist_file, 'w', encoding='utf-8') as f:
+                json.dump(items or [], f, ensure_ascii=False, indent=2)
+            return True
+        except Exception:
+            try:
+                self._append_debug(f"Failed to save mylist: {traceback.format_exc()}")
+            except Exception:
+                pass
+            return False
+
+    def get_my_list(self):
+        """Return the locally-stored My List (list of item dicts).
+
+        This implementation uses a local JSON file as a fallback so the
+        add/remove My List UI works even when a server-side My List
+        endpoint is not implemented or accessible.
+        """
+        try:
+            if os.path.exists(self.mylist_file):
+                with open(self.mylist_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f) or []
+                if isinstance(data, list):
+                    return data
+                # support older formats where items nested under a key
+                if isinstance(data, dict) and 'items' in data and isinstance(data['items'], list):
+                    return data['items']
+        except Exception:
+            try:
+                self._append_debug(f"Failed to load mylist: {traceback.format_exc()}")
+            except Exception:
+                pass
+        return []
+
+    def is_in_my_list(self, content_id):
+        try:
+            if not content_id:
+                return False
+            items = self.get_my_list() or []
+            for it in items:
+                try:
+                    if str(it.get('id')) == str(content_id):
+                        return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return False
+
+    def add_to_my_list(self, item):
+        """Add a normalized item to the local My List. Returns True on success."""
+        try:
+            if not item or not isinstance(item, dict):
+                return False
+            cid = item.get('id') or item.get('contentId') or item.get('content_id')
+            if not cid:
+                return False
+            items = self.get_my_list() or []
+            # already present?
+            for it in items:
+                try:
+                    if str(it.get('id')) == str(cid):
+                        return True
+                except Exception:
+                    continue
+
+            normalized = {
+                'id': cid,
+                'title': item.get('title') or item.get('name') or '',
+                'type': item.get('type') or item.get('contentType') or '',
+                'posterUrl': item.get('posterUrl') or item.get('thumb') or item.get('poster') or None,
+                'raw': item,
+            }
+            items.append(normalized)
+            return self._save_my_list(items)
+        except Exception:
+            try:
+                self._append_debug(f"add_to_my_list exception: {traceback.format_exc()}")
+            except Exception:
+                pass
+            return False
+
+    def remove_from_my_list(self, content_id):
+        """Remove an item from local My List by id. Returns True if removed."""
+        try:
+            if not content_id:
+                return False
+            items = self.get_my_list() or []
+            new_items = [it for it in items if str(it.get('id')) != str(content_id)]
+            if len(new_items) == len(items):
+                # nothing removed
+                return False
+            return self._save_my_list(new_items)
+        except Exception:
+            try:
+                self._append_debug(f"remove_from_my_list exception: {traceback.format_exc()}")
+            except Exception:
+                pass
+            return False
+
+    # --- End My List --------------------------------------------------------
 
     def exchange_code_for_tokens(self, code, code_verifier, redirect_uri='https://app.nlziet.nl/callback'):
         url = 'https://id.nlziet.nl/connect/token'
