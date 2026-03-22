@@ -2,6 +2,20 @@
 
 All notable changes to this project are recorded in this file.
 
+## [0.0.5] - 2026-03-22
+
+### Added
+- Landscape thumbnail picker: introduced `_pick_landscape_thumb` to select the best landscape-oriented artwork.
+
+### Changed
+- Updated `browse_series`, `show_series_season`, and `do_search` to utilize the new thumbnail picker.
+- Enhanced `get_series_list` and `get_series_episodes` in `NLZietAPI` for improved data retrieval and increased limits.
+
+### Notes
+- See commit 41af5e0 for implementation details and code-level changes.
+
+----
+
 ## [0.0.4] - 2026-03-19
 
 ### Added

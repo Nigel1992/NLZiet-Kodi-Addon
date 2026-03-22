@@ -34,7 +34,7 @@ def build_url(query):
     return BASE_URL + '?' + urllib.parse.urlencode(query)
 
 
-def add_directory_item(title, query, is_folder=True, thumb=None, info=None):
+def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
     url = build_url(query)
     li = xbmcgui.ListItem(label=title)
     if thumb:
@@ -58,6 +58,53 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None):
     # mark non-folder items as playable so Enter/Select triggers playback
     if not is_folder:
         li.setProperty('IsPlayable', 'true')
+    # Add context-menu entry for My List when we can determine a content id
+    try:
+        content_id = None
+        content_type = None
+        # Prefer explicit content dict when provided
+        if content and isinstance(content, dict):
+            content_id = content.get('id') or content.get('contentId') or content.get('content_id') or content.get('seriesId') or content.get('movieId') or content.get('assetId')
+            content_type = content.get('type') or content.get('contentType') or None
+        # Fallback: inspect the query params for common id keys
+        if not content_id and isinstance(query, dict):
+            for k in ('id', 'series_id', 'seriesId', 'movieId', 'contentId', 'content_id'):
+                if k in query and query.get(k):
+                    content_id = query.get(k)
+                    break
+        # Only allow My List for top-level Series or Movies (no Seasons/Episodes)
+        allow_mylist = False
+        if content and isinstance(content, dict):
+            ctype = (content_type or '')
+            ctype_l = (str(ctype).lower() if ctype else '')
+            if any(x in ctype_l for x in ('series', 'tvshow', 'movie', 'film')):
+                allow_mylist = True
+        elif isinstance(query, dict):
+            mode = (query.get('mode') or '').lower()
+            # treat explicit series_detail as a series entry
+            if mode == 'series_detail' and (query.get('series_id') or query.get('seriesId')):
+                allow_mylist = True
+
+        if allow_mylist and content_id:
+            try:
+                api_tmp = NLZietAPI(username=ADDON.getSetting('username'), password=ADDON.getSetting('password'))
+                in_list = api_tmp.is_in_my_list(content_id)
+            except Exception:
+                in_list = False
+
+            cm_label = 'Remove from My List' if in_list else 'Add to My List'
+            cm_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
+            if content_type:
+                cm_query['type'] = content_type
+            if thumb:
+                cm_query['thumb'] = thumb
+            try:
+                cm_url = build_url(cm_query)
+                li.addContextMenuItems([(cm_label, f"RunPlugin({cm_url})")])
+            except Exception:
+                pass
+    except Exception:
+        pass
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=is_folder)
 
 
@@ -145,6 +192,7 @@ def main_menu():
     add_directory_item('Login (set credentials in settings)', {'mode': 'login'}, thumb=_pick_png('login'))
     add_directory_item('Manage profiles', {'mode': 'profiles'}, thumb=_pick_png('profiles'))
     add_directory_item('Search', {'mode': 'search'}, thumb=_pick_png('search'))
+    add_directory_item('My List', {'mode': 'my_list'}, thumb=_pick_png('mylist'))
     add_directory_item('Series', {'mode': 'series'}, thumb=_pick_png('series'))
     add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'}, thumb=_pick_png('movies'))
     # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
@@ -207,7 +255,7 @@ def browse_series():
                 }
         except Exception:
             info = None
-        add_directory_item(item.get('title') or item.get('id') or 'Series', {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info)
+        add_directory_item(item.get('title') or item.get('id') or 'Series', {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -334,7 +382,7 @@ def show_series_season(series_id, season_id):
             else:
                 label = label or ep.get('id') or 'Episode'
 
-        add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info)
+        add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=ep)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -389,9 +437,9 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
 
             if content_id:
                 # Treat as series when possible
-                add_directory_item(title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info)
+                add_directory_item(title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info, content=src)
             else:
-                add_directory_item(title, {'mode': 'play', 'id': src.get('playUrl') or src.get('streamUrl') or src.get('id')}, is_folder=False, thumb=thumb, info=info)
+                add_directory_item(title, {'mode': 'play', 'id': src.get('playUrl') or src.get('streamUrl') or src.get('id')}, is_folder=False, thumb=thumb, info=info, content=src)
         except Exception:
             continue
     xbmcplugin.endOfDirectory(HANDLE)
@@ -498,6 +546,149 @@ def manage_profiles():
         add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj)
 
     xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_my_list():
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    try:
+        items = api.get_my_list() or []
+    except Exception:
+        items = []
+
+    if not items:
+        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+    # Group My List items into Series/Movies/Other so the My List top-level
+    # shows folders the user can open to view each category.
+    groups = {'Series': [], 'Movies': [], 'Other': []}
+    for itm in items:
+        try:
+            typ = (itm.get('type') or '').lower()
+            if 'series' in typ or 'tvshow' in typ:
+                groups['Series'].append(itm)
+            elif 'movie' in typ or 'film' in typ:
+                groups['Movies'].append(itm)
+            else:
+                groups['Other'].append(itm)
+        except Exception:
+            groups['Other'].append(itm)
+
+    # Present folders for each non-empty group (Series and Movies prioritized)
+    folder_order = ['Series', 'Movies', 'Other']
+    any_folder = False
+    for g in folder_order:
+        lst = groups.get(g) or []
+        if not lst:
+            continue
+        first = lst[0] if lst else None
+        thumb = _pick_landscape_thumb(first) if first else None
+        label = f"{g}: {len(lst)} found"
+        add_directory_item(label, {'mode': 'my_list_group', 'group': g}, is_folder=True, thumb=thumb)
+        any_folder = True
+
+    if not any_folder:
+        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_my_list_group(group):
+    """Show items from the user's My List filtered to a single group."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    try:
+        items = api.get_my_list() or []
+    except Exception:
+        items = []
+
+    if not items:
+        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+
+    filtered = []
+    for itm in items:
+        try:
+            typ = (itm.get('type') or '').lower()
+            if group == 'Series' and ('series' in typ or 'tvshow' in typ):
+                filtered.append(itm)
+            elif group == 'Movies' and ('movie' in typ or 'film' in typ):
+                filtered.append(itm)
+            elif group == 'Other' and not ('series' in typ or 'tvshow' in typ or 'movie' in typ or 'film' in typ):
+                filtered.append(itm)
+        except Exception:
+            continue
+
+    if not filtered:
+        xbmcgui.Dialog().notification('NLZiet', f'No items found for {group}', xbmcgui.NOTIFICATION_INFO)
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+
+    for itm in filtered:
+        try:
+            title = itm.get('title') or itm.get('name') or itm.get('id') or 'Item'
+            thumb = itm.get('thumb') or itm.get('posterUrl') or None
+            typ = (itm.get('type') or '').lower()
+            if 'series' in typ or 'tvshow' in typ:
+                add_directory_item(title, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, content=itm)
+            elif 'episode' in typ:
+                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
+            elif 'movie' in typ or 'film' in typ:
+                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
+            else:
+                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
+        except Exception:
+            continue
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    if not item_id:
+        xbmcgui.Dialog().notification('NLZiet', 'Missing id for My List action', xbmcgui.NOTIFICATION_ERROR)
+        return
+    # Defensive: only allow Series or Movies to be toggled
+    if type and isinstance(type, str):
+        tl = type.lower()
+        if not any(x in tl for x in ('series', 'tvshow', 'movie', 'film')):
+            xbmcgui.Dialog().notification('NLZiet', 'Only Series and Movies can be added to My List', xbmcgui.NOTIFICATION_INFO)
+            return
+    else:
+        # try to detect content type from detail
+        try:
+            det = api.get_content_detail(item_id) or {}
+            raw_type = (det.get('raw') or {}).get('type') or det.get('type') or ''
+            if raw_type and not any(x in str(raw_type).lower() for x in ('series', 'tvshow', 'movie', 'film')):
+                xbmcgui.Dialog().notification('NLZiet', 'Only Series and Movies can be added to My List', xbmcgui.NOTIFICATION_INFO)
+                return
+        except Exception:
+            pass
+    try:
+        itm = {'id': item_id, 'title': title, 'type': type, 'posterUrl': thumb}
+        if api.is_in_my_list(item_id):
+            removed = api.remove_from_my_list(item_id)
+            if removed:
+                xbmcgui.Dialog().notification('NLZiet', 'Removed from My List', xbmcgui.NOTIFICATION_INFO)
+            else:
+                xbmcgui.Dialog().notification('NLZiet', 'Failed to remove from My List', xbmcgui.NOTIFICATION_ERROR)
+        else:
+            added = api.add_to_my_list(itm)
+            if added:
+                xbmcgui.Dialog().notification('NLZiet', 'Added to My List', xbmcgui.NOTIFICATION_INFO)
+            else:
+                xbmcgui.Dialog().notification('NLZiet', 'Failed to add to My List', xbmcgui.NOTIFICATION_ERROR)
+    except Exception:
+        xbmcgui.Dialog().notification('NLZiet', 'My List action failed', xbmcgui.NOTIFICATION_ERROR)
+    # Refresh the current container so context menu changes reflect immediately
+    try:
+        xbmc.executebuiltin('Container.Refresh')
+    except Exception:
+        pass
 
 
 def select_profile(profile_id):
@@ -786,23 +977,23 @@ def do_search():
 
         # Series / TV show -> open series detail (folder)
         if 'series' in itype_l or 'tvshow' in itype_l:
-            add_directory_item(display_title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info, content=item)
         # Episode -> playable
         elif 'episode' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         # Movie -> playable
         elif 'movie' in itype_l or 'film' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         # Channel / Live -> play as live
         elif 'channel' in itype_l or 'live' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info, content=item)
         else:
             # fallback: treat as series if a seriesId exists, otherwise play
             sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
             if sid:
-                add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info)
+                add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
-                add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info)
+                add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -959,7 +1150,7 @@ def browse_category(content_type):
         query = {'mode': 'play', 'id': item.get('id')}
         if content_type.lower() == 'channels':
             query['fmt'] = 'live'
-        add_directory_item(item.get('title'), query, is_folder=False, thumb=_pick_landscape_thumb(item), info=info)
+        add_directory_item(item.get('title'), query, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -1098,19 +1289,19 @@ def search_group(q, group):
         display_title = title
 
         if 'series' in itype_l or 'tvshow' in itype_l:
-            add_directory_item(display_title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'series_detail', 'series_id': content_id}, is_folder=True, thumb=thumb, info=info, content=item)
         elif 'episode' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         elif 'movie' in itype_l or 'film' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         elif 'channel' in itype_l or 'live' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info, content=item)
         else:
             sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
             if sid:
-                add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info)
+                add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
-                add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info)
+                add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -1270,15 +1461,23 @@ def play_item(content_id, fmt=None):
                 if url:
                     sub_urls.append(url)
             if sub_urls:
-                xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                 try:
-                    li.setSubtitles(sub_urls)
+                    enable_subs = ADDON.getSetting('subtitles_default')
                 except Exception:
-                    # fallback: store as property for debugging or later handling
+                    enable_subs = None
+                # Only attach subtitles automatically when the setting is enabled
+                if str(enable_subs or '').lower() in ('true', '1', 'yes'):
+                    xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                     try:
-                        li.setProperty('nlziet.subtitles', ';'.join(sub_urls))
+                        li.setSubtitles(sub_urls)
                     except Exception:
-                        pass
+                        # fallback: store as property for debugging or later handling
+                        try:
+                            li.setProperty('nlziet.subtitles', ';'.join(sub_urls))
+                        except Exception:
+                            pass
+                else:
+                    xbmc.log('NLZiet: auto-subtitles disabled by settings', xbmc.LOGDEBUG)
         except Exception:
             pass
 
@@ -1307,6 +1506,12 @@ def router(paramstring):
         do_search()
     elif mode == 'profiles':
         manage_profiles()
+    elif mode == 'my_list':
+        browse_my_list()
+    elif mode == 'my_list_group':
+        browse_my_list_group(params.get('group'))
+    elif mode == 'toggle_mylist':
+        toggle_mylist(params.get('id'), params.get('title'), params.get('type'), params.get('thumb'))
     elif mode == 'select_profile':
         select_profile(params.get('profile_id'))
     elif mode == 'apply_profile':
