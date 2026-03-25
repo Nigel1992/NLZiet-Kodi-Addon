@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v0.0.5 — 2026-03-22. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v0.0.6 — 2026-03-25. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub><sup>Unofficial NLZiet Kodi Addon &mdash; Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sup></sub>
 
@@ -31,6 +31,17 @@
 - <span style="color:#16A085;">**Search**</span>: Find series, movies, and episodes by title.
 - <span style="color:#34495E;">**Robust Handshake**</span>: Automatic manifest/license extraction and fallback logic.
 - <span style="color:#E67E22;">**Debug Logging**</span>: Easy log collection for troubleshooting.
+
+### New in v0.0.6
+
+- **TV Shows**: Added a dedicated "TV Shows" main-menu entry using the recommend API (recommend/withContext) to surface episodic video content.
+- **Documentary**: New "Documentary" main-menu entry using the filtered recommend endpoint (category=Programs, genre=Documentary).
+- **Account integration**: Settings > Account shows **Subscription**, **Subscription expires**, and **Max devices** (read-only) populated from the customer summary API when authenticated.
+- **Logout & reset**: Settings > Account includes a `Logout` action that clears cookies, tokens, profile selection and the local My List (confirmation required).
+- **Silent account refresh**: Account info is refreshed silently on addon launch and after login/profile changes.
+- **Protected menu items**: Manage profiles, Search, My List, Series, Movies and Channels are shown only when authenticated to avoid errors for anonymous users.
+- **Profiles UI**: Profiles were moved to a dedicated Settings > Profiles section and are non-editable from Settings (use Manage profiles in the addon's main menu).
+- **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
 
 ---
 
