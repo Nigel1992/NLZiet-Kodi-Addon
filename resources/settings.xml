@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
   <category label="Credentials">
-    <setting id="username" type="text" label="Username" default="" />
+    <setting id="username" type="text" label="Email" default="" />
     <setting id="password" type="text" label="Password" default="" />
   </category>
   <category label="Account">
-    <setting id="profile_id" type="text" label="Active profile ID" default="" />
-    <setting id="profile_name" type="text" label="Active profile name" default="" />
-    <setting id="manage_profiles_button" type="button" label="Manage profiles..." default="" onClick="RunPlugin(plugin://plugin.video.nlziet/?mode=profiles)" />
-    <setting id="apply_profile_button" type="button" label="Apply profile ID" default="" onClick="RunPlugin(plugin://plugin.video.nlziet/?mode=apply_profile)" />
+    <setting id="subscription_name" type="text" label="Subscription" default="" enabled="false" />
+    <setting id="subscription_expires" type="text" label="Subscription expires" default="" enabled="false" />
+    <setting id="max_devices" type="text" label="Max devices" default="" enabled="false" />
+    <setting id="logout_button" type="action" label="Logout and clear local data" action="RunPlugin(plugin://plugin.video.nlziet/?mode=logout_confirm)" />  </category>
+  <category label="Profiles">
+    <setting id="profile_id" type="text" label="Active profile ID" default="" enabled="false" />
+    <setting id="profile_name" type="text" label="Active profile name" default="" enabled="false" />
   </category>
   <category label="Advanced">
     <setting id="api_base_url" type="text" label="API base URL (optional)" default="https://api.nlziet.nl" />

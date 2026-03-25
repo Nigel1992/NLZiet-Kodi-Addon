@@ -430,6 +430,141 @@ class NLZietAPI:
             return []
 
 
+    def get_videos(self, limit=999):
+        """Fetch recommended videos (TV shows) using the recommend/withContext endpoint.
+
+        Mirrors `get_movies` but requests `contextName=recommendVideos`.
+        """
+        try:
+            url = f"{self.base_url}/v9/recommend/withcontext?contextName=recommendVideos&limit={limit}"
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'nlziet-appname': 'WebApp',
+                'nlziet-appversion': '6.0.3',
+                'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+            }
+            token = self.get_access_token()
+            if token:
+                headers['Authorization'] = 'Bearer ' + token
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+
+            items = data.get('data') or data.get('results') or data.get('items') or []
+            results = []
+            for item in items:
+                src = item.get('item') if isinstance(item, dict) and item.get('item') else item.get('content') if isinstance(item, dict) and item.get('content') else item
+                if not isinstance(src, dict):
+                    continue
+                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
+                thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
+                desc = src.get('description') or src.get('plot') or src.get('summary') or ''
+                subtitle = src.get('subtitle') or src.get('subtitleText') or ''
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle})
+            return results
+        except Exception as e:
+            xbmc.log(f"NLZiet get_videos error: {e}", xbmc.LOGERROR)
+            return []
+
+
+    def get_documentaries(self, limit=999, offset=0):
+        """Fetch recommended Documentary programs using the filtered recommend endpoint.
+
+        Uses: /v9/recommend/filtered?category=Programs&genre=Documentary&limit={limit}&offset={offset}
+        """
+        try:
+            url = f"{self.base_url}/v9/recommend/filtered?category=Programs&genre=Documentary&limit={limit}&offset={offset}"
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'nlziet-appname': 'WebApp',
+                'nlziet-appversion': '6.0.3',
+                'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+            }
+            token = self.get_access_token()
+            if token:
+                headers['Authorization'] = 'Bearer ' + token
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+
+            items = data.get('data') or data.get('results') or data.get('items') or []
+            results = []
+            for item in items:
+                src = item.get('item') if isinstance(item, dict) and item.get('item') else item.get('content') if isinstance(item, dict) and item.get('content') else item
+                if not isinstance(src, dict):
+                    continue
+                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
+                thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
+                desc = src.get('description') or src.get('plot') or src.get('summary') or ''
+                subtitle = src.get('subtitle') or src.get('subtitleText') or ''
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle})
+            return results
+        except Exception as e:
+            xbmc.log(f"NLZiet get_documentaries error: {e}", xbmc.LOGERROR)
+            return []
+
+
+    def get_customer_summary(self):
+        """Retrieve account summary from the customer API using bearer token."""
+        try:
+            token = self.get_access_token()
+            # If we have a cookie-session but no token yet, try to perform PKCE authorize+exchange
+            if not token and getattr(self, 'token', None) == 'cookie-session':
+                try:
+                    tokens = self.perform_pkce_authorize_and_exchange()
+                    if tokens and tokens.get('access_token'):
+                        token = tokens.get('access_token')
+                except Exception:
+                    token = None
+
+            if not token:
+                return {}
+
+            url = 'https://api.customer.nlziet.nl/customer/summary'
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'Authorization': 'Bearer ' + token,
+            }
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+            return data or {}
+        except Exception as e:
+            xbmc.log(f"NLZiet get_customer_summary error: {e}", xbmc.LOGERROR)
+            return {}
+
+
     def get_content_detail(self, content_id):
         """Fetch content detail including description/plot for a given content id."""
         if not content_id:

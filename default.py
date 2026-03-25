@@ -7,6 +7,7 @@ import xbmcaddon
 import xbmcgui
 import xbmcplugin
 import time
+import threading
 
 from resources.lib.nlziet_api import NLZietAPI
 
@@ -158,6 +159,35 @@ def _pick_landscape_thumb(src):
     return None
 
 
+def _is_logged_in():
+    """Return True when the addon has an active authenticated session.
+
+    We consider the user logged in when a valid access token exists or a
+    cookie-session was established by the form login. This is intentionally
+    lightweight and avoids forcing network calls during menu rendering.
+    """
+    try:
+        api = NLZietAPI(username=ADDON.getSetting('username'), password=ADDON.getSetting('password'))
+        try:
+            token = api.get_access_token()
+        except Exception:
+            token = None
+        if token:
+            return True
+        if getattr(api, 'token', None) == 'cookie-session':
+            # Heuristic: presence of nlziet cookies indicates an active session
+            try:
+                for c in api.cookie_jar:
+                    dom = getattr(c, 'domain', '') or ''
+                    if 'nlziet' in dom.lower():
+                        return True
+            except Exception:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def main_menu():
     try:
         addon_path = ADDON.getAddonInfo('path') or ''
@@ -189,14 +219,39 @@ def main_menu():
             pass
         return _pick_icon(name)
 
+    # Start background refresh of account info (silent) on addon launch
+    try:
+        threading.Thread(target=refresh_account_info, args=(False,), daemon=True).start()
+    except Exception:
+        xbmc.log('NLZiet: failed to start account refresh thread', xbmc.LOGDEBUG)
+
+    # Determine authentication state and show protected items only when logged in
+    logged_in = _is_logged_in()
+
+    # If not logged in, notify the user to provide credentials in Settings
+    # and press Login on the main menu.
+    if not logged_in:
+        try:
+            uname = ADDON.getSetting('username') or ''
+            if not uname:
+                msg = 'Please open Settings > Credentials, enter your NLZiet username and password, then return and press Login.'
+            else:
+                msg = 'Not logged in. Please press Login on the main menu to authenticate.'
+            xbmcgui.Dialog().notification('NLZiet', msg, xbmcgui.NOTIFICATION_INFO)
+        except Exception:
+            xbmc.log('NLZiet: failed to show login notification', xbmc.LOGDEBUG)
+
     add_directory_item('Login (set credentials in settings)', {'mode': 'login'}, thumb=_pick_png('login'))
-    add_directory_item('Manage profiles', {'mode': 'profiles'}, thumb=_pick_png('profiles'))
-    add_directory_item('Search', {'mode': 'search'}, thumb=_pick_png('search'))
-    add_directory_item('My List', {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-    add_directory_item('Series', {'mode': 'series'}, thumb=_pick_png('series'))
-    add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'}, thumb=_pick_png('movies'))
-    # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
-    add_directory_item('Channels', {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+    if logged_in:
+        add_directory_item('Manage profiles', {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        add_directory_item('Search', {'mode': 'search'}, thumb=_pick_png('search'))
+        add_directory_item('My List', {'mode': 'my_list'}, thumb=_pick_png('mylist'))
+        add_directory_item('Series', {'mode': 'series'}, thumb=_pick_png('series'))
+        add_directory_item('TV Shows', {'mode': 'browse', 'type': 'videos'}, thumb=_pick_png('tvshows'))
+        add_directory_item('Documentary', {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
+        add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'}, thumb=_pick_png('movies'))
+        # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
+        add_directory_item('Channels', {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -445,6 +500,244 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
     xbmcplugin.endOfDirectory(HANDLE)
 
 
+def _extract_max_devices(summary):
+    """Try to parse max devices from API summary payload."""
+    def _find(data):
+        if isinstance(data, dict):
+            title = str(data.get('title') or data.get('name') or '')
+            if title and 'apparaten' in title.lower():
+                # direct title may contain number
+                m = re.search(r"(\d+)", title)
+                if m:
+                    return m.group(1)
+            terms = data.get('terms') or data.get('term') or []
+            if isinstance(terms, list):
+                for t in terms:
+                    if isinstance(t, dict):
+                        label = str(t.get('label') or '')
+                        if 'apparaten' in label.lower():
+                            m = re.search(r"(\d+)", label)
+                            if m:
+                                return m.group(1)
+                        res = _find(t)
+                        if res:
+                            return res
+            for v in data.values():
+                res = _find(v)
+                if res:
+                    return res
+        elif isinstance(data, list):
+            for item in data:
+                res = _find(item)
+                if res:
+                    return res
+        return None
+
+    result = _find(summary)
+    return str(result) if result else ''
+
+
+def _extract_subscription_name(summary):
+    """Try to parse subscription name from API summary payload."""
+    if not isinstance(summary, dict):
+        return ''
+    # first, look for direct subscription field
+    sub = summary.get('subscription') or summary.get('plan') or summary.get('product') or {}
+    if isinstance(sub, dict):
+        name = sub.get('name') or sub.get('title') or ''
+        if name:
+            return str(name)
+    # fallback: find any name field in root with known hints
+    for k in ('name', 'subscriptionName', 'planName'):
+        if summary.get(k):
+            return str(summary.get(k))
+    # recursively find object with 'name' and context
+    def _find(data):
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if k.lower() == 'name' and isinstance(v, str) and v.strip():
+                    return v
+                res = _find(v)
+                if res:
+                    return res
+        elif isinstance(data, list):
+            for item in data:
+                res = _find(item)
+                if res:
+                    return res
+        return None
+    found = _find(summary)
+    return str(found) if found else ''
+
+
+def _extract_subscription_expiry(summary):
+    """Try to parse subscription expiry (nextDate) from API summary payload."""
+    if not summary:
+        return ''
+    # direct field on root
+    if isinstance(summary, dict):
+        if 'nextDate' in summary and summary.get('nextDate'):
+            return _format_date_string(summary.get('nextDate'))
+        sub = summary.get('subscription') or summary.get('plan') or summary.get('product') or {}
+        if isinstance(sub, dict) and sub.get('nextDate'):
+            return _format_date_string(sub.get('nextDate'))
+    # recurse into lists/dicts
+    if isinstance(summary, (list, tuple)):
+        for item in summary:
+            d = _extract_subscription_expiry(item)
+            if d:
+                return d
+    if isinstance(summary, dict):
+        for v in summary.values():
+            d = _extract_subscription_expiry(v)
+            if d:
+                return d
+    return ''
+
+
+def _format_date_string(dtstr):
+    """Normalize various date formats to YYYY-MM-DD string."""
+    if not dtstr:
+        return ''
+    from datetime import datetime
+    s = str(dtstr)
+    formats = ["%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"]
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(s, fmt)
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            continue
+    # try numeric timestamp (seconds or milliseconds)
+    try:
+        t = float(s)
+        if t > 1e12:
+            t = t / 1000.0
+        dt = datetime.fromtimestamp(t)
+        return dt.strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return s
+
+
+def refresh_account_info(notify=True):
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    summary = api.get_customer_summary() or {}
+
+    subscription = _extract_subscription_name(summary) or ''
+    max_devices = _extract_max_devices(summary) or ''
+    subscription_expires = _extract_subscription_expiry(summary) or ''
+
+    try:
+        ADDON.setSetting('subscription_name', subscription)
+        ADDON.setSetting('max_devices', max_devices)
+        ADDON.setSetting('subscription_expires', subscription_expires)
+    except Exception:
+        pass
+
+    display_values = []
+    if subscription:
+        display_values.append(f"Subscription: {subscription}")
+    if max_devices:
+        display_values.append(f"Max devices: {max_devices}")
+    if subscription_expires:
+        display_values.append(f"Expires: {subscription_expires}")
+
+    if notify:
+        if display_values:
+            xbmcgui.Dialog().notification('NLZiet', 'Account info updated:\n' + '\n'.join(display_values), xbmcgui.NOTIFICATION_INFO)
+        else:
+            xbmcgui.Dialog().notification('NLZiet', 'Account info could not be parsed', xbmcgui.NOTIFICATION_INFO)
+    else:
+        if display_values:
+            xbmc.log('NLZiet: Account info updated: ' + ', '.join(display_values), xbmc.LOGDEBUG)
+        else:
+            xbmc.log('NLZiet: Account info could not be parsed', xbmc.LOGDEBUG)
+
+
+def do_logout():
+    """Clear persistent addon data (cookies, tokens, profile) and refresh the UI.
+
+    This removes cookie/token/profile/mylist files saved under the addon's
+    profile directory, clears the stored profile settings, and replaces the
+    current container with the main menu so the addon appears like a fresh
+    install.
+    """
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    # remove persistent files (cookies, profile, tokens, mylist)
+    paths = [getattr(api, 'cookie_file', None), getattr(api, 'stream_cookie_file', None), getattr(api, 'profile_file', None), getattr(api, 'token_file', None), getattr(api, 'mylist_file', None)]
+    for p in paths:
+        try:
+            if p and os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    try:
+                        with open(p, 'w', encoding='utf-8') as f:
+                            f.write('')
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    # clear in-memory cookie jar and tokens
+    try:
+        api.cookie_jar.clear()
+    except Exception:
+        pass
+    try:
+        api.tokens = {}
+        api.token = None
+    except Exception:
+        pass
+
+    # Clear relevant addon settings so the addon appears fresh
+    try:
+        for key in ('profile_id', 'profile_name', 'subscription_name', 'subscription_expires', 'max_devices', 'username', 'password'):
+            try:
+                ADDON.setSetting(key, '')
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    xbmcgui.Dialog().notification('NLZiet', 'Logged out — local data cleared', xbmcgui.NOTIFICATION_INFO)
+
+    # Refresh UI to main menu so the addon appears like a fresh install
+    try:
+        main_url = build_url({})
+        xbmc.executebuiltin('Container.Update(%s,replace)' % main_url)
+    except Exception:
+        try:
+            xbmc.executebuiltin('RunPlugin(%s)' % BASE_URL)
+        except Exception:
+            pass
+
+
+def confirm_logout():
+    """Show a confirmation dialog before performing logout."""
+    d = xbmcgui.Dialog()
+    msg = 'This will clear cookies, tokens and reset My List (local only - no online MyList sync build in yet). Continue?'
+    try:
+        ok = d.yesno('NLZiet', msg, yeslabel='Logout', nolabel='Cancel')
+    except Exception:
+        try:
+            ok = d.yesno('NLZiet', msg)
+        except Exception:
+            ok = False
+    if ok:
+        do_logout()
+    else:
+        try:
+            xbmcgui.Dialog().notification('NLZiet', 'Logout cancelled', xbmcgui.NOTIFICATION_INFO)
+        except Exception:
+            pass
+
+
 def do_login():
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
@@ -457,6 +750,10 @@ def do_login():
             xbmcgui.Dialog().notification('NLZiet', 'Login successful (tokens acquired)', xbmcgui.NOTIFICATION_INFO)
         else:
             xbmcgui.Dialog().notification('NLZiet', 'Login successful (no tokens)', xbmcgui.NOTIFICATION_INFO)
+        try:
+            refresh_account_info()
+        except Exception:
+            pass
     else:
         xbmcgui.Dialog().notification('NLZiet', 'Login failed — running in demo mode', xbmcgui.NOTIFICATION_INFO)
 
@@ -778,6 +1075,11 @@ def apply_profile():
         except Exception:
             pass
 
+        try:
+            refresh_account_info()
+        except Exception:
+            pass
+
         xbmcgui.Dialog().notification('NLZiet', f'Profile applied: {profile_name or pid}', xbmcgui.NOTIFICATION_INFO)
     else:
         xbmcgui.Dialog().notification('NLZiet', 'Failed to apply profile. Try Manage profiles.', xbmcgui.NOTIFICATION_ERROR)
@@ -1004,6 +1306,10 @@ def browse_category(content_type):
     epg_map = {}
     if content_type.lower() == 'movies':
         results = api.get_movies()
+    elif content_type.lower() == 'videos':
+        results = api.get_videos()
+    elif content_type.lower() == 'documentary':
+        results = api.get_documentaries()
     elif content_type.lower() == 'channels':
         results = api.get_channels()
         # fetch current program (EPG) for the visible channels and show it
@@ -1518,6 +1824,12 @@ def router(paramstring):
         apply_profile()
     elif mode == 'series':
         browse_series()
+    elif mode == 'logout':
+        do_logout()
+    elif mode == 'logout_confirm':
+        confirm_logout()
+    elif mode == 'account_summary':
+        refresh_account_info()
     elif mode == 'search_group':
         search_group(params.get('q'), params.get('group'))
     elif mode == 'series_detail':
