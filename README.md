@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Nigel1992/NLZiet-Kodi-Addon/master/icon.png" width="120" alt="NLZiet Kodi Addon Logo"/>
+<img src="https://raw.githubusercontent.com/Nigel1992/NLZiet-Kodi-Addon/master/icon.png" width="300" alt="NLZiet Kodi Addon Logo"/>
 
 # <span style="color:#E60000;">NLZiet Kodi Addon</span>
 
@@ -47,6 +47,7 @@
 
 ## 🖼️ Screenshots
 
+Coming soon...
 <p align="center">
   <img src="docs/screenshot_main.png" width="400" alt="Main Menu"/>
   <img src="docs/screenshot_series.png" width="400" alt="Series View"/>
