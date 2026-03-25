@@ -52,3 +52,22 @@ All notable changes to this project are recorded in this file.
 ----
 
 See the GitHub Releases page for binary releases and tags: https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases
+
+## [0.0.6] - 2026-03-25
+
+### Added
+- Main menu: new "TV Shows" and "Documentary" entries using the recommend endpoints.
+- Settings: new **Account** section showing subscription name, subscription expiry, and max devices (read-only).
+- Settings: `Logout` action that clears cookies, tokens, profiles and local My List (with confirmation).
+
+### Changed
+- Profiles moved into a dedicated **Profiles** settings category and are now read-only in Settings.
+- Main menu now hides protected items (Profiles, Search, My List, Series, Movies, Channels) when not authenticated.
+- Account info is refreshed silently on addon launch and after login/profile changes.
+
+### Fixed / Notes
+- Improved token/cookie handling and added a PKCE fallback to exchange cookie sessions for tokens when needed.
+- Various UI and parsing improvements: thumbnail selection, expiry formatting, and defensive API parsing.
+
+----
+
