@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v0.0.6 — 2026-03-25. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v0.0.7 — 2026-03-26. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub><sup>Unofficial NLZiet Kodi Addon &mdash; Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sup></sub>
 
@@ -44,6 +44,13 @@
 - **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
 
 ---
+
+### New in v0.0.7
+
+- Persist cookie-based login across Kodi restarts so the add-on recognizes logged-in sessions.
+- Bumped addon version to `0.0.7` and added release package.
+
+----
 
 ## 🖼️ Screenshots
 
