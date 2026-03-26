@@ -127,6 +127,18 @@ class NLZietAPI:
 
         # current access token (kept in memory for quick access)
         self.token = self.tokens.get('access_token')
+        # If no access token but persistent NLZiet cookies exist, mark
+        # this session as a cookie-based session so callers can detect
+        # an authenticated cookie session after a Kodi restart.
+        if not self.token:
+            try:
+                for c in self.cookie_jar:
+                    dom = getattr(c, 'domain', '') or ''
+                    if 'nlziet' in dom.lower():
+                        self.token = 'cookie-session'
+                        break
+            except Exception:
+                pass
 
     def _append_debug(self, text):
         try:
