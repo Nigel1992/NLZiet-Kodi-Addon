@@ -8,6 +8,7 @@ import xbmcgui
 import xbmcplugin
 import time
 import threading
+from datetime import datetime
 
 from resources.lib.nlziet_api import NLZietAPI
 
@@ -18,6 +19,87 @@ BASE_URL = sys.argv[0]
 # Raw expiry color to test — change this to 'orange' or a hex like 'FFA500' or
 # try the exact raw tag you suggested ('ffoooo66') to experiment.
 EXPIRY_COLOR_RAW = 'ffoooo66'
+
+# Language/Localization dictionary - Dutch (NL) and English (EN)
+TRANSLATIONS = {
+    'login': {'nl': 'Inloggen (stel inloggegevens in bij instellingen)', 'en': 'Login (set credentials in settings)'},
+    'manage_profiles': {'nl': 'Profielen beheren', 'en': 'Manage profiles'},
+    'search': {'nl': 'Zoeken', 'en': 'Search'},
+    'my_list': {'nl': 'Mijn lijst', 'en': 'My List'},
+    'series': {'nl': 'Series', 'en': 'Series'},
+    'tv_shows': {'nl': 'TV Shows', 'en': 'TV Shows'},
+    'documentary': {'nl': 'Documentaire', 'en': 'Documentary'},
+    'movies': {'nl': 'Films', 'en': 'Movies'},
+    'channels': {'nl': 'Kanalen', 'en': 'Channels'},
+    'all_episodes': {'nl': 'Alle afleveringen', 'en': 'All episodes'},
+    'missing_series_id': {'nl': 'Serie-ID ontbreekt', 'en': 'Missing series id'},
+    'missing_season_id': {'nl': 'Seizoen-ID ontbreekt', 'en': 'Missing season id'},
+    'unable_fetch_series': {'nl': 'Kan seriegegevens niet ophalen', 'en': 'Unable to fetch series details'},
+    'no_items_found': {'nl': 'Geen items gevonden', 'en': 'No items found'},
+    'not_logged_in': {'nl': 'Niet ingelogd. Klik op Inloggen in het hoofdmenu om in te loggen.', 'en': 'Not logged in. Please press Login on the main menu to authenticate.'},
+    'login_notification': {'nl': 'Open Instellingen > Inloggegevens en voer uw NLZiet-gebruikersnaam en wachtwoord in.', 'en': 'Please open Settings > Credentials, enter your NLZiet username and password, then return and press Login.'},
+    'logout_and_clear': {'nl': 'Afmelden en lokale gegevens wissen', 'en': 'Logout and clear local data'},
+    'only_series_movies': {'nl': 'Alleen Series en Films kunnen aan Mijn lijst worden toegevoegd', 'en': 'Only Series and Movies can be added to My List'},
+    'searching': {'nl': 'Zoeken naar "{}"', 'en': 'Searching for "{}"'},
+    'no_results': {'nl': 'Geen resultaten gevonden voor "{}"', 'en': 'No results found for "{}"'},
+    'now_watching': {'nl': 'Nu aan het kijken', 'en': 'Now watching'},
+    'added_to_list': {'nl': 'Toegevoegd aan Mijn lijst', 'en': 'Added to My List'},
+    'removed_from_list': {'nl': 'Verwijderd uit Mijn lijst', 'en': 'Removed from My List'},
+    'all': {'nl': 'Alles', 'en': 'All'},
+    'no_episodes_found': {'nl': 'Geen afleveringen gevonden', 'en': 'No episodes found'},
+    'account_updated': {'nl': 'Accountinformatie bijgewerkt:', 'en': 'Account info updated:'},
+    'account_parse_error': {'nl': 'Accountinformatie kon niet worden verwerkt', 'en': 'Account info could not be parsed'},
+    'logged_out': {'nl': 'Afgemeld — lokale gegevens gewist', 'en': 'Logged out — local data cleared'},
+    'logout_cancelled': {'nl': 'Afmelden geannuleerd', 'en': 'Logout cancelled'},
+    'login_successful_tokens': {'nl': 'Inloggen geslaagd (tokens verkregen)', 'en': 'Login successful (tokens acquired)'},
+    'login_successful_no_tokens': {'nl': 'Inloggen geslaagd (geen tokens)', 'en': 'Login successful (no tokens)'},
+    'login_failed_demo': {'nl': 'Inloggen mislukt — in demomodus gedraaid', 'en': 'Login failed — running in demo mode'},
+    'no_profiles': {'nl': 'Geen profielen beschikbaar. Meld u eerst aan.', 'en': 'No profiles available. Please login first.'},
+    'my_list_empty': {'nl': 'Mijn lijst is leeg', 'en': 'My List is empty'},
+    'no_items_for_group': {'nl': 'Geen items gevonden voor {}', 'en': 'No items found for {}'},
+    'missing_id_mylist': {'nl': 'ID ontbreekt voor Mijn lijst-actie', 'en': 'Missing id for My List action'},
+    'logout_confirm_msg': {'nl': 'Hiermee worden cookies, tokens gewist en wordt Mijn lijst opnieuw ingesteld (alleen lokaal - geen online MyList-synchronisatie ingebouwd). Doorgaan?', 'en': 'This will clear cookies, tokens and reset My List (local only - no online MyList sync build in yet). Continue?'},
+    'logout_btn': {'nl': 'Afmelden', 'en': 'Logout'},
+    'cancel_btn': {'nl': 'Annuleren', 'en': 'Cancel'},
+    'season': {'nl': 'Seizoen', 'en': 'Season'},
+    'subscription_label': {'nl': 'Abonnement', 'en': 'Subscription'},
+    'max_devices_label': {'nl': 'Max apparaten', 'en': 'Max devices'},
+    'expires_label': {'nl': 'Verloopt', 'en': 'Expires'},
+}
+
+def get_string(key, *args):
+    """Get translated string based on language setting.
+    
+    Args:
+        key: Translation key
+        *args: Optional format arguments
+        
+    Returns:
+        Translated string in user's selected language (default: Dutch)
+    """
+    lang_setting = ADDON.getSetting('language') or '0'
+    
+    # Map setting values to language codes
+    # Settings.xml has values="Dutch|English" so it returns "Dutch" or "English"
+    # Also handle indices 0/1 and language codes nl/en as fallback
+    lang_map = {
+        '0': 'nl',
+        '1': 'en',
+        'Dutch': 'nl',
+        'English': 'en',
+        'nl': 'nl',
+        'en': 'en',
+        'Nederlands': 'nl'
+    }
+    lang = lang_map.get(lang_setting, 'nl')
+    
+    text = TRANSLATIONS.get(key, {}).get(lang, TRANSLATIONS.get(key, {}).get('en', key))
+    if args:
+        try:
+            text = text.format(*args)
+        except (IndexError, KeyError):
+            pass
+    return text
 
 def _make_color_tag(color_raw, text):
     """Return a COLOR tag using the raw value provided by the user.
@@ -189,6 +271,9 @@ def _is_logged_in():
 
 
 def main_menu():
+    # Check if language changed and reload addon if needed
+    check_and_reload_on_settings_change()
+    
     try:
         addon_path = ADDON.getAddonInfo('path') or ''
     except Exception:
@@ -234,24 +319,82 @@ def main_menu():
         try:
             uname = ADDON.getSetting('username') or ''
             if not uname:
-                msg = 'Please open Settings > Credentials, enter your NLZiet username and password, then return and press Login.'
+                msg = get_string('login_notification')
             else:
-                msg = 'Not logged in. Please press Login on the main menu to authenticate.'
+                msg = get_string('not_logged_in')
             xbmcgui.Dialog().notification('NLZiet', msg, xbmcgui.NOTIFICATION_INFO)
         except Exception:
             xbmc.log('NLZiet: failed to show login notification', xbmc.LOGDEBUG)
 
-    add_directory_item('Login (set credentials in settings)', {'mode': 'login'}, thumb=_pick_png('login'))
+    add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'))
     if logged_in:
-        add_directory_item('Manage profiles', {'mode': 'profiles'}, thumb=_pick_png('profiles'))
-        add_directory_item('Search', {'mode': 'search'}, thumb=_pick_png('search'))
-        add_directory_item('My List', {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-        add_directory_item('Series', {'mode': 'series'}, thumb=_pick_png('series'))
-        add_directory_item('TV Shows', {'mode': 'browse', 'type': 'videos'}, thumb=_pick_png('tvshows'))
-        add_directory_item('Documentary', {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
-        add_directory_item('Movies', {'mode': 'browse', 'type': 'movies'}, thumb=_pick_png('movies'))
+        add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
+        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
+        add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
+        add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
+        add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
+        add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
-        add_directory_item('Channels', {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+        add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_series_categories():
+    """Display series category/genre list."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+
+    genres = api.get_series_genres()
+    for genre in genres:
+        name = genre.get('name')
+        genre_param = genre.get('genre')
+        add_directory_item(name, {'mode': 'browse_series_genre', 'genre': genre_param or 'all'}, is_folder=True)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_series_genre(genre=None):
+    """Display series in a selected genre."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+
+    # Handle "all" as None for the API
+    genre_param = None if genre == 'all' else genre
+    results = api.get_series_by_genre(genre_param)
+    
+    for item in results:
+        item_type = item.get('type', 'Series')
+        info = None
+        try:
+            desc = item.get('description') or item.get('subtitle') or ''
+            if desc:
+                title_for_info = item.get('title') or ''
+                expiry_text = item.get('expires_in') or None
+                truncated = (desc[:250] + '...') if len(desc) > 250 else desc
+                plot_full = desc
+                po = truncated
+                if expiry_text:
+                    marker = '🔶 '
+                    colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
+                    plot_full = f"{colored}\n{desc}" if desc else colored
+                    po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
+                info = {
+                    'title': title_for_info,
+                    'plot': plot_full,
+                    'plotoutline': po,
+                }
+        except Exception:
+            info = None
+        
+        # Series items should open as folders showing seasons/episodes
+        if item_type == 'Series':
+            add_directory_item(item.get('title') or item.get('id') or 'Series', {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        else:
+            # Episodes would be playable - but shouldn't appear at top level in genre view
+            pass
+    
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -302,11 +445,19 @@ def browse_series():
             desc = item.get('description') or item.get('subtitle') or ''
             if desc:
                 title_for_info = item.get('title') or ''
+                expiry_text = item.get('expires_in') or None
                 truncated = (desc[:250] + '...') if len(desc) > 250 else desc
+                plot_full = desc
+                po = truncated
+                if expiry_text:
+                    marker = '🔶 '
+                    colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
+                    plot_full = f"{colored}\n{desc}" if desc else colored
+                    po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
                 info = {
                     'title': title_for_info,
-                    'plot': desc,
-                    'plotoutline': truncated,
+                    'plot': plot_full,
+                    'plotoutline': po,
                 }
         except Exception:
             info = None
@@ -316,29 +467,29 @@ def browse_series():
 
 def show_series_detail(series_id):
     if not series_id:
-        xbmcgui.Dialog().notification('NLZiet', 'Missing series id', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
         return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     api = NLZietAPI(username=username, password=password)
     detail = api.get_series_detail(series_id)
     if not detail:
-        xbmcgui.Dialog().notification('NLZiet', 'Unable to fetch series details', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('unable_fetch_series'), xbmcgui.NOTIFICATION_ERROR)
         return
     seasons = detail.get('seasons') or []
     # If no seasons discovered, offer direct episode listing
     if not seasons:
-        add_directory_item('All episodes', {'mode': 'series_season', 'series_id': series_id, 'season_id': ''}, is_folder=True)
+        add_directory_item(get_string('all_episodes'), {'mode': 'series_season', 'series_id': series_id, 'season_id': ''}, is_folder=True)
     else:
         for s in seasons:
-            title = s.get('title') or f"Season {s.get('id')}"
+            title = s.get('title') or f"{get_string('season')} {s.get('id')}"
             add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id')}, is_folder=True)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
 def show_series_season(series_id, season_id):
     if not series_id:
-        xbmcgui.Dialog().notification('NLZiet', 'Missing series id', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
         return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
@@ -355,19 +506,48 @@ def show_series_season(series_id, season_id):
         except Exception:
             episodes = []
     if not episodes:
-        xbmcgui.Dialog().notification('NLZiet', 'No episodes found', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
         return
     for ep in episodes:
         info = None
         try:
             desc = ep.get('description') or ep.get('subtitle') or ''
-            if desc:
-                title_for_info = ep.get('title') or ''
+            title_for_info = ep.get('title') or ''
+            aired_date = ep.get('raw', {}).get('broadcastAt') or ep.get('aired_date') or ep.get('broadcastDate') or ep.get('aired') or None
+            
+            # Format broadcast date info
+            date_info = ''
+            if aired_date:
+                try:
+                    # Parse and format date
+                    if 'T' in aired_date:
+                        date_obj = datetime.fromisoformat(aired_date.replace('Z', '+00:00'))
+                    else:
+                        date_obj = datetime.strptime(aired_date, '%Y-%m-%d')
+                    
+                    date_formatted = date_obj.strftime('%d-%m-%Y')
+                    lang_code = ADDON.getSetting('language')
+                    if lang_code == '0':  # Dutch
+                        date_info = f"Uitgezonden: {date_formatted}"
+                    else:  # English
+                        date_info = f"Aired: {date_formatted}"
+                except Exception:
+                    date_info = ''
+            
+            # Build description with broadcast date if available
+            plot_full = desc
+            po = desc
+            
+            if date_info:
+                plot_full = f"{date_info}\n{desc}" if desc else date_info
+                po = f"{date_info} — {desc[:100]}" if desc else date_info
+            
+            if desc or date_info:
                 truncated = (desc[:250] + '...') if len(desc) > 250 else desc
                 info = {
                     'title': title_for_info,
-                    'plot': desc,
-                    'plotoutline': truncated,
+                    'plot': plot_full,
+                    'plotoutline': po,
                 }
         except Exception:
             info = None
@@ -441,6 +621,164 @@ def show_series_season(series_id, season_id):
     xbmcplugin.endOfDirectory(HANDLE)
 
 
+def browse_tv_shows():
+    """Show TV show categories/genres for browsing."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    
+    genres = api.get_tv_show_genres()
+    for genre in genres:
+        query = {'mode': 'browse_tv_genre', 'genre': genre.get('genre') or 'all'}
+        add_directory_item(genre.get('name'), query, is_folder=True)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_tv_genre(genre=None):
+    """Show TV shows for a specific genre."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+    
+    # Get shows for the genre (None for 'all')
+    genre_param = None if genre == 'all' else genre
+    results = api.get_videos_by_genre(genre=genre_param, limit=999)
+    
+    for item in results:
+        # Use subtitle as primary display title if available (for episodes with episode names)
+        display_title = item.get('subtitle') or item.get('title') or ''
+        info = None
+        try:
+            desc = item.get('description') or item.get('subtitle') or ''
+            title_for_info = item.get('title') or ''
+            expiry_text = item.get('expires_in') or None
+            aired_date = item.get('aired_date') or None
+            
+            truncated = (desc[:250] + '...') if len(desc) > 250 else desc
+            plot_full = desc
+            po = truncated
+            
+            # Add aired/broadcast date info if available
+            date_info = ''
+            if aired_date:
+                try:
+                    # Parse and format date
+                    if 'T' in aired_date:
+                        date_obj = datetime.fromisoformat(aired_date.replace('Z', '+00:00'))
+                    else:
+                        date_obj = datetime.strptime(aired_date, '%Y-%m-%d')
+                    
+                    date_formatted = date_obj.strftime('%d-%m-%Y')
+                    lang_code = ADDON.getSetting('language')
+                    if lang_code == '0':  # Dutch
+                        date_info = f"Uitgezonden: {date_formatted}"
+                    else:  # English
+                        date_info = f"Aired: {date_formatted}"
+                except Exception:
+                    date_info = ''
+            
+            # Build full plot with date info
+            parts = []
+            if date_info:
+                parts.append(date_info)
+            if expiry_text:
+                marker = '🔶 '
+                colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
+                parts.append(colored)
+            if desc:
+                parts.append(desc)
+            
+            plot_full = '\n'.join(parts) if parts else ''
+            
+            # Build plotoutline with date
+            po_parts = []
+            if date_info:
+                po_parts.append(date_info)
+            if expiry_text:
+                marker = '🔶 '
+                po_parts.append(f"{marker}{expiry_text}")
+            if truncated:
+                po_parts.append(truncated)
+            
+            po = ' — '.join(po_parts) if po_parts else truncated
+            
+            # Create info if we have any data (title, date, or description)
+            if title_for_info or date_info or expiry_text or desc:
+                info = {
+                    'title': title_for_info,
+                    'plot': plot_full,
+                    'plotoutline': po,
+                }
+        except Exception:
+            info = None
+        
+        # Determine query mode based on item type
+        item_type = (item.get('type') or '').lower()
+        query = {'mode': 'play', 'id': item.get('id')}
+        is_folder = False
+        
+        if item_type == 'series':
+            # Series open as folders showing seasons/episodes
+            query = {'mode': 'series_detail', 'series_id': item.get('id')}
+            is_folder = True
+        
+        add_directory_item(display_title, query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_movie_categories():
+    """Display movie category/genre list."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+
+    genres = api.get_movie_genres()
+    for genre in genres:
+        name = genre.get('name')
+        genre_param = genre.get('genre')
+        add_directory_item(name, {'mode': 'browse_movie_genre', 'genre': genre_param or 'all'}, is_folder=True)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_movie_genre(genre=None):
+    """Display movies in a selected genre."""
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    api = NLZietAPI(username=username, password=password)
+
+    # Handle "all" as None for the API
+    genre_param = None if genre == 'all' else genre
+    results = api.get_movies_by_genre(genre_param)
+    
+    for item in results:
+        info = None
+        try:
+            desc = item.get('description') or item.get('subtitle') or ''
+            if desc:
+                title_for_info = item.get('title') or ''
+                expiry_text = item.get('expires_in') or None
+                truncated = (desc[:250] + '...') if len(desc) > 250 else desc
+                plot_full = desc
+                po = truncated
+                if expiry_text:
+                    marker = '🔶 '
+                    colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
+                    plot_full = f"{colored}\n{desc}" if desc else colored
+                    po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
+                info = {
+                    'title': title_for_info,
+                    'plot': plot_full,
+                    'plotoutline': po,
+                }
+        except Exception:
+            info = None
+        
+        # Movies are playable items
+        add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item)
+    
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
 def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
     """List items for a placement row. Accepts either `items_url` or a
     `placement_id` + `comp_index` to locate inline items.
@@ -476,7 +814,7 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
             items = []
 
     if not items:
-        xbmcgui.Dialog().notification('NLZiet', 'No items found', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_items_found'), xbmcgui.NOTIFICATION_INFO)
         return
 
     for src in items:
@@ -487,8 +825,16 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
             desc = src.get('description') or src.get('summary') or ''
             info = None
             if desc:
+                expiry_text = src.get('expires_in') or None
                 truncated = (desc[:250] + '...') if len(desc) > 250 else desc
-                info = {'title': title, 'plot': desc, 'plotoutline': truncated}
+                plot_full = desc
+                po = truncated
+                if expiry_text:
+                    marker = '🔶 '
+                    colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
+                    plot_full = f"{colored}\n{desc}" if desc else colored
+                    po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
+                info = {'title': title, 'plot': plot_full, 'plotoutline': po}
 
             if content_id:
                 # Treat as series when possible
@@ -639,17 +985,17 @@ def refresh_account_info(notify=True):
 
     display_values = []
     if subscription:
-        display_values.append(f"Subscription: {subscription}")
+        display_values.append(f"{get_string('subscription_label')}: {subscription}")
     if max_devices:
-        display_values.append(f"Max devices: {max_devices}")
+        display_values.append(f"{get_string('max_devices_label')}: {max_devices}")
     if subscription_expires:
-        display_values.append(f"Expires: {subscription_expires}")
+        display_values.append(f"{get_string('expires_label')}: {subscription_expires}")
 
     if notify:
         if display_values:
-            xbmcgui.Dialog().notification('NLZiet', 'Account info updated:\n' + '\n'.join(display_values), xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('account_updated') + '\n' + '\n'.join(display_values), xbmcgui.NOTIFICATION_INFO)
         else:
-            xbmcgui.Dialog().notification('NLZiet', 'Account info could not be parsed', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('account_parse_error'), xbmcgui.NOTIFICATION_INFO)
     else:
         if display_values:
             xbmc.log('NLZiet: Account info updated: ' + ', '.join(display_values), xbmc.LOGDEBUG)
@@ -705,7 +1051,7 @@ def do_logout():
     except Exception:
         pass
 
-    xbmcgui.Dialog().notification('NLZiet', 'Logged out — local data cleared', xbmcgui.NOTIFICATION_INFO)
+    xbmcgui.Dialog().notification('NLZiet', get_string('logged_out'), xbmcgui.NOTIFICATION_INFO)
 
     # Refresh UI to main menu so the addon appears like a fresh install
     try:
@@ -721,9 +1067,9 @@ def do_logout():
 def confirm_logout():
     """Show a confirmation dialog before performing logout."""
     d = xbmcgui.Dialog()
-    msg = 'This will clear cookies, tokens and reset My List (local only - no online MyList sync build in yet). Continue?'
+    msg = get_string('logout_confirm_msg')
     try:
-        ok = d.yesno('NLZiet', msg, yeslabel='Logout', nolabel='Cancel')
+        ok = d.yesno('NLZiet', msg, yeslabel=get_string('logout_btn'), nolabel=get_string('cancel_btn'))
     except Exception:
         try:
             ok = d.yesno('NLZiet', msg)
@@ -733,7 +1079,7 @@ def confirm_logout():
         do_logout()
     else:
         try:
-            xbmcgui.Dialog().notification('NLZiet', 'Logout cancelled', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('logout_cancelled'), xbmcgui.NOTIFICATION_INFO)
         except Exception:
             pass
 
@@ -747,15 +1093,15 @@ def do_login():
         # attempt PKCE authorize + token exchange (uses the saved cookie session)
         tokens = api.perform_pkce_authorize_and_exchange()
         if tokens:
-            xbmcgui.Dialog().notification('NLZiet', 'Login successful (tokens acquired)', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_tokens'), xbmcgui.NOTIFICATION_INFO)
         else:
-            xbmcgui.Dialog().notification('NLZiet', 'Login successful (no tokens)', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_no_tokens'), xbmcgui.NOTIFICATION_INFO)
         try:
             refresh_account_info()
         except Exception:
             pass
     else:
-        xbmcgui.Dialog().notification('NLZiet', 'Login failed — running in demo mode', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('login_failed_demo'), xbmcgui.NOTIFICATION_INFO)
 
 
 def manage_profiles():
@@ -779,7 +1125,7 @@ def manage_profiles():
             profiles = profiles or []
 
     if not profiles:
-        xbmcgui.Dialog().notification('NLZiet', 'No profiles available. Please login first.', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_profiles'), xbmcgui.NOTIFICATION_INFO)
         return
 
     current_pid = ADDON.getSetting('profile_id') or ''
@@ -855,7 +1201,7 @@ def browse_my_list():
         items = []
 
     if not items:
-        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
     # Group My List items into Series/Movies/Other so the My List top-level
@@ -887,7 +1233,7 @@ def browse_my_list():
         any_folder = True
 
     if not any_folder:
-        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -920,7 +1266,7 @@ def browse_my_list_group(group):
             continue
 
     if not filtered:
-        xbmcgui.Dialog().notification('NLZiet', f'No items found for {group}', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_items_for_group').format(group), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
@@ -947,13 +1293,13 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
     password = ADDON.getSetting('password')
     api = NLZietAPI(username=username, password=password)
     if not item_id:
-        xbmcgui.Dialog().notification('NLZiet', 'Missing id for My List action', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_id_mylist'), xbmcgui.NOTIFICATION_ERROR)
         return
     # Defensive: only allow Series or Movies to be toggled
     if type and isinstance(type, str):
         tl = type.lower()
         if not any(x in tl for x in ('series', 'tvshow', 'movie', 'film')):
-            xbmcgui.Dialog().notification('NLZiet', 'Only Series and Movies can be added to My List', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
             return
     else:
         # try to detect content type from detail
@@ -961,7 +1307,7 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
             det = api.get_content_detail(item_id) or {}
             raw_type = (det.get('raw') or {}).get('type') or det.get('type') or ''
             if raw_type and not any(x in str(raw_type).lower() for x in ('series', 'tvshow', 'movie', 'film')):
-                xbmcgui.Dialog().notification('NLZiet', 'Only Series and Movies can be added to My List', xbmcgui.NOTIFICATION_INFO)
+                xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
                 return
         except Exception:
             pass
@@ -1633,12 +1979,18 @@ def play_item(content_id, fmt=None):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     api = NLZietAPI(username=username, password=password)
+    xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGINFO)
     if fmt == 'live':
         info = api.get_stream_info(content_id, context='Live')
+        xbmc.log(f"NLZiet LIVE TV: id={content_id} context='Live'", xbmc.LOGINFO)
     else:
         info = api.get_stream_info(content_id)
+        xbmc.log(f"NLZiet REGULAR content: id={content_id} (not live)", xbmc.LOGINFO)
     manifest = info.get('manifest')
-    xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={info.get('is_drm')}", xbmc.LOGDEBUG)
+    is_drm = info.get('is_drm')
+    subs_in_info = info.get('subtitles')
+    xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGINFO)
+    xbmc.log(f"NLZiet info subtitles value: {repr(subs_in_info)} (type: {type(subs_in_info).__name__})", xbmc.LOGINFO)
     if not manifest:
         xbmcgui.Dialog().notification('NLZiet', 'No manifest available', xbmcgui.NOTIFICATION_ERROR)
         return
@@ -1767,6 +2119,8 @@ def play_item(content_id, fmt=None):
         # Attach external subtitles (OutOfBand VTT) returned by the handshake
         try:
             subs = info.get('subtitles') or []
+            xbmc.log(f"NLZiet DRM subtitles array: {subs} (type: {type(subs).__name__}, len={len(subs) if subs else 0})", xbmc.LOGINFO)
+            
             sub_urls = []
             for s in subs:
                 if isinstance(s, dict):
@@ -1775,24 +2129,42 @@ def play_item(content_id, fmt=None):
                     url = s
                 if url:
                     sub_urls.append(url)
+            xbmc.log(f"NLZiet DRM extracted sub_urls: {sub_urls}", xbmc.LOGINFO)
+            
             if sub_urls:
                 try:
                     enable_subs = ADDON.getSetting('subtitles_default')
-                except Exception:
+                    xbmc.log(f"NLZiet DEBUG subtitles_default raw value: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+                except Exception as e:
                     enable_subs = None
-                # Only attach subtitles automatically when the setting is enabled
-                if str(enable_subs or '').lower() in ('true', '1', 'yes'):
+                    xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
+                
+                # Convert to boolean - handle all possible Kodi return values
+                if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs is False:
+                    subs_enabled = False
+                elif enable_subs == 'true' or enable_subs is True or enable_subs == '1':
+                    subs_enabled = True
+                else:
+                    # Fallback: try string parsing
+                    subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
+                
+                xbmc.log(f"NLZiet DRM subtitles: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
+                
+                if subs_enabled:
                     xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                     try:
                         li.setSubtitles(sub_urls)
-                    except Exception:
+                    except Exception as e:
+                        xbmc.log(f"NLZiet subtitle attach failed: {e}", xbmc.LOGINFO)
                         # fallback: store as property for debugging or later handling
                         try:
                             li.setProperty('nlziet.subtitles', ';'.join(sub_urls))
                         except Exception:
                             pass
                 else:
-                    xbmc.log('NLZiet: auto-subtitles disabled by settings', xbmc.LOGDEBUG)
+                    xbmc.log(f'NLZiet: auto-subtitles disabled', xbmc.LOGINFO)
+            else:
+                xbmc.log(f'NLZiet: no subtitles in stream response', xbmc.LOGINFO)
         except Exception:
             pass
 
@@ -1807,7 +2179,108 @@ def play_item(content_id, fmt=None):
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
         li = xbmcgui.ListItem(path=manifest)
+        
+        # Also handle subtitles for non-DRM streams
+        try:
+            subs = info.get('subtitles') or []
+            xbmc.log(f"NLZiet non-DRM subtitles array: {subs} (type: {type(subs).__name__}, len={len(subs) if subs else 0})", xbmc.LOGINFO)
+            
+            sub_urls = []
+            for s in subs:
+                if isinstance(s, dict):
+                    url = s.get('url') or s.get('uri') or s.get('file')
+                else:
+                    url = s
+                if url:
+                    sub_urls.append(url)
+            xbmc.log(f"NLZiet non-DRM extracted sub_urls: {sub_urls}", xbmc.LOGINFO)
+            
+            if sub_urls:
+                try:
+                    enable_subs = ADDON.getSetting('subtitles_default')
+                    xbmc.log(f"NLZiet DEBUG non-DRM subtitles_default raw: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+                except Exception as e:
+                    enable_subs = None
+                    xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
+                
+                # Convert to boolean - handle all possible return values from Kodi
+                if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs is False:
+                    subs_enabled = False
+                elif enable_subs == 'true' or enable_subs is True or enable_subs == '1':
+                    subs_enabled = True
+                else:
+                    # Fallback: try string parsing
+                    subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
+                
+                xbmc.log(f"NLZiet non-DRM subtitles: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
+                
+                if subs_enabled:
+                    xbmc.log(f"NLZiet non-DRM attaching subtitles: {sub_urls}", xbmc.LOGINFO)
+                    try:
+                        li.setSubtitles(sub_urls)
+                    except Exception as e:
+                        xbmc.log(f"NLZiet non-DRM subtitle attach failed: {e}", xbmc.LOGINFO)
+        except Exception as e:
+            xbmc.log(f"NLZiet exception in non-DRM subtitle handling: {e}", xbmc.LOGINFO)
+        
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
+
+
+def check_and_reload_on_settings_change():
+    """Check if language setting changed and notify user to reload addon.
+    
+    Compares current language setting with stored value. If language
+    differs, shows a notification prompting user to reload the addon
+    to apply the language change.
+    """
+    try:
+        current_language = ADDON.getSetting('language')
+        
+        # Read last known language from addon data directory (persistent storage)
+        addon_data_dir = xbmc.translatePath(ADDON.getAddonInfo('profile'))
+        lang_file = os.path.join(addon_data_dir, 'last_language.txt')
+        
+        stored_language = None
+        if os.path.exists(lang_file):
+            try:
+                with open(lang_file, 'r') as f:
+                    stored_language = f.read().strip()
+            except Exception:
+                pass
+        
+        # Create data dir if needed
+        try:
+            if not os.path.exists(addon_data_dir):
+                os.makedirs(addon_data_dir)
+        except Exception:
+            pass
+        
+        # Write current language for next check
+        try:
+            with open(lang_file, 'w') as f:
+                f.write(current_language)
+        except Exception:
+            pass
+        
+        # Log for debugging
+        xbmc.log(f"NLZiet language check: {stored_language}->{current_language}", xbmc.LOGDEBUG)
+        
+        # Check if language setting changed
+        if stored_language is not None and stored_language != current_language:
+            xbmc.log(f"NLZiet detected language change", xbmc.LOGINFO)
+            
+            # Show notification to user asking them to reload
+            langs = {0: 'Dutch', 1: 'English'}
+            new_lang = langs.get(int(current_language), current_language)
+            notification = f'Language changed to {new_lang}.\nPlease reload the addon to apply changes.'
+            
+            try:
+                xbmcgui.Dialog().notification('NLZiet', notification, xbmcgui.NOTIFICATION_INFO, 3000)
+            except Exception:
+                pass
+            
+    except Exception as e:
+        xbmc.log(f"NLZiet error in language change check: {e}", xbmc.LOGDEBUG)
 
 
 def router(paramstring):
@@ -1847,6 +2320,18 @@ def router(paramstring):
         show_series_season(params.get('series_id'), params.get('season_id'))
     elif mode == 'placement_row':
         browse_placement_row(params.get('items_url'), params.get('placement_id'), params.get('comp_index'))
+    elif mode == 'browse_tv_shows':
+        browse_tv_shows()
+    elif mode == 'browse_tv_genre':
+        browse_tv_genre(params.get('genre'))
+    elif mode == 'browse_series_categories':
+        browse_series_categories()
+    elif mode == 'browse_series_genre':
+        browse_series_genre(params.get('genre'))
+    elif mode == 'browse_movie_categories':
+        browse_movie_categories()
+    elif mode == 'browse_movie_genre':
+        browse_movie_genre(params.get('genre'))
     elif mode == 'browse':
         browse_category(params.get('type', 'all'))
     elif mode == 'play':

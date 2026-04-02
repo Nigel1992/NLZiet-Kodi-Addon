@@ -441,15 +441,38 @@ class NLZietAPI:
             xbmc.log(f"NLZiet get_movies error: {e}", xbmc.LOGERROR)
             return []
 
+    def get_movie_genres(self):
+        """Return list of available movie genres/categories."""
+        return [
+            {'name': 'All', 'genre': None},
+            {'name': 'Action', 'genre': 'Action'},
+            {'name': 'Animation', 'genre': 'Animation'},
+            {'name': 'Comedy', 'genre': 'Comedy'},
+            {'name': 'Documentary', 'genre': 'Documentary'},
+            {'name': 'Drama', 'genre': 'Drama'},
+            {'name': 'Romance', 'genre': 'Romance'},
+            {'name': 'Sci-Fi', 'genre': 'SciFi'},
+            {'name': 'Thriller', 'genre': 'Thriller'},
+            {'name': 'Youth', 'genre': 'Youth'},
+        ]
 
-    def get_videos(self, limit=999):
-        """Fetch recommended videos (TV shows) using the recommend/withContext endpoint.
-
-        Mirrors `get_movies` but requests `contextName=recommendVideos`.
-        TV shows may include both Episode and Series type items.
+    def get_movies_by_genre(self, genre=None, limit=999, offset=0):
+        """Fetch movies filtered by genre.
+        
+        Args:
+            genre: Genre name (e.g., 'Action', 'Comedy', 'Drama'). If None, uses recommendMovies.
+            limit: Number of items to return
+            offset: Offset for pagination
+            
+        Returns:
+            List of movie items
         """
         try:
-            url = f"{self.base_url}/v9/recommend/withcontext?contextName=recommendVideos&limit={limit}"
+            if genre:
+                url = f"{self.base_url}/v9/recommend/filtered?category=Movies&genre={genre}&limit={limit}&offset={offset}"
+            else:
+                url = f"{self.base_url}/v9/recommend/withcontext?contextName=recommendMovies&limit={limit}"
+            
             headers = {
                 'User-Agent': self.user_agent,
                 'Accept': 'application/json, text/plain, */*',
@@ -479,7 +502,7 @@ class NLZietAPI:
             items = data.get('data') or data.get('results') or data.get('items') or []
             results = []
             for item in items:
-                src = item.get('item') if isinstance(item, dict) and item.get('item') else item.get('content') if isinstance(item, dict) and item.get('content') else item
+                src = item.get('content') if isinstance(item, dict) and item.get('content') else item.get('item') if isinstance(item, dict) and item.get('item') else item
                 if not isinstance(src, dict):
                     continue
                 content_id = src.get('id') or src.get('contentId') or src.get('content_id')
@@ -487,12 +510,374 @@ class NLZietAPI:
                 thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
                 desc = src.get('description') or src.get('plot') or src.get('summary') or ''
                 subtitle = src.get('subtitle') or src.get('subtitleText') or ''
+                typ = src.get('type') or 'Movie'
+                
+                # Detect expiration timestamps
+                expires_at = None
+                for key in ('availableTo', 'available_to', 'availableUntil', 'available_until', 'endDate', 'end_date', 'expiresAt', 'expires_at', 'expiration', 'validUntil', 'valid_until', 'availableToDate', 'available_to_date'):
+                    if isinstance(src, dict) and key in src and src.get(key):
+                        parsed = self._parse_timestamp(src.get(key))
+                        if parsed:
+                            expires_at = parsed
+                            break
+                if not expires_at:
+                    availability = src.get('availability') or src.get('availabilities') or src.get('availabilityRange') or src.get('availableRanges')
+                    if availability:
+                        if isinstance(availability, dict):
+                            for k in ('endDate', 'to', 'availableTo', 'end'):
+                                v = availability.get(k)
+                                if v:
+                                    parsed = self._parse_timestamp(v)
+                                    if parsed:
+                                        expires_at = parsed
+                                        break
+                        elif isinstance(availability, (list, tuple)):
+                            for a in availability:
+                                if isinstance(a, dict):
+                                    v = a.get('endDate') or a.get('to') or a.get('availableTo') or a.get('end')
+                                    if v:
+                                        parsed = self._parse_timestamp(v)
+                                        if parsed:
+                                            expires_at = parsed
+                                            break
+                expires_in = None
+                if expires_at:
+                    now = int(time.time())
+                    secs = expires_at - now
+                    if secs <= 0:
+                        expires_in = 'Expired'
+                    else:
+                        days = secs // 86400
+                        if days >= 1:
+                            expires_in = f'Expires in {days}d'
+                        else:
+                            hours = secs // 3600
+                            if hours >= 1:
+                                expires_in = f'Expires in {hours}h'
+                            else:
+                                minutes = max(1, secs // 60)
+                                expires_in = f'Expires in {minutes}m'
+                
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+            return results
+        except Exception as e:
+            xbmc.log(f"NLZiet get_movies_by_genre error: {e}", xbmc.LOGERROR)
+            return []
+
+    def get_videos(self, limit=999):
+        """Fetch videos (TV shows) using the recommend/withContext endpoint.
+
+        Uses `contextName=allPopularPrograms` to fetch all popular TV shows.
+        
+        Note: May return both Episode items and Series items. Series need to be 
+        opened as folders showing seasons/episodes, not played directly.
+        """
+        try:
+            url = f"{self.base_url}/v9/recommend/withcontext?contextName=allPopularPrograms&limit={limit}"
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'nlziet-appname': 'WebApp',
+                'nlziet-appversion': '6.0.3',
+                'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+            }
+            token = self.get_access_token()
+            if token:
+                headers['Authorization'] = 'Bearer ' + token
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+
+            items = data.get('data') or data.get('results') or data.get('items') or []
+            results = []
+            for item in items:
+                src = item.get('content') if isinstance(item, dict) and item.get('content') else item.get('item') if isinstance(item, dict) and item.get('item') else item
+                if not isinstance(src, dict):
+                    continue
+                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
+                # Prefer landscape thumbnail for series, portrait for episodes
+                img = src.get('image') or {}
+                thumb = src.get('posterUrl') or img.get('landscapeUrl') or img.get('portraitUrl')
+                desc = src.get('description') or src.get('plot') or src.get('summary') or ''
+                subtitle = src.get('subtitle') or src.get('subtitleText') or ''
                 typ = src.get('type') or 'Episode'
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle, 'type': typ})
+                
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb})
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_videos error: {e}", xbmc.LOGERROR)
             return []
+
+    def get_tv_show_genres(self):
+        """Return list of available TV show genres/categories."""
+        return [
+            {'name': 'All', 'genre': None},
+            {'name': 'Amusement', 'genre': 'Amusement'},
+            {'name': 'Quiz', 'genre': 'Quiz'},
+            {'name': 'Reality', 'genre': 'Reality'},
+            {'name': 'Lifestyle', 'genre': 'Lifestyle'},
+            {'name': 'News', 'genre': 'News'},
+            {'name': 'Talkshow', 'genre': 'Talkshow'},
+            {'name': 'Human Interest', 'genre': 'HumanInterest'},
+            {'name': 'Art & Culture', 'genre': 'ArtCulture'},
+            {'name': 'Sports', 'genre': 'Sports'},
+            {'name': 'Consumer Information', 'genre': 'ConsumerInformation'},
+            {'name': 'Travel', 'genre': 'Travel'},
+            {'name': 'Culinary', 'genre': 'Culinary'},
+            {'name': 'Nature', 'genre': 'Nature'},
+            {'name': 'Music', 'genre': 'Music'},
+            {'name': 'Comedy', 'genre': 'Comedy'},
+            {'name': 'Health', 'genre': 'Health'},
+            {'name': 'Business', 'genre': 'Business'},
+        ]
+
+    def get_videos_by_genre(self, genre=None, limit=999, offset=0):
+        """Fetch videos (TV shows) filtered by genre.
+        
+        Args:
+            genre: Genre name (e.g., 'Amusement', 'Comedy'). If None, uses allPopularPrograms.
+            limit: Number of items to return
+            offset: Offset for pagination
+            
+        Returns:
+            List of video items
+        """
+        try:
+            if genre:
+                url = f"{self.base_url}/v9/recommend/filtered?category=Programs&genre={genre}&limit={limit}&offset={offset}"
+            else:
+                url = f"{self.base_url}/v9/recommend/withcontext?contextName=allPopularPrograms&limit={limit}"
+            
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'nlziet-appname': 'WebApp',
+                'nlziet-appversion': '6.0.3',
+                'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+            }
+            token = self.get_access_token()
+            if token:
+                headers['Authorization'] = 'Bearer ' + token
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+
+            items = data.get('data') or data.get('results') or data.get('items') or []
+            results = []
+            for item in items:
+                src = item.get('content') if isinstance(item, dict) and item.get('content') else item.get('item') if isinstance(item, dict) and item.get('item') else item
+                if not isinstance(src, dict):
+                    continue
+                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
+                img = src.get('image') or {}
+                thumb = src.get('posterUrl') or img.get('landscapeUrl') or img.get('portraitUrl')
+                desc = src.get('description') or src.get('plot') or src.get('summary') or ''
+                subtitle = src.get('subtitle') or src.get('subtitleText') or ''
+                typ = src.get('type') or 'Episode'
+                
+                # Detect expiration timestamps
+                expires_at = None
+                for key in ('availableTo', 'available_to', 'availableUntil', 'available_until', 'endDate', 'end_date', 'expiresAt', 'expires_at', 'expiration', 'validUntil', 'valid_until', 'availableToDate', 'available_to_date'):
+                    if isinstance(src, dict) and key in src and src.get(key):
+                        parsed = self._parse_timestamp(src.get(key))
+                        if parsed:
+                            expires_at = parsed
+                            break
+                if not expires_at:
+                    availability = src.get('availability') or src.get('availabilities') or src.get('availabilityRange') or src.get('availableRanges')
+                    if availability:
+                        if isinstance(availability, dict):
+                            for k in ('endDate', 'to', 'availableTo', 'end'):
+                                v = availability.get(k)
+                                if v:
+                                    parsed = self._parse_timestamp(v)
+                                    if parsed:
+                                        expires_at = parsed
+                                        break
+                        elif isinstance(availability, (list, tuple)):
+                            for a in availability:
+                                if isinstance(a, dict):
+                                    v = a.get('endDate') or a.get('to') or a.get('availableTo') or a.get('end')
+                                    if v:
+                                        parsed = self._parse_timestamp(v)
+                                        if parsed:
+                                            expires_at = parsed
+                                            break
+                expires_in = None
+                if expires_at:
+                    now = int(time.time())
+                    secs = expires_at - now
+                    if secs <= 0:
+                        expires_in = 'Expired'
+                    else:
+                        days = secs // 86400
+                        if days >= 1:
+                            expires_in = f'Expires in {days}d'
+                        else:
+                            hours = secs // 3600
+                            if hours >= 1:
+                                expires_in = f'Expires in {hours}h'
+                            else:
+                                minutes = max(1, secs // 60)
+                                expires_in = f'Expires in {minutes}m'
+                
+                # Extract date information (aired, broadcast, etc.)
+                aired_date = None
+                for key in ('aired', 'episodeAired', 'broadcastDate', 'broadcastAt', 'firstAired', 'productionDate', 'releaseDate', 'premiere', 'transmissionDate'):
+                    if isinstance(src, dict) and key in src and src.get(key):
+                        aired_date = src.get(key)
+                        break
+                
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in, 'aired_date': aired_date})
+            return results
+        except Exception as e:
+            xbmc.log(f"NLZiet get_videos_by_genre error: {e}", xbmc.LOGERROR)
+            return []
+
+    def get_series_genres(self):
+        """Return list of available Series genres/categories."""
+        return [
+            {'name': 'All', 'genre': None},
+            {'name': 'Comedy', 'genre': 'Comedy'},
+            {'name': 'Crime', 'genre': 'Crime'},
+            {'name': 'Drama', 'genre': 'Drama'},
+        ]
+
+    def get_series_by_genre(self, genre=None, limit=999, offset=0):
+        """Fetch series filtered by genre.
+        
+        Args:
+            genre: Genre name (e.g., 'Comedy', 'Crime', 'Drama'). If None, uses allPopularSeries.
+            limit: Number of items to return
+            offset: Offset for pagination
+            
+        Returns:
+            List of series items
+        """
+        try:
+            if genre:
+                url = f"{self.base_url}/v9/recommend/filtered?category=Series&genre={genre}&limit={limit}&offset={offset}"
+            else:
+                url = f"{self.base_url}/v9/recommend/withcontext?contextName=allPopularSeries&limit={limit}"
+            
+            headers = {
+                'User-Agent': self.user_agent,
+                'Accept': 'application/json, text/plain, */*',
+                'Referer': 'https://app.nlziet.nl/',
+                'Origin': 'https://app.nlziet.nl',
+                'nlziet-appname': 'WebApp',
+                'nlziet-appversion': '6.0.3',
+                'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+            }
+            token = self.get_access_token()
+            if token:
+                headers['Authorization'] = 'Bearer ' + token
+            try:
+                if os.path.exists(self.profile_file):
+                    with open(self.profile_file, 'r', encoding='utf-8') as pf_f:
+                        pfj = json.load(pf_f)
+                    profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                    if profile_id:
+                        headers['X-Profile-Id'] = str(profile_id)
+            except Exception:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                data = json.load(r)
+
+            items = data.get('data') or data.get('results') or data.get('items') or []
+            results = []
+            for item in items:
+                src = item.get('content') if isinstance(item, dict) and item.get('content') else item.get('item') if isinstance(item, dict) and item.get('item') else item
+                if not isinstance(src, dict):
+                    continue
+                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
+                img = src.get('image') or {}
+                thumb = src.get('posterUrl') or img.get('portraitUrl') or img.get('landscapeUrl')
+                desc = src.get('description') or src.get('plot') or src.get('summary') or ''
+                subtitle = src.get('subtitle') or src.get('subtitleText') or ''
+                typ = src.get('type') or 'Series'
+                
+                # Detect expiration timestamps
+                expires_at = None
+                for key in ('availableTo', 'available_to', 'availableUntil', 'available_until', 'endDate', 'end_date', 'expiresAt', 'expires_at', 'expiration', 'validUntil', 'valid_until', 'availableToDate', 'available_to_date'):
+                    if isinstance(src, dict) and key in src and src.get(key):
+                        parsed = self._parse_timestamp(src.get(key))
+                        if parsed:
+                            expires_at = parsed
+                            break
+                if not expires_at:
+                    availability = src.get('availability') or src.get('availabilities') or src.get('availabilityRange') or src.get('availableRanges')
+                    if availability:
+                        if isinstance(availability, dict):
+                            for k in ('endDate', 'to', 'availableTo', 'end'):
+                                v = availability.get(k)
+                                if v:
+                                    parsed = self._parse_timestamp(v)
+                                    if parsed:
+                                        expires_at = parsed
+                                        break
+                        elif isinstance(availability, (list, tuple)):
+                            for a in availability:
+                                if isinstance(a, dict):
+                                    v = a.get('endDate') or a.get('to') or a.get('availableTo') or a.get('end')
+                                    if v:
+                                        parsed = self._parse_timestamp(v)
+                                        if parsed:
+                                            expires_at = parsed
+                                            break
+                expires_in = None
+                if expires_at:
+                    now = int(time.time())
+                    secs = expires_at - now
+                    if secs <= 0:
+                        expires_in = 'Expired'
+                    else:
+                        days = secs // 86400
+                        if days >= 1:
+                            expires_in = f'Expires in {days}d'
+                        else:
+                            hours = secs // 3600
+                            if hours >= 1:
+                                expires_in = f'Expires in {hours}h'
+                            else:
+                                minutes = max(1, secs // 60)
+                                expires_in = f'Expires in {minutes}m'
+                
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+            return results
+        except Exception as e:
+            xbmc.log(f"NLZiet get_series_by_genre error: {e}", xbmc.LOGERROR)
+            return []
+
 
 
     def get_documentaries(self, limit=999, offset=0):
@@ -2020,7 +2405,54 @@ class NLZietAPI:
                 thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
                 desc = src.get('description') or src.get('plot') or src.get('summary') or ''
                 subtitle = src.get('subtitle') or src.get('subtitleText') or ''
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle})
+                
+                # Detect expiration timestamps
+                expires_at = None
+                for key in ('availableTo', 'available_to', 'availableUntil', 'available_until', 'endDate', 'end_date', 'expiresAt', 'expires_at', 'expiration', 'validUntil', 'valid_until', 'availableToDate', 'available_to_date'):
+                    if isinstance(src, dict) and key in src and src.get(key):
+                        parsed = self._parse_timestamp(src.get(key))
+                        if parsed:
+                            expires_at = parsed
+                            break
+                if not expires_at:
+                    availability = src.get('availability') or src.get('availabilities') or src.get('availabilityRange') or src.get('availableRanges')
+                    if availability:
+                        if isinstance(availability, dict):
+                            for k in ('endDate', 'to', 'availableTo', 'end'):
+                                v = availability.get(k)
+                                if v:
+                                    parsed = self._parse_timestamp(v)
+                                    if parsed:
+                                        expires_at = parsed
+                                        break
+                        elif isinstance(availability, (list, tuple)):
+                            for a in availability:
+                                if isinstance(a, dict):
+                                    v = a.get('endDate') or a.get('to') or a.get('availableTo') or a.get('end')
+                                    if v:
+                                        parsed = self._parse_timestamp(v)
+                                        if parsed:
+                                            expires_at = parsed
+                                            break
+                expires_in = None
+                if expires_at:
+                    now = int(time.time())
+                    secs = expires_at - now
+                    if secs <= 0:
+                        expires_in = 'Expired'
+                    else:
+                        days = secs // 86400
+                        if days >= 1:
+                            expires_in = f'Expires in {days}d'
+                        else:
+                            hours = secs // 3600
+                            if hours >= 1:
+                                expires_in = f'Expires in {hours}h'
+                            else:
+                                minutes = max(1, secs // 60)
+                                expires_in = f'Expires in {minutes}m'
+                
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle, 'expires_at': expires_at, 'expires_in': expires_in})
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_series_list error: {e}", xbmc.LOGERROR)

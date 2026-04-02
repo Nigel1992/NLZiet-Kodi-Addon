@@ -1,25 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings>
-  <category label="Credentials">
-    <setting id="username" type="text" label="Email" default="" />
-    <setting id="password" type="text" label="Password" default="" />
+  <category label="Taal / Language">
+    <setting id="language" type="select" label="Taal / Language" default="0" values="Dutch|English">
+      <level>0</level>
+    </setting>
+    <setting type="action" label="ℹ️ Herstart de addon na wijzigen taal / Restart the addon after changing language" action="" />
   </category>
-  <category label="Account">
-    <setting id="subscription_name" type="text" label="Subscription" default="" enabled="false" />
-    <setting id="subscription_expires" type="text" label="Subscription expires" default="" enabled="false" />
-    <setting id="max_devices" type="text" label="Max devices" default="" enabled="false" />
-    <setting id="logout_button" type="action" label="Logout and clear local data" action="RunPlugin(plugin://plugin.video.nlziet/?mode=logout_confirm)" />  </category>
-  <category label="Profiles">
-    <setting id="profile_id" type="text" label="Active profile ID" default="" enabled="false" />
-    <setting id="profile_name" type="text" label="Active profile name" default="" enabled="false" />
+  <category label="Inloggegevens / Credentials">
+    <setting id="username" type="text" label="E-mailadres / Email" default="" />
+    <setting id="password" type="text" label="Wachtwoord / Password" default="" />
   </category>
-  <category label="Advanced">
-    <setting id="api_base_url" type="text" label="API base URL (optional)" default="https://api.nlziet.nl" />
+  <category label="Account / Account">
+    <setting id="subscription_name" type="text" label="Abonnement / Subscription" default="" enabled="false" />
+    <setting id="subscription_expires" type="text" label="Abonnement verloopt op / Subscription expires" default="" enabled="false" />
+    <setting id="max_devices" type="text" label="Max apparaten / Max devices" default="" enabled="false" />
+    <setting id="logout_button" type="action" label="Afmelden en lokale gegevens wissen / Logout and clear local data" action="RunPlugin(plugin://plugin.video.nlziet/?mode=logout_confirm)" />
   </category>
-  <category label="Playback">
-    <setting id="subtitles_default" type="bool" label="Enable subtitles by default" default="false" />
+  <category label="Profielen / Profiles">
+    <setting id="profile_id" type="text" label="Actief profiel-ID / Active profile ID" default="" enabled="false" />
+    <setting id="profile_name" type="text" label="Naam actief profiel / Active profile name" default="" enabled="false" />
   </category>
-  <category label="Debug">
-    <setting id="debug_http" type="bool" label="Enable HTTP debug logging" default="false" />
+  <category label="Geavanceerd / Advanced">
+    <setting id="api_base_url" type="text" label="API basis-URL (optioneel) / API base URL (optional)" default="https://api.nlziet.nl" />
+  </category>
+  <category label="Afspelen / Playback">
+    <setting id="subtitles_default" type="bool" label="Standaard ondertitels inschakelen / Enable subtitles by default" default="false" />
+  </category>
+  <category label="Debug / Debug">
+    <setting id="debug_http" type="bool" label="HTTP-foutopsporinglogboek inschakelen / Enable HTTP debug logging" default="false" />
   </category>
 </settings>

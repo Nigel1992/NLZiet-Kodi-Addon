@@ -2,6 +2,38 @@
 
 All notable changes to this project are recorded in this file.
 
+## [0.0.8] - 2026-04-02
+
+### Added
+- **Full Dutch/English Localization**: Complete UI translation with 47 translation entries covering all menu items, settings, and notifications. Users can toggle language in settings.
+- **Language Change Notification**: Addon now detects language setting changes and notifies user to restart addon/Kodi to apply the change.
+- **TV Show Broadcast Date Display**: Episodes now show broadcast/aired date in both Dutch ("Uitgezonden") and English ("Aired") formats.
+- **TV Shows Category System**: Organized TV shows by 18 genres (Comedy, Drama, Sports, News, Documentary, etc.) for better browsing.
+- **Subtitle Enforcement**: Subtitle default setting now properly enforced across DRM and non-DRM playback with robust boolean parsing.
+- **Enhanced Debug Logging**: Added comprehensive debug logging for live TV detection, subtitle handling, and language changes.
+- **Settings Information**: Added bilingual help text in settings explaining language change requirements.
+
+### Changed
+- TV shows endpoint optimized: switched from `recommendVideos` to `allPopularPrograms` to overcome ~40 item limit.
+- Movie browsing improved: items in genre view now correctly marked as playable (not folders).
+- Episode subtitle detection enhanced: episodes now show their actual names (e.g., "Tweede helft" for NOS Voetbal).
+- Broadcast date extraction upgraded: added support for `broadcastAt` field from API responses.
+- Settings UI enhanced with bilingual labels throughout all 7 categories.
+
+### Fixed
+- Movies in genre browsing now display as playable items instead of folders.
+- TV show category and series genre lists now display proper counts (4 genres for Series, 18 for TV Shows, 10 for Movies).
+- Subtitle setting boolean parsing now handles all Kodi return value formats (None, '', 'true', 'false', True, False, '1', '0').
+- Episodes without descriptions now display broadcast date and other metadata correctly.
+- Genre/category routing fixed to properly distinguish between playable content and folder navigation.
+
+### Notes
+- Language localization uses Kodi's standard language infrastructure with .po files for future native support.
+- Subtitle enforcement includes special handling for both Widevine DRM and standard HLS/DASH streams.
+- Live TV streams are specially flagged in debug logs for enhanced troubleshooting.
+
+----
+
 ## [0.0.7] - 2026-03-26
 
 ### Added

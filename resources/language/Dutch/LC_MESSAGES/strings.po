@@ -1,0 +1,83 @@
+# NLZiet Dutch Localization
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nl\n"
+
+# Settings Categories
+msgctxt "#30001"
+msgid "Language"
+msgstr "Taal"
+
+msgctxt "#30002"
+msgid "Credentials"
+msgstr "Inloggegevens"
+
+msgctxt "#30003"
+msgid "Account"
+msgstr "Account"
+
+msgctxt "#30004"
+msgid "Profiles"
+msgstr "Profielen"
+
+msgctxt "#30005"
+msgid "Advanced"
+msgstr "Geavanceerd"
+
+msgctxt "#30006"
+msgid "Playback"
+msgstr "Afspelen"
+
+msgctxt "#30007"
+msgid "Debug"
+msgstr "Debug"
+
+# Settings Labels
+msgctxt "#30100"
+msgid "Language"
+msgstr "Taal"
+
+msgctxt "#30101"
+msgid "Email"
+msgstr "E-mailadres"
+
+msgctxt "#30102"
+msgid "Password"
+msgstr "Wachtwoord"
+
+msgctxt "#30103"
+msgid "Subscription"
+msgstr "Abonnement"
+
+msgctxt "#30104"
+msgid "Subscription expires"
+msgstr "Abonnement verloopt op"
+
+msgctxt "#30105"
+msgid "Max devices"
+msgstr "Max apparaten"
+
+msgctxt "#30106"
+msgid "Logout and clear local data"
+msgstr "Afmelden en lokale gegevens wissen"
+
+msgctxt "#30107"
+msgid "Active profile ID"
+msgstr "Actief profiel-ID"
+
+msgctxt "#30108"
+msgid "Active profile name"
+msgstr "Naam actief profiel"
+
+msgctxt "#30109"
+msgid "API base URL (optional)"
+msgstr "API basis-URL (optioneel)"
+
+msgctxt "#30110"
+msgid "Enable subtitles by default"
+msgstr "Standaard ondertitels inschakelen"
+
+msgctxt "#30111"
+msgid "Enable HTTP debug logging"
+msgstr "HTTP-foutopsporinglogboek inschakelen"

@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v0.0.7 — 2026-03-26. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v0.0.8 — 2026-04-02. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub><sup>Unofficial NLZiet Kodi Addon &mdash; Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sup></sub>
 
@@ -44,6 +44,19 @@
 - **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
 
 ---
+
+### New in v0.0.8
+
+- **Full Localization**: Complete Dutch and English UI with 47 translation entries. Users can toggle language in settings (Dutch by default).
+- **Language Change Detection**: Addon notifies users when language setting changes, with instructions to restart addon to apply.
+- **TV Show Broadcast Dates**: Episodes now display broadcast/aired dates in both Dutch ("Uitgezonden") and English ("Aired").
+- **Enhanced TV Shows Browsing**: Reorganized TV shows with 18 genre categories (Sports, News, Drama, Comedy, Documentary, etc.).
+- **TV Shows Endpoint Optimization**: Switched from `recommendVideos` to `allPopularPrograms` for full content access (overcomes ~40 item limit).
+- **Subtitle Control**: Default subtitle setting now properly enforced for DRM and non-DRM streams with robust boolean parsing.
+- **Movie Playability Fix**: Movies in genre browsing now correctly marked as playable items.
+- **Episode Details**: Episodes without descriptions now properly display available metadata (broadcast date, expiry info).
+- **Settings Documentation**: Bilingual help text added explaining language change requirements.
+- **Advanced Debug Logging**: Enhanced logging for live TV detection, subtitle handling, and language change detection.
 
 ### New in v0.0.7
 
