@@ -4,7 +4,7 @@
     <setting id="language" type="select" label="Taal / Language" default="0" values="Dutch|English">
       <level>0</level>
     </setting>
-    <setting type="action" label="ℹ️ Herstart de addon na wijzigen taal / Restart the addon after changing language" action="" />
+    <setting type="action" label="ℹ️ Herstart Kodi na wijzigen taal / Restart Kodi after changing language" action="" />
   </category>
   <category label="Inloggegevens / Credentials">
     <setting id="username" type="text" label="E-mailadres / Email" default="" />
