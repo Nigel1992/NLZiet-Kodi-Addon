@@ -1451,12 +1451,21 @@ def browse_category(content_type):
                         pass
         except Exception:
             info = None
-        # For channels, mark play queries with fmt=live so the player uses
-        # the Live handshake when resolving the stream.
+        
+        # Determine query mode based on item type
+        # Documentaries and Series should open series detail, not try to play directly
+        item_type = (item.get('type') or '').lower()
         query = {'mode': 'play', 'id': item.get('id')}
-        if content_type.lower() == 'channels':
+        is_folder = False
+        
+        if item_type == 'series' or content_type.lower() == 'documentary':
+            # Series and documentaries open as folders with series detail
+            query = {'mode': 'series_detail', 'series_id': item.get('id')}
+            is_folder = True
+        elif content_type.lower() == 'channels':
             query['fmt'] = 'live'
-        add_directory_item(item.get('title'), query, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        
+        add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item)
     xbmcplugin.endOfDirectory(HANDLE)
 
 

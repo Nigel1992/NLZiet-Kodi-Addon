@@ -446,6 +446,7 @@ class NLZietAPI:
         """Fetch recommended videos (TV shows) using the recommend/withContext endpoint.
 
         Mirrors `get_movies` but requests `contextName=recommendVideos`.
+        TV shows may include both Episode and Series type items.
         """
         try:
             url = f"{self.base_url}/v9/recommend/withcontext?contextName=recommendVideos&limit={limit}"
@@ -486,7 +487,8 @@ class NLZietAPI:
                 thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
                 desc = src.get('description') or src.get('plot') or src.get('summary') or ''
                 subtitle = src.get('subtitle') or src.get('subtitleText') or ''
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle})
+                typ = src.get('type') or 'Episode'
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle, 'type': typ})
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_videos error: {e}", xbmc.LOGERROR)
@@ -494,9 +496,12 @@ class NLZietAPI:
 
 
     def get_documentaries(self, limit=999, offset=0):
-        """Fetch recommended Documentary programs using the filtered recommend endpoint.
+        """Fetch recommended Documentary series using the filtered recommend endpoint.
 
         Uses: /v9/recommend/filtered?category=Programs&genre=Documentary&limit={limit}&offset={offset}
+        
+        Note: Documentaries are returned as Series items, not individual episodes.
+        The API wraps them in a 'content' field within the 'data' array.
         """
         try:
             url = f"{self.base_url}/v9/recommend/filtered?category=Programs&genre=Documentary&limit={limit}&offset={offset}"
@@ -529,15 +534,33 @@ class NLZietAPI:
             items = data.get('data') or data.get('results') or data.get('items') or []
             results = []
             for item in items:
-                src = item.get('item') if isinstance(item, dict) and item.get('item') else item.get('content') if isinstance(item, dict) and item.get('content') else item
+                # Documentaries are wrapped in a 'content' field
+                src = item.get('content') if isinstance(item, dict) and item.get('content') else item.get('item') if isinstance(item, dict) and item.get('item') else item
                 if not isinstance(src, dict):
                     continue
-                content_id = src.get('id') or src.get('contentId') or src.get('content_id')
-                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('assetName')
-                thumb = src.get('posterUrl') or (src.get('image') or {}).get('portraitUrl') or (src.get('image') or {}).get('landscapeUrl')
+                
+                content_id = src.get('id')
+                # Skip items without an ID
+                if not content_id:
+                    continue
+                
+                title = src.get('title') or src.get('name') or (item.get('analytics') or {}).get('title')
+                # Prefer landscape thumbnail for series
+                img = src.get('image') or {}
+                thumb = src.get('posterUrl') or img.get('landscapeUrl') or img.get('portraitUrl')
                 desc = src.get('description') or src.get('plot') or src.get('summary') or ''
                 subtitle = src.get('subtitle') or src.get('subtitleText') or ''
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'description': desc, 'subtitle': subtitle})
+                typ = src.get('type') or 'Series'
+                
+                results.append({
+                    'id': content_id,
+                    'title': title,
+                    'thumb': thumb,
+                    'type': typ,
+                    'description': desc,
+                    'subtitle': subtitle,
+                    'posterUrl': thumb
+                })
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_documentaries error: {e}", xbmc.LOGERROR)
