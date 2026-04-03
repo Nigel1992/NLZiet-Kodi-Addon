@@ -32,19 +32,7 @@
 - <span style="color:#34495E;">**Robust Handshake**</span>: Automatic manifest/license extraction and fallback logic.
 - <span style="color:#E67E22;">**Debug Logging**</span>: Easy log collection for troubleshooting.
 
-### New in v0.0.6
-
-- **TV Shows**: Added a dedicated "TV Shows" main-menu entry using the recommend API (recommend/withContext) to surface episodic video content.
-- **Documentary**: New "Documentary" main-menu entry using the filtered recommend endpoint (category=Programs, genre=Documentary).
-- **Account integration**: Settings > Account shows **Subscription**, **Subscription expires**, and **Max devices** (read-only) populated from the customer summary API when authenticated.
-- **Logout & reset**: Settings > Account includes a `Logout` action that clears cookies, tokens, profile selection and the local My List (confirmation required).
-- **Silent account refresh**: Account info is refreshed silently on addon launch and after login/profile changes.
-- **Protected menu items**: Manage profiles, Search, My List, Series, Movies and Channels are shown only when authenticated to avoid errors for anonymous users.
-- **Profiles UI**: Profiles were moved to a dedicated Settings > Profiles section and are non-editable from Settings (use Manage profiles in the addon's main menu).
-- **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
-
----
-
+----
 ### New in v0.0.8
 
 - **Full Localization**: Complete Dutch and English UI with 47 translation entries. Users can toggle language in settings (Dutch by default).
@@ -62,6 +50,20 @@
 
 - Persist cookie-based login across Kodi restarts so the add-on recognizes logged-in sessions.
 - Bumped addon version to `0.0.7` and added release package.
+
+### New in v0.0.6
+
+- **TV Shows**: Added a dedicated "TV Shows" main-menu entry using the recommend API (recommend/withContext) to surface episodic video content.
+- **Documentary**: New "Documentary" main-menu entry using the filtered recommend endpoint (category=Programs, genre=Documentary).
+- **Account integration**: Settings > Account shows **Subscription**, **Subscription expires**, and **Max devices** (read-only) populated from the customer summary API when authenticated.
+- **Logout & reset**: Settings > Account includes a `Logout` action that clears cookies, tokens, profile selection and the local My List (confirmation required).
+- **Silent account refresh**: Account info is refreshed silently on addon launch and after login/profile changes.
+- **Protected menu items**: Manage profiles, Search, My List, Series, Movies and Channels are shown only when authenticated to avoid errors for anonymous users.
+- **Profiles UI**: Profiles were moved to a dedicated Settings > Profiles section and are non-editable from Settings (use Manage profiles in the addon's main menu).
+- **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
+
+---
+
 
 ----
 
