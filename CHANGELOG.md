@@ -2,6 +2,43 @@
 
 All notable changes to this project are recorded in this file.
 
+## [0.0.9] - 2026-04-04
+
+### Added
+- **Token-Based OAuth2 Authentication**: Secure PKCE-based login flow with automatic token refresh. Sessions persist across Kodi restarts via cookie storage.
+- **Dialog-Based Login**: Modern Kodi dialog login interface — credentials are never exposed in addon settings menu for better security UX.
+- **Optional Credential Storage**: Users choose between "Save tokens only" (recommended, requires login only when tokens expire) or "Save email+password" (auto-refresh convenience).
+- **Auto-Token Refresh**: Sessions automatically refresh when tokens expire. Fallback to form login if refresh fails, with user re-login prompt.
+- **Dynamic Login/Sign Out Button**: Main menu displays "Login" when not authenticated and "Sign Out" when user has active session.
+- **Protected Content Menu**: Series, Movies, TV Shows, Search, and My List menu items hidden for unauthenticated users to prevent API errors.
+- **Logout Confirmation Flow**: Two-step logout with optional "Keep My List" to preserve favorites after sign out.
+- **Smart Artwork by Aspect Ratio**: Automatically separates and assigns images based on aspect ratio — landscape (16:9) for fanart/poster, portrait (2:3) for covers, preventing face-cutting.
+- **High-Resolution Fanart Images**: Image URLs now request 3840px width from the NLZiet image service, rendering crisp 4K-quality artwork instead of small pixelated thumbnails.
+- **Global API Instance Caching**: 5-minute TTL cache reduces initialization overhead and disk I/O on every menu interaction.
+- **Instant Context Menu Response**: Menu operations (Add/Remove My List, etc.) now near-instantaneous by reusing cached API instances instead of creating new ones per item.
+- **Channel Optimization**: Skips unnecessary `/v9/content/detail` requests for channel items (endpoint not supported), eliminating 404 errors.
+
+### Changed
+- Authentication workflow completely redesigned: moved from settings-based credentials to secure dialog-based OAuth2 flow.
+- API instance creation now centralized via `get_api_instance()` function with caching logic for 15+ menu functions.
+- Image optimization function now requests 3840px width instead of stripping parameters, ensuring high-quality fanart display.
+- Context menu items now use cached API instances instead of creating new NLZietAPI objects per item interaction.
+
+### Fixed
+- Channel menus no longer generate 404 errors from unsupported `/v9/content/detail` endpoint.
+- Image aspect ratio correctly preserved in Kodi artwork keys — landscape images no longer assigned to portrait keys and vice versa.
+- Small pixelated fanart images now request higher resolution from API, eliminating zoom/crop appearance on large screens.
+- Menu response time reduced from 2-3 seconds to near-instant for context operations (Add/Remove My List).
+
+### Notes
+- OAuth2 PKCE flow ensures secure token exchange without exposing client secrets.
+- Cookie-based session persistence uses HTTP LWP format for cross-session recognition.
+- Token expiry buffer set to 30 seconds for proactive refresh before actual expiration.
+- Image resolution optimization applies to both portrait and landscape image picking functions.
+- API cache timeout set to 300 seconds (5 minutes) — balance between freshness and performance.
+
+----
+
 ## [0.0.8] - 2026-04-02
 
 ### Added

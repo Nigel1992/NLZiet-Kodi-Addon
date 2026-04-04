@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v0.0.8 — 2026-04-02. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v0.0.9 — 2026-04-04. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub><sup>Unofficial NLZiet Kodi Addon &mdash; Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sup></sub>
 
@@ -33,6 +33,19 @@
 - <span style="color:#E67E22;">**Debug Logging**</span>: Easy log collection for troubleshooting.
 
 ----
+### New in v0.0.9
+
+- **Token-Based Authentication**: Secure OAuth2 PKCE-based login with optional credential storage. Users can choose to save only tokens (recommended, auto-refresh) or tokens+credentials (convenience).
+- **Dialog-Based Login**: Modern login UI via Kodi dialogs instead of addon settings — credentials never appear in Settings menu.
+- **Auto-Token Refresh**: Sessions automatically refresh when tokens expire. If refresh fails, users are prompted to re-login.
+- **Sign Out Button**: Dynamic main menu button shows "Login" when not authenticated and "Sign Out" when logged in.
+- **Protected Menu Content**: All series, movies, TV shows, search, and My List are hidden until user logs in. Prevents errors for unauthenticated users.
+- **My List Preservation**: Two-step logout flow asks whether to keep or clear the user's My List.
+- **Performance Optimization**: Global API instance caching with 5-minute TTL eliminates repeated initialization. Context menu operations now instant instead of 2-3 second delays.
+- **Channel Optimization**: Fixed unnecessary 404 requests to `/v9/content/detail` for channels (endpoint not supported).
+- **Smart Artwork Assignment**: Images automatically separated by aspect ratio — landscape images for fanart, portrait for posters, preventing face-cutting.
+- **High-Resolution Fanart**: Image URLs now request 3840px width from the NLZiet image service, rendering crisp 4K-quality artwork instead of small pixelated images.
+
 ### New in v0.0.8
 
 - **Full Localization**: Complete Dutch and English UI with 47 translation entries. Users can toggle language in settings (Dutch by default).
