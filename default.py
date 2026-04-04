@@ -16,13 +16,55 @@ ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 
+# Global API instance cache to avoid repeated initialization
+_api_cache = None
+_api_cache_time = 0
+_api_cache_timeout = 300  # 5 minutes - refresh cache after this
+
+def get_api_instance():
+    """Get or create a cached API instance to avoid repeated disk I/O and initialization."""
+    global _api_cache, _api_cache_time
+    current_time = time.time()
+    
+    # If cache exists and is fresh (within timeout), return it
+    if _api_cache is not None and (current_time - _api_cache_time) < _api_cache_timeout:
+        return _api_cache
+    
+    # Create new instance (loads cookies, tokens from disk)
+    username = ADDON.getSetting('username') or ''
+    password = ADDON.getSetting('password') or ''
+    _api_cache = NLZietAPI(username=username, password=password)
+    _api_cache_time = current_time
+    return _api_cache
+
+def clear_api_cache():
+    """Clear the API instance cache (call after logout)."""
+    global _api_cache, _api_cache_time
+    _api_cache = None
+    _api_cache_time = 0
+
 # Raw expiry color to test — change this to 'orange' or a hex like 'FFA500' or
 # try the exact raw tag you suggested ('ffoooo66') to experiment.
 EXPIRY_COLOR_RAW = 'ffoooo66'
 
 # Language/Localization dictionary - Dutch (NL) and English (EN)
 TRANSLATIONS = {
-    'login': {'nl': 'Inloggen (stel inloggegevens in bij instellingen)', 'en': 'Login (set credentials in settings)'},
+    'login': {'nl': 'Inloggen', 'en': 'Login'},
+    'sign_out': {'nl': 'Uitloggen', 'en': 'Sign Out'},
+    'login_via_dialog': {'nl': 'Inloggen (via dialoogvenster)', 'en': 'Login (via dialog)'},
+    'login_dialog_title': {'nl': 'NLZiet Inloggen', 'en': 'NLZiet Login'},
+    'login_dialog_email': {'nl': 'E-mailadres', 'en': 'Email address'},
+    'login_dialog_password': {'nl': 'Wachtwoord', 'en': 'Password'},
+    'login_dialog_ok': {'nl': 'Inloggen', 'en': 'Login'},
+    'login_dialog_cancel': {'nl': 'Annuleren', 'en': 'Cancel'},
+    'token_expired': {'nl': 'Sessie verlopen - opnieuw inloggen is vereist', 'en': 'Session expired - re-authentication required'},
+    'login_again': {'nl': 'Uw sessie is verlopen. Klik op Inloggen om opnieuw in te loggen.', 'en': 'Your session has expired. Please click Login to re-authenticate.'},
+    'save_options_title': {'nl': 'Hoe wilt u ingelogd blijven?', 'en': 'How do you want to stay logged in?'},
+    'save_option_tokens_only': {'nl': 'Alleen tokens opslaan (aanbevolen)', 'en': 'Save only tokens (recommended)'},
+    'save_option_with_credentials': {'nl': 'E-mail en wachtwoord opslaan (niet aanbevolen)', 'en': 'Save email and password (not recommended)'},
+    'tokens_only_info': {'nl': 'Alleen tokens worden opgeslagen. Dit is veiliger. U hoeft alleen in te loggen wanneer het sessietoken verloopt.', 'en': 'Only session tokens are saved. This is safer. You only need to login again when your session expires.'},
+    'credentials_saved_warning': {'nl': 'E-mailadres en wachtwoord opgeslagen. Deze worden gebruikt om tokens automatisch te vernieuwen.', 'en': 'Email and password saved. These will be used to automatically refresh your session.'},
+    'session_token_obtained': {'nl': 'Sessietoken verkregen. U bent aangemeld.', 'en': 'Session token obtained. You are logged in.'},
     'manage_profiles': {'nl': 'Profielen beheren', 'en': 'Manage profiles'},
     'search': {'nl': 'Zoeken', 'en': 'Search'},
     'my_list': {'nl': 'Mijn lijst', 'en': 'My List'},
@@ -36,8 +78,8 @@ TRANSLATIONS = {
     'missing_season_id': {'nl': 'Seizoen-ID ontbreekt', 'en': 'Missing season id'},
     'unable_fetch_series': {'nl': 'Kan seriegegevens niet ophalen', 'en': 'Unable to fetch series details'},
     'no_items_found': {'nl': 'Geen items gevonden', 'en': 'No items found'},
-    'not_logged_in': {'nl': 'Niet ingelogd. Klik op Inloggen in het hoofdmenu om in te loggen.', 'en': 'Not logged in. Please press Login on the main menu to authenticate.'},
-    'login_notification': {'nl': 'Open Instellingen > Inloggegevens en voer uw NLZiet-gebruikersnaam en wachtwoord in.', 'en': 'Please open Settings > Credentials, enter your NLZiet username and password, then return and press Login.'},
+    'not_logged_in': {'nl': 'Niet ingelogd. Klik op [B]Inloggen[/B] om in te loggen.', 'en': 'Not logged in. Press [B]Login[/B] to authenticate.'},
+    'login_notification': {'nl': 'Klik op [B]Inloggen[/B] in het hoofdmenu om in te loggen via een dialoogvenster.', 'en': 'Press [B]Login[/B] on the main menu to authenticate via a dialog.'},
     'logout_and_clear': {'nl': 'Afmelden en lokale gegevens wissen', 'en': 'Logout and clear local data'},
     'only_series_movies': {'nl': 'Alleen Series en Films kunnen aan Mijn lijst worden toegevoegd', 'en': 'Only Series and Movies can be added to My List'},
     'searching': {'nl': 'Zoeken naar "{}"', 'en': 'Searching for "{}"'},
@@ -58,7 +100,10 @@ TRANSLATIONS = {
     'my_list_empty': {'nl': 'Mijn lijst is leeg', 'en': 'My List is empty'},
     'no_items_for_group': {'nl': 'Geen items gevonden voor {}', 'en': 'No items found for {}'},
     'missing_id_mylist': {'nl': 'ID ontbreekt voor Mijn lijst-actie', 'en': 'Missing id for My List action'},
-    'logout_confirm_msg': {'nl': 'Hiermee worden cookies, tokens gewist en wordt Mijn lijst opnieuw ingesteld (alleen lokaal - geen online MyList-synchronisatie ingebouwd). Doorgaan?', 'en': 'This will clear cookies, tokens and reset My List (local only - no online MyList sync build in yet). Continue?'},
+    'logout_confirm_msg': {'nl': 'Hiermee worden cookies en tokens gewist. Doorgaan?', 'en': 'This will clear cookies and tokens. Continue?'},
+    'keep_mylist': {'nl': 'Wilt u uw Mijn Lijst / My List bewaren?', 'en': 'Do you want to keep your My List?'},
+    'keep_mylist_btn': {'nl': 'Bewaren', 'en': 'Keep'},
+    'clear_mylist_btn': {'nl': 'Wissen', 'en': 'Clear'},
     'logout_btn': {'nl': 'Afmelden', 'en': 'Logout'},
     'cancel_btn': {'nl': 'Annuleren', 'en': 'Cancel'},
     'season': {'nl': 'Seizoen', 'en': 'Season'},
@@ -120,15 +165,10 @@ def build_url(query):
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
     url = build_url(query)
     li = xbmcgui.ListItem(label=title)
-    if thumb:
-        # Provide multiple art keys so different skins can pick the one they use
-        try:
-            li.setArt({'thumb': thumb, 'icon': thumb, 'poster': thumb, 'fanart': thumb})
-        except Exception:
-            try:
-                li.setArt({'thumb': thumb, 'icon': thumb})
-            except Exception:
-                pass
+    if thumb or content:
+        # Use smart artwork assignment to respect aspect ratios
+        # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
+        _set_smart_artwork(li, content, thumb=thumb)
     if info:
         li.setInfo('video', info)
         # set a short summary for skins that display a second label
@@ -170,7 +210,8 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
 
         if allow_mylist and content_id:
             try:
-                api_tmp = NLZietAPI(username=ADDON.getSetting('username'), password=ADDON.getSetting('password'))
+                # Use cached API instance instead of creating new ones for every item
+                api_tmp = get_api_instance()
                 in_list = api_tmp.is_in_my_list(content_id)
             except Exception:
                 in_list = False
@@ -191,6 +232,32 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=is_folder)
 
 
+def _optimize_image_url(url):
+    """Optimize image URLs to request higher-resolution versions for fanart.
+    
+    The NLZiet image service returns low-res images (1280x720) by default.
+    We request a larger resolution to avoid pixelation when displayed as fanart.
+    
+    Args:
+        url: Image URL
+        
+    Returns:
+        Optimized URL requesting higher-resolution image
+    """
+    if not url or not isinstance(url, str):
+        return url
+    
+    # Remove any existing width/crop parameters
+    if '?' in url:
+        url = url.split('?')[0]
+    
+    # Request a much larger width for fanart (3840px = 4K width)
+    # This ensures crisp display even on large screens
+    url = url + '?width=3840'
+    
+    return url
+
+
 def _pick_landscape_thumb(src):
     """Return the best landscape-oriented thumbnail or path for an item.
 
@@ -201,19 +268,19 @@ def _pick_landscape_thumb(src):
     if not src:
         return None
     if isinstance(src, str):
-        return src
+        return _optimize_image_url(src)
     try:
         # Prefer explicit landscape / wide keys first
         for k in ('landscapeUrl', 'landscape', 'thumbnailLandscape', 'thumbnail_landscape', 'posterLandscape', 'poster_landscape', 'heroImage', 'heroImageUrl', 'widePosterUrl'):
             v = src.get(k)
             if isinstance(v, str) and v:
-                return v
+                return _optimize_image_url(v)
 
         # Common poster/thumbnail fields (posterUrl may be portrait but is a useful fallback)
         for k in ('posterUrl', 'poster', 'thumbnail', 'thumb'):
             v = src.get(k)
             if isinstance(v, str) and v:
-                return v
+                return _optimize_image_url(v)
 
         # Check nested image dicts for landscape keys
         for img_key in ('image', 'images'):
@@ -222,7 +289,7 @@ def _pick_landscape_thumb(src):
                 for k in ('landscapeUrl', 'landscape', 'landscape_url', 'wide', 'wideUrl', 'large', 'largeUrl', 'posterUrl', 'thumbnail', 'thumb'):
                     v = img.get(k)
                     if isinstance(v, str) and v:
-                        return v
+                        return _optimize_image_url(v)
                 for kk, vv in img.items():
                     if isinstance(kk, str) and 'landscape' in kk.lower() and isinstance(vv, str) and vv:
                         return vv
@@ -230,15 +297,115 @@ def _pick_landscape_thumb(src):
         # Any key name containing 'landscape' on the top-level
         for kk, vv in src.items():
             if isinstance(kk, str) and 'landscape' in kk.lower() and isinstance(vv, str) and vv:
-                return vv
+                return _optimize_image_url(vv)
 
         # As a final fallback, return any url-like string value
         for vv in src.values():
             if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
-                return vv
+                return _optimize_image_url(vv)
     except Exception:
         pass
     return None
+
+
+def _pick_portrait_thumb(src):
+    """Return the best portrait-oriented thumbnail or path for an item.
+    
+    Portrait images are typically 2:3 aspect ratio (posters/covers).
+    Prefers explicit portrait keys, then falls back to landscape or generic thumbnails.
+    """
+    if not src:
+        return None
+    if isinstance(src, str):
+        return _optimize_image_url(src)
+    try:
+        # Prefer explicit portrait / tall keys first
+        for k in ('portraitUrl', 'portrait', 'posterUrl', 'poster', 'thumbnailPortrait', 'thumbnail_portrait', 'coverUrl', 'cover'):
+            v = src.get(k)
+            if isinstance(v, str) and v:
+                return _optimize_image_url(v)
+        # Check nested image dicts for portrait keys
+        for img_key in ('image', 'images'):
+            img = src.get(img_key)
+            if isinstance(img, dict):
+                for k in ('portraitUrl', 'portrait', 'portrait_url', 'posterUrl', 'poster', 'coverUrl', 'cover', 'thumbnail', 'thumb'):
+                    v = img.get(k)
+                    if isinstance(v, str) and v:
+                        return _optimize_image_url(v)
+        # Fallback to any image URL
+        for vv in src.values():
+            if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
+                return _optimize_image_url(vv)
+    except Exception:
+        pass
+    return None
+
+
+def _set_smart_artwork(li, src, thumb=None):
+    """Set artwork on a ListItem with proper aspect ratio handling.
+    
+    Assigns different images to different art keys based on their aspect ratios:
+    - fanart (16:9 landscape) - prefers landscape images
+    - poster (2:3 portrait) - prefers portrait images  
+    - thumb/icon (1:1 square) - uses best single image with aspect ratio preserved
+    
+    Args:
+        li: xbmcgui.ListItem to set artwork on
+        src: Content dict (to extract multiple image URLs)
+        thumb: Fallback single image URL if src doesn't provide multiple images
+    """
+    if not thumb and not src:
+        return
+    
+    # Extract different image types from content object
+    landscape_img = None
+    portrait_img = None
+    
+    if src and isinstance(src, dict):
+        landscape_img = _pick_landscape_thumb(src)
+        portrait_img = _pick_portrait_thumb(src)
+    
+    # Fallback: use provided thumb for both if we don't have separate images
+    if not landscape_img and not portrait_img:
+        landscape_img = thumb
+        portrait_img = thumb
+    elif not landscape_img:
+        landscape_img = portrait_img
+    elif not portrait_img:
+        portrait_img = landscape_img
+    
+    # Build artwork dict with proper aspect ratio handling
+    art = {}
+    
+    # Landscape images work best for fanart (16:9 aspect ratio)
+    if landscape_img:
+        art['fanart'] = landscape_img
+        art['landscape'] = landscape_img
+    
+    # Portrait images for poster art (2:3 aspect ratio)
+    if portrait_img:
+        art['poster'] = portrait_img
+    
+    # Use landscape for thumb/icon with aspect ratio preservation
+    # Kodi will letterbox/pillarbox to fit rather than stretch
+    if landscape_img:
+        art['thumb'] = landscape_img
+        art['icon'] = landscape_img
+    elif portrait_img:
+        art['thumb'] = portrait_img
+        art['icon'] = portrait_img
+    
+    # Apply artwork with fallback for older Kodi versions
+    if art:
+        try:
+            li.setArt(art)
+        except Exception:
+            # Fallback: try simple thumb/icon only
+            try:
+                if landscape_img:
+                    li.setArt({'thumb': landscape_img, 'icon': landscape_img})
+            except Exception:
+                pass
 
 
 def _is_logged_in():
@@ -249,7 +416,7 @@ def _is_logged_in():
     lightweight and avoids forcing network calls during menu rendering.
     """
     try:
-        api = NLZietAPI(username=ADDON.getSetting('username'), password=ADDON.getSetting('password'))
+        api = get_api_instance()
         try:
             token = api.get_access_token()
         except Exception:
@@ -270,9 +437,37 @@ def _is_logged_in():
     return False
 
 
+def _check_and_handle_token_expiry():
+    """Check if token is expired and needs refresh. Show notification if re-login is required."""
+    try:
+        api = get_api_instance()
+        
+        # Try to get a valid token (which handles refresh automatically)
+        token = api.get_access_token()
+        if token:
+            # Token is valid or was successfully refreshed
+            return True
+        
+        # Token is expired and refresh failed - user needs to re-login
+        save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
+        if not save_creds:
+            # No saved credentials, notify user to login
+            try:
+                xbmcgui.Dialog().notification('NLZiet', get_string('login_again'), xbmcgui.NOTIFICATION_INFO)
+            except Exception:
+                pass
+        return False
+    except Exception:
+        pass
+    return False
+
+
 def main_menu():
     # Check if language changed and reload addon if needed
     check_and_reload_on_settings_change()
+    
+    # Check for expired tokens and attempt refresh
+    _check_and_handle_token_expiry()
     
     try:
         addon_path = ADDON.getAddonInfo('path') or ''
@@ -313,20 +508,20 @@ def main_menu():
     # Determine authentication state and show protected items only when logged in
     logged_in = _is_logged_in()
 
-    # If not logged in, notify the user to provide credentials in Settings
-    # and press Login on the main menu.
+    # If not logged in, notify the user to press Login on the main menu
     if not logged_in:
         try:
-            uname = ADDON.getSetting('username') or ''
-            if not uname:
-                msg = get_string('login_notification')
-            else:
-                msg = get_string('not_logged_in')
+            msg = get_string('login_notification')
             xbmcgui.Dialog().notification('NLZiet', msg, xbmcgui.NOTIFICATION_INFO)
         except Exception:
             xbmc.log('NLZiet: failed to show login notification', xbmc.LOGDEBUG)
 
-    add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'))
+    # Show Login or Sign Out button based on auth status
+    if logged_in:
+        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'))
+    else:
+        add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'))
+    
     if logged_in:
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
@@ -342,9 +537,7 @@ def main_menu():
 
 def browse_series_categories():
     """Display series category/genre list."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
 
     genres = api.get_series_genres()
     for genre in genres:
@@ -356,9 +549,7 @@ def browse_series_categories():
 
 def browse_series_genre(genre=None):
     """Display series in a selected genre."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
 
     # Handle "all" as None for the API
     genre_param = None if genre == 'all' else genre
@@ -401,7 +592,11 @@ def browse_series_genre(genre=None):
 def browse_series():
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster menu navigation
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
 
     # Prefer placement rows (home/explore layout) when available
     try:
@@ -471,7 +666,11 @@ def show_series_detail(series_id):
         return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster detail loading
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     detail = api.get_series_detail(series_id)
     if not detail:
         xbmcgui.Dialog().notification('NLZiet', get_string('unable_fetch_series'), xbmcgui.NOTIFICATION_ERROR)
@@ -493,7 +692,11 @@ def show_series_season(series_id, season_id):
         return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster episode loading
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     xbmc.log(f"NLZiet show_series_season: series_id={series_id} season_id={season_id}", xbmc.LOGDEBUG)
     episodes = api.get_series_episodes(series_id, season_id=season_id or None, limit=400)
     # If the API returned no episodes, but the `season_id` appears to be
@@ -623,9 +826,7 @@ def show_series_season(series_id, season_id):
 
 def browse_tv_shows():
     """Show TV show categories/genres for browsing."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
     
     genres = api.get_tv_show_genres()
     for genre in genres:
@@ -636,9 +837,7 @@ def browse_tv_shows():
 
 def browse_tv_genre(genre=None):
     """Show TV shows for a specific genre."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
     
     # Get shows for the genre (None for 'all')
     genre_param = None if genre == 'all' else genre
@@ -728,9 +927,7 @@ def browse_tv_genre(genre=None):
 
 def browse_movie_categories():
     """Display movie category/genre list."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
 
     genres = api.get_movie_genres()
     for genre in genres:
@@ -742,9 +939,7 @@ def browse_movie_categories():
 
 def browse_movie_genre(genre=None):
     """Display movies in a selected genre."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
 
     # Handle "all" as None for the API
     genre_param = None if genre == 'all' else genre
@@ -785,7 +980,11 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
     """
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster placement loading
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     items = []
 
     # Direct items URL
@@ -969,7 +1168,12 @@ def _format_date_string(dtstr):
 def refresh_account_info(notify=True):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance to avoid repeated disk I/O and initialization overhead
+    try:
+        api = get_api_instance()
+    except Exception:
+        # Fallback to creating a new instance if cache fails
+        api = NLZietAPI(username=username, password=password)
     summary = api.get_customer_summary() or {}
 
     subscription = _extract_subscription_name(summary) or ''
@@ -1003,19 +1207,31 @@ def refresh_account_info(notify=True):
             xbmc.log('NLZiet: Account info could not be parsed', xbmc.LOGDEBUG)
 
 
-def do_logout():
+def do_logout(keep_mylist=False):
     """Clear persistent addon data (cookies, tokens, profile) and refresh the UI.
 
-    This removes cookie/token/profile/mylist files saved under the addon's
+    Args:
+        keep_mylist: If True, keep the My List file; if False, delete it
+    
+    This removes cookie/token/profile files saved under the addon's
     profile directory, clears the stored profile settings, and replaces the
     current container with the main menu so the addon appears like a fresh
     install.
     """
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
-    # remove persistent files (cookies, profile, tokens, mylist)
-    paths = [getattr(api, 'cookie_file', None), getattr(api, 'stream_cookie_file', None), getattr(api, 'profile_file', None), getattr(api, 'token_file', None), getattr(api, 'mylist_file', None)]
+    # Use cached API instance when available
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
+    
+    # remove persistent files (cookies, profile, tokens)
+    # optionally remove mylist based on keep_mylist parameter
+    paths = [getattr(api, 'cookie_file', None), getattr(api, 'stream_cookie_file', None), getattr(api, 'profile_file', None), getattr(api, 'token_file', None)]
+    if not keep_mylist:
+        paths.append(getattr(api, 'mylist_file', None))
+    
     for p in paths:
         try:
             if p and os.path.exists(p):
@@ -1041,9 +1257,12 @@ def do_logout():
     except Exception:
         pass
 
+    # Clear API instance cache
+    clear_api_cache()
+    
     # Clear relevant addon settings so the addon appears fresh
     try:
-        for key in ('profile_id', 'profile_name', 'subscription_name', 'subscription_expires', 'max_devices', 'username', 'password'):
+        for key in ('profile_id', 'profile_name', 'subscription_name', 'subscription_expires', 'max_devices', 'username', 'password', 'save_credentials'):
             try:
                 ADDON.setSetting(key, '')
             except Exception:
@@ -1065,7 +1284,10 @@ def do_logout():
 
 
 def confirm_logout():
-    """Show a confirmation dialog before performing logout."""
+    """Show confirmation dialogs before performing logout.
+    
+    First asks to confirm logout, then asks whether to keep My List.
+    """
     d = xbmcgui.Dialog()
     msg = get_string('logout_confirm_msg')
     try:
@@ -1075,27 +1297,108 @@ def confirm_logout():
             ok = d.yesno('NLZiet', msg)
         except Exception:
             ok = False
-    if ok:
-        do_logout()
-    else:
+    
+    if not ok:
         try:
             xbmcgui.Dialog().notification('NLZiet', get_string('logout_cancelled'), xbmcgui.NOTIFICATION_INFO)
         except Exception:
             pass
+        return
+    
+    # Confirmed logout - now ask about My List
+    keep_mylist = False
+    try:
+        keep = d.yesno('NLZiet', get_string('keep_mylist'), yeslabel=get_string('keep_mylist_btn'), nolabel=get_string('clear_mylist_btn'))
+        keep_mylist = keep
+    except Exception:
+        try:
+            keep = d.yesno('NLZiet', get_string('keep_mylist'))
+            keep_mylist = keep
+        except Exception:
+            pass
+    
+    do_logout(keep_mylist=keep_mylist)
+
+
+def show_login_dialog():
+    """Show login dialog to get email and password from user.
+    
+    Returns:
+        Tuple of (email, password) or (None, None) if cancelled
+    """
+    dialog = xbmcgui.Dialog()
+    
+    # Get email from user
+    email = dialog.input(get_string('login_dialog_email'), type=0)
+    if not email:
+        return None, None
+    
+    # Get password from user (type=0 for text input)
+    password = dialog.input(get_string('login_dialog_password'), type=0)
+    if not password:
+        return None, None
+    
+    return email, password
 
 
 def do_login():
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    """Handle login via dialog or saved credentials."""
+    save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
+    
+    # Check if we have saved credentials
+    saved_username = ADDON.getSetting('username')
+    saved_password = ADDON.getSetting('password')
+    
+    email = None
+    password = None
+    
+    # If credentials are saved and save_credentials is enabled, use them
+    if save_creds and saved_username and saved_password:
+        email = saved_username
+        password = saved_password
+        use_saved = True
+    else:
+        # Show login dialog
+        email, password = show_login_dialog()
+        use_saved = False
+        if not email or not password:
+            return
+    
+    # Attempt login with provided credentials
+    api = NLZietAPI(username=email, password=password)
     ok = api.login()
+    
     if ok:
         # attempt PKCE authorize + token exchange (uses the saved cookie session)
         tokens = api.perform_pkce_authorize_and_exchange()
         if tokens:
-            xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_tokens'), xbmcgui.NOTIFICATION_INFO)
+            # Store tokens in API (they're persistent via save_tokens)
+            xbmcgui.Dialog().notification('NLZiet', get_string('session_token_obtained'), xbmcgui.NOTIFICATION_INFO)
+            
+            # If user didn't use saved credentials, ask how to save the session
+            if not use_saved and not save_creds:
+                try:
+                    options = [
+                        get_string('save_option_tokens_only'),
+                        get_string('save_option_with_credentials')
+                    ]
+                    choice = xbmcgui.Dialog().select(get_string('save_options_title'), options)
+                    
+                    if choice == 0:
+                        # User chose tokens only (recommended)
+                        xbmcgui.Dialog().ok('NLZiet', get_string('tokens_only_info'))
+                    elif choice == 1:
+                        # User chose to save email and password
+                        xbmcgui.Dialog().ok('NLZiet', get_string('credentials_saved_warning'))
+                        # Save credentials
+                        ADDON.setSetting('username', email)
+                        ADDON.setSetting('password', password)
+                        ADDON.setSetting('save_credentials', 'true')
+                except Exception:
+                    pass
         else:
             xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_no_tokens'), xbmcgui.NOTIFICATION_INFO)
+        
         try:
             refresh_account_info()
         except Exception:
@@ -1112,9 +1415,7 @@ def manage_profiles():
     the list so the active profile remains highlighted until another is
     chosen.
     """
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    api = get_api_instance()
     profiles = api.get_profiles()
     # Try to obtain tokens if profiles empty
     if not profiles:
@@ -1194,7 +1495,11 @@ def manage_profiles():
 def browse_my_list():
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster list loading
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     try:
         items = api.get_my_list() or []
     except Exception:
@@ -1241,7 +1546,11 @@ def browse_my_list_group(group):
     """Show items from the user's My List filtered to a single group."""
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster group loading
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     try:
         items = api.get_my_list() or []
     except Exception:
@@ -1291,7 +1600,12 @@ def browse_my_list_group(group):
 def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance to respond instantly to My List actions
+    try:
+        api = get_api_instance()
+    except Exception:
+        # Fallback to creating a new instance if cache fails
+        api = NLZietAPI(username=username, password=password)
     if not item_id:
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_id_mylist'), xbmcgui.NOTIFICATION_ERROR)
         return
@@ -1342,7 +1656,11 @@ def select_profile(profile_id):
 
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster profile switching
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     try:
         result = api.select_profile(profile_id)
     except Exception as e:
@@ -1389,7 +1707,11 @@ def apply_profile():
 
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster profile application
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
 
     try:
         # Attempt a direct profile switch using the stored master token or
@@ -1439,7 +1761,11 @@ def do_search():
     query = kb.getText()
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for search
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     results = api.search(query)
     # If the API search failed or returned no results, try fallback endpoints
     if not results:
@@ -1648,7 +1974,11 @@ def do_search():
 def browse_category(content_type):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for faster menu navigation
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     epg_map = {}
     if content_type.lower() == 'movies':
         results = api.get_movies()
@@ -1688,7 +2018,8 @@ def browse_category(content_type):
                 }
             else:
                 cid = item.get('id')
-                if cid:
+                # Skip detail fetch for channels - they don't support /v9/content/detail/ endpoint
+                if cid and content_type.lower() != 'channels':
                     detail = api.get_content_detail(cid)
                     if detail:
                         desc = detail.get('description') or detail.get('plot') or ''
@@ -1827,7 +2158,11 @@ def search_group(q, group):
 
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance for search results
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
     results = api.search(q)
     if not results:
         fb = []
@@ -1978,7 +2313,12 @@ def ensure_inputstream_for_drm():
 def play_item(content_id, fmt=None):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    api = NLZietAPI(username=username, password=password)
+    # Use cached API instance - still makes the stream info call but avoids object init overhead
+    try:
+        api = get_api_instance()
+    except Exception:
+        # Fallback to creating a new instance if cache fails
+        api = NLZietAPI(username=username, password=password)
     xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGINFO)
     if fmt == 'live':
         info = api.get_stream_info(content_id, context='Live')

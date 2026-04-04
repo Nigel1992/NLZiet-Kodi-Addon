@@ -6,10 +6,6 @@
     </setting>
     <setting type="action" label="ℹ️ Herstart Kodi na wijzigen taal / Restart Kodi after changing language" action="" />
   </category>
-  <category label="Inloggegevens / Credentials">
-    <setting id="username" type="text" label="E-mailadres / Email" default="" />
-    <setting id="password" type="text" label="Wachtwoord / Password" default="" />
-  </category>
   <category label="Account / Account">
     <setting id="subscription_name" type="text" label="Abonnement / Subscription" default="" enabled="false" />
     <setting id="subscription_expires" type="text" label="Abonnement verloopt op / Subscription expires" default="" enabled="false" />
