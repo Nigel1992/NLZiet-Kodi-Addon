@@ -1238,9 +1238,27 @@ class NLZietAPI:
         self.token = self.tokens.get('access_token')
         return self.tokens
 
-    def refresh_tokens(self):
+    def refresh_tokens(self, fallback_to_login=True):
+        """Refresh tokens using the refresh_token. If that fails and we have saved credentials, attempt to re-login.
+        
+        Args:
+            fallback_to_login: If True and refresh fails, attempt form login with saved credentials
+            
+        Returns:
+            Updated tokens dict on success, None on failure
+        """
         if not self.tokens.get('refresh_token'):
+            # No refresh token available; if we have saved credentials, try form login
+            if fallback_to_login and self.username and self.password:
+                try:
+                    if self.login():
+                        tokens = self.perform_pkce_authorize_and_exchange()
+                        if tokens:
+                            return tokens
+                except Exception:
+                    pass
             return None
+        
         url = 'https://id.nlziet.nl/connect/token'
         post = {
             'grant_type': 'refresh_token',
@@ -1260,6 +1278,15 @@ class NLZietAPI:
             with self._open_with_opener(self.opener, req, timeout=20) as r:
                 resp = json.load(r)
         except Exception:
+            # Token refresh failed; if we have saved credentials, try form login as fallback
+            if fallback_to_login and self.username and self.password:
+                try:
+                    if self.login():
+                        tokens = self.perform_pkce_authorize_and_exchange()
+                        if tokens:
+                            return tokens
+                except Exception:
+                    pass
             return None
 
         now = int(time.time())
@@ -1275,6 +1302,26 @@ class NLZietAPI:
         self.save_tokens()
         self.token = self.tokens.get('access_token')
         return self.tokens
+
+    def is_token_valid(self):
+        """Check if we have a valid (non-expired) access token.
+        
+        Returns:
+            True if token exists and is not expired (with 30sec buffer), False otherwise
+        """
+        token = self.tokens.get('access_token')
+        if not token:
+            # Check for cookie-based session
+            if self.token == 'cookie-session':
+                return True
+            return False
+        
+        expires_at = self.tokens.get('expires_at')
+        if not expires_at:
+            return True  # No expiry info, assume valid
+        
+        # Check if token is expired (with 30sec buffer)
+        return expires_at > int(time.time()) + 30
 
     def get_access_token(self):
         if self.tokens.get('access_token') and self.tokens.get('expires_at') and self.tokens['expires_at'] > int(time.time()) + 30:
