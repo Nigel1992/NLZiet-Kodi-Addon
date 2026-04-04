@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Kodi Forum Support Thread
+    url: https://forum.kodi.tv/showthread.php?tid=385207
+    about: "Discuss the addon on the official Kodi forum"
+  - name: Kodi Documentation
+    url: https://kodi.wiki/
+    about: "Learn more about Kodi features and troubleshooting"
+  - name: NLZiet Official Site
+    url: https://www.nlziet.nl
+    about: "Check your NLZiet subscription and account settings"
+  - name: Paste Kodi Logs
+    url: https://paste.kodi.tv/
+    about: "Upload your debug logs here for easier sharing"
