@@ -1,9 +1,10 @@
 ---
-name: Feature Request
+name: "✨ Feature Request"
 description: Suggest an idea or enhancement for the NLZiet Kodi addon
 about: Request a new feature or improvement to the addon
 title: "[FEATURE] "
 labels: ["enhancement"]
+assignees: ["Nigel1992"]
 ---
 
 ## Is Your Feature Request Related to a Problem?
