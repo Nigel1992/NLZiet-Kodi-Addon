@@ -5,28 +5,22 @@ All notable changes to this project are recorded in this file.
 ## [Unreleased]
 
 ### Added
-- **Subscription Account Details Display**: Settings now show account subscription information including subscription type, expiry date, and maximum devices allowed.
-- **Background Settings Monitor Service**: Real-time detection of language setting changes with immediate restart notification popup, eliminating need for manual reload/restart checks.
-- **Account Settings Group**: New dedicated Account section in settings menu displaying subscription status and providing refresh/logout actions.
+- **Kodi fanart support**: Added addon fanart metadata and menu-level fanart assignment so skins can render `resources/media/background.jpg` when opening/browsing the addon.
+- **Logout icon asset**: Added dedicated `menu_logout.png` and wired main menu logout item to prefer this asset.
+- **Converted localization catalogs**: Added `resource.language.en_gb/strings.po` and `resource.language.nl_nl/strings.po` for converted settings string resolution.
 
 ### Changed
-- Settings schema converted to strict Kodi v19+ format (section/category/group/setting/control hierarchy) with proper constraint blocks, enable/disable flags, and control nesting for full compliance.
-- Settings.xml language category simplified and streamlined — removed UI elements prone to blank rendering.
-- Account settings layout restructured to properly display subscription fields (name, type, expiry, max devices) as read-only visible information.
-- Language change detection logic migrated from settings menu to lightweight background service using Kodi's native `xbmc.Monitor.onSettingsChanged()` callback for reliable, immediate notification.
-- **Performance Optimization**: ListItem creation now uses `offscreen=True` parameter to prevent rendering during creation, significantly improving menu loading speed in directory listings and playback initialization. (Thanks @dimkroon)
+- Settings now run in Dutch-only mode for addon settings UI: removed language switch controls from settings and removed language-dependent branching in settings label paths.
+- Localization layout migrated from legacy `resources/language/English|Dutch/strings.xml` to Kodi resource language folders used by converted settings.
+- Service wrapper simplified to a minimal monitor loop; removed language-change monitor/state persistence logic.
+- Addon metadata now keeps Dutch summary/description only.
 
 ### Fixed
-- Logout action button in Settings > Account was non-functional — fixed by moving action data to correct setting-level element with proper button control format.
-- Settings UI rendering failures caused by schema format violations in converted settings structure (missing constraints, improper enable flags, incorrect control nesting).
-- Dutch language text not displaying in settings menu due to localization string binding issues in converted settings format.
-- Missing subscription type field in account information — added recursive extraction function crawling API payload for subscription-related fields.
-- Language restart message now displays immediately when user presses OK in language selection (previously relied on unreliable UI element in settings.xml that rendered blank).
+- Fixed missing/blank settings labels by keeping converted `version="1"` settings structure and providing matching string IDs in resource language catalogs.
+- Fixed inconsistent language rendering in settings by using Dutch labels in both fallback catalogs.
 
 ### Notes
-- Background service persists language state to addon profile directory to track changes across sessions.
-- Subscription fields extracted from NLZiet API customer summary object with fallback handling for varying API response structures.
-- Service registration in addon.xml uses `start="startup"` to ensure background monitor launches automatically on Kodi startup.
+- `resources/settings.xml` remains in converted format (`<settings version="1">` + section/category/group/setting/control hierarchy) per Kodi conversion guidance.
 
 ----
 

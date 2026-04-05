@@ -2,22 +2,6 @@
 <settings version="1">
   <section id="plugin.video.nlziet">
 
-    <category id="category_language" label="30001" help="">
-      <group id="1" label="">
-        <setting id="language" type="integer" label="30100" help="30117">
-          <level>0</level>
-          <default>0</default>
-          <constraints>
-            <options>
-              <option label="30113">0</option>
-              <option label="30114">1</option>
-            </options>
-          </constraints>
-          <control type="spinner" format="string"/>
-        </setting>
-      </group>
-    </category>
-
     <category id="category_account" label="30003" help="">
       <group id="1" label="">
         <setting id="subscription_name" type="string" label="30103" help="">

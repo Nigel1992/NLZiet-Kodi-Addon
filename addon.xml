@@ -9,12 +9,11 @@
   </extension>
   <extension point="xbmc.service" library="service.py" start="startup" />
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">NLZiet streaming addon</summary>
-    <description lang="en">Stream NLZiet content via the service API (requires account)</description>
     <summary lang="nl">NLZiet streaming addon</summary>
     <description lang="nl">Stream NLZiet content via de service API (vereist account)</description>
     <assets>
       <icon>icon.png</icon>
+      <fanart>resources/media/background.jpg</fanart>
     </assets>
   </extension>
 </addon>

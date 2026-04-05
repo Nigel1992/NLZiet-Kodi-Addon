@@ -115,33 +115,18 @@ TRANSLATIONS = {
     'expires_label': {'nl': 'Verloopt', 'en': 'Expires'},
 }
 
+
 def get_string(key, *args):
-    """Get translated string based on language setting.
+    """Get translated string (Dutch only).
     
     Args:
         key: Translation key
         *args: Optional format arguments
         
     Returns:
-        Translated string in user's selected language (default: Dutch)
+        Translated string in Dutch
     """
-    lang_setting = ADDON.getSetting('language') or '0'
-    
-    # Map setting values to language codes
-    # Settings.xml has values="Dutch|English" so it returns "Dutch" or "English"
-    # Also handle indices 0/1 and language codes nl/en as fallback
-    lang_map = {
-        '0': 'nl',
-        '1': 'en',
-        'Dutch': 'nl',
-        'English': 'en',
-        'nl': 'nl',
-        'en': 'en',
-        'Nederlands': 'nl'
-    }
-    lang = lang_map.get(lang_setting, 'nl')
-    
-    text = TRANSLATIONS.get(key, {}).get(lang, TRANSLATIONS.get(key, {}).get('en', key))
+    text = TRANSLATIONS.get(key, {}).get('nl', key)
     if args:
         try:
             text = text.format(*args)
@@ -168,6 +153,16 @@ def build_url(query):
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
     url = build_url(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
+    
+    # Set background image on each item for skin display
+    try:
+        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ADDON.getAddonInfo('path') or ''
+        background_path = os.path.join(addon_path, 'resources', 'media', 'background.jpg')
+        if os.path.exists(background_path):
+            li.setArt({'fanart': background_path})
+    except Exception:
+        pass
+    
     if thumb or content:
         # Use smart artwork assignment to respect aspect ratios
         # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
@@ -466,16 +461,16 @@ def _check_and_handle_token_expiry():
 
 
 def main_menu():
-    # Check if language changed and reload addon if needed
-    check_and_reload_on_settings_change()
-    
     # Check for expired tokens and attempt refresh
     _check_and_handle_token_expiry()
     
     try:
-        addon_path = ADDON.getAddonInfo('path') or ''
+        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ''
     except Exception:
-        addon_path = ''
+        try:
+            addon_path = ADDON.getAddonInfo('path') or ''
+        except Exception:
+            addon_path = ''
 
     # prefer png then svg then fallback to addon's icon.png
     def _pick_icon(name):
@@ -521,7 +516,9 @@ def main_menu():
 
     # Show Login or Sign Out button based on auth status
     if logged_in:
-        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'))
+        explicit_logout_icon = os.path.join(addon_path, 'resources', 'media', 'menu_logout.png')
+        logout_icon = explicit_logout_icon if explicit_logout_icon and os.path.exists(explicit_logout_icon) else _pick_png('logout')
+        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=logout_icon)
     else:
         add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'))
     
@@ -535,6 +532,15 @@ def main_menu():
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+    
+    # Set background image for the container
+    try:
+        background_path = os.path.join(addon_path, 'resources', 'media', 'background.jpg')
+        if os.path.exists(background_path):
+            xbmcplugin.setProperty(HANDLE, 'fanart', background_path)
+    except Exception:
+        xbmc.log('NLZiet: failed to set background image', xbmc.LOGDEBUG)
+    
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -732,11 +738,7 @@ def show_series_season(series_id, season_id):
                         date_obj = datetime.strptime(aired_date, '%Y-%m-%d')
                     
                     date_formatted = date_obj.strftime('%d-%m-%Y')
-                    lang_code = ADDON.getSetting('language')
-                    if lang_code == '0':  # Dutch
-                        date_info = f"Uitgezonden: {date_formatted}"
-                    else:  # English
-                        date_info = f"Aired: {date_formatted}"
+                    date_info = f"Uitgezonden: {date_formatted}"
                 except Exception:
                     date_info = ''
             
@@ -871,11 +873,7 @@ def browse_tv_genre(genre=None):
                         date_obj = datetime.strptime(aired_date, '%Y-%m-%d')
                     
                     date_formatted = date_obj.strftime('%d-%m-%Y')
-                    lang_code = ADDON.getSetting('language')
-                    if lang_code == '0':  # Dutch
-                        date_info = f"Uitgezonden: {date_formatted}"
-                    else:  # English
-                        date_info = f"Aired: {date_formatted}"
+                    date_info = f"Uitgezonden: {date_formatted}"
                 except Exception:
                     date_info = ''
             
@@ -2730,60 +2728,6 @@ def play_item(content_id, fmt=None):
             xbmc.log(f"NLZiet exception in non-DRM subtitle handling: {e}", xbmc.LOGINFO)
         
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
-
-
-def check_and_reload_on_settings_change():
-    """Check if language setting changed and notify user to reload addon.
-    
-    Compares current language setting with stored value. If language
-    differs, shows a notification prompting user to reload the addon
-    to apply the language change.
-    """
-    try:
-        current_language = ADDON.getSetting('language')
-        
-        # Read last known language from addon data directory (persistent storage)
-        addon_data_dir = xbmc.translatePath(ADDON.getAddonInfo('profile'))
-        lang_file = os.path.join(addon_data_dir, 'last_language.txt')
-        
-        stored_language = None
-        if os.path.exists(lang_file):
-            try:
-                with open(lang_file, 'r') as f:
-                    stored_language = f.read().strip()
-            except Exception:
-                pass
-        
-        # Create data dir if needed
-        try:
-            if not os.path.exists(addon_data_dir):
-                os.makedirs(addon_data_dir)
-        except Exception:
-            pass
-        
-        # Write current language for next check
-        try:
-            with open(lang_file, 'w') as f:
-                f.write(current_language)
-        except Exception:
-            pass
-        
-        # Log for debugging
-        xbmc.log(f"NLZiet language check: {stored_language}->{current_language}", xbmc.LOGDEBUG)
-        
-        # Check if language setting changed
-        if stored_language is not None and stored_language != current_language:
-            xbmc.log(f"NLZiet detected language change", xbmc.LOGINFO)
-
-            # Show a modal popup so the user can't miss the restart requirement.
-            try:
-                message = ADDON.getLocalizedString(30117) or 'Restart Kodi to apply language changes'
-                xbmcgui.Dialog().ok('NLZiet', message)
-            except Exception:
-                pass
-            
-    except Exception as e:
-        xbmc.log(f"NLZiet error in language change check: {e}", xbmc.LOGDEBUG)
 
 
 def router(paramstring):
