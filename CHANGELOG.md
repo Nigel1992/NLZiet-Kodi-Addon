@@ -14,6 +14,7 @@ All notable changes to this project are recorded in this file.
 - Settings.xml language category simplified and streamlined — removed UI elements prone to blank rendering.
 - Account settings layout restructured to properly display subscription fields (name, type, expiry, max devices) as read-only visible information.
 - Language change detection logic migrated from settings menu to lightweight background service using Kodi's native `xbmc.Monitor.onSettingsChanged()` callback for reliable, immediate notification.
+- **Performance Optimization**: ListItem creation now uses `offscreen=True` parameter to prevent rendering during creation, significantly improving menu loading speed in directory listings and playback initialization.
 
 ### Fixed
 - Logout action button in Settings > Account was non-functional — fixed by moving action data to correct setting-level element with proper button control format.
