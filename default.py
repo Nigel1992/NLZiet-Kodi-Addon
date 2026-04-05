@@ -57,6 +57,8 @@ TRANSLATIONS = {
     'login_dialog_password': {'nl': 'Wachtwoord', 'en': 'Password'},
     'login_dialog_ok': {'nl': 'Inloggen', 'en': 'Login'},
     'login_dialog_cancel': {'nl': 'Annuleren', 'en': 'Cancel'},
+    'login_invalid_credentials': {'nl': 'Ongeldig e-mailadres of wachtwoord', 'en': 'Invalid email or password'},
+    'login_try_again': {'nl': 'Opnieuw proberen?', 'en': 'Try again?'},
     'token_expired': {'nl': 'Sessie verlopen - opnieuw inloggen is vereist', 'en': 'Session expired - re-authentication required'},
     'login_again': {'nl': 'Uw sessie is verlopen. Klik op Inloggen om opnieuw in te loggen.', 'en': 'Your session has expired. Please click Login to re-authenticate.'},
     'save_options_title': {'nl': 'Hoe wilt u ingelogd blijven?', 'en': 'How do you want to stay logged in?'},
@@ -1197,9 +1199,9 @@ def refresh_account_info(notify=True):
 
     if notify:
         if display_values:
-            xbmcgui.Dialog().notification('NLZiet', get_string('account_updated') + '\n' + '\n'.join(display_values), xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().ok('NLZiet', get_string('account_updated') + '\n' + '\n'.join(display_values))
         else:
-            xbmcgui.Dialog().notification('NLZiet', get_string('account_parse_error'), xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().ok('NLZiet', get_string('account_parse_error'))
     else:
         if display_values:
             xbmc.log('NLZiet: Account info updated: ' + ', '.join(display_values), xbmc.LOGDEBUG)
@@ -1320,21 +1322,26 @@ def confirm_logout():
     do_logout(keep_mylist=keep_mylist)
 
 
-def show_login_dialog():
+def show_login_dialog(preset_email='', preset_password=''):
     """Show login dialog to get email and password from user.
+    
+    Args:
+        preset_email: optional pre-filled email address
+        preset_password: optional pre-filled password
     
     Returns:
         Tuple of (email, password) or (None, None) if cancelled
     """
     dialog = xbmcgui.Dialog()
     
-    # Get email from user
-    email = dialog.input(get_string('login_dialog_email'), type=0)
+    # Get email from user (pre-filled if provided)
+    # dialog.input(heading, defaultText='', type=0)
+    email = dialog.input(get_string('login_dialog_email'), preset_email, type=0)
     if not email:
         return None, None
     
-    # Get password from user (type=0 for text input)
-    password = dialog.input(get_string('login_dialog_password'), type=0)
+    # Get password from user (pre-filled if provided)
+    password = dialog.input(get_string('login_dialog_password'), preset_password, type=0)
     if not password:
         return None, None
     
@@ -1342,7 +1349,7 @@ def show_login_dialog():
 
 
 def do_login():
-    """Handle login via dialog or saved credentials."""
+    """Handle login via dialog or saved credentials with retry support."""
     save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
     
     # Check if we have saved credentials
@@ -1364,47 +1371,84 @@ def do_login():
         if not email or not password:
             return
     
-    # Attempt login with provided credentials
-    api = NLZietAPI(username=email, password=password)
-    ok = api.login()
+    # Attempt login with provided credentials (with retry loop)
+    max_attempts = 3
+    attempt = 0
     
-    if ok:
-        # attempt PKCE authorize + token exchange (uses the saved cookie session)
-        tokens = api.perform_pkce_authorize_and_exchange()
-        if tokens:
-            # Store tokens in API (they're persistent via save_tokens)
-            xbmcgui.Dialog().notification('NLZiet', get_string('session_token_obtained'), xbmcgui.NOTIFICATION_INFO)
+    while attempt < max_attempts:
+        attempt += 1
+        try:
+            xbmc.log(f"NLZiet: attempting login (attempt {attempt}/{max_attempts}) for {email}", xbmc.LOGINFO)
+            api = NLZietAPI(username=email, password=password)
+            ok = api.login()
             
-            # If user didn't use saved credentials, ask how to save the session
-            if not use_saved and not save_creds:
-                try:
-                    options = [
-                        get_string('save_option_tokens_only'),
-                        get_string('save_option_with_credentials')
-                    ]
-                    choice = xbmcgui.Dialog().select(get_string('save_options_title'), options)
+            if ok:
+                xbmc.log(f"NLZiet: login successful for {email}", xbmc.LOGINFO)
+                # attempt PKCE authorize + token exchange (uses the saved cookie session)
+                tokens = api.perform_pkce_authorize_and_exchange()
+                if tokens:
+                    # Store tokens in API (they're persistent via save_tokens)
+                    xbmcgui.Dialog().notification('NLZiet', get_string('session_token_obtained'), xbmcgui.NOTIFICATION_INFO)
                     
-                    if choice == 0:
-                        # User chose tokens only (recommended)
-                        xbmcgui.Dialog().ok('NLZiet', get_string('tokens_only_info'))
-                    elif choice == 1:
-                        # User chose to save email and password
-                        xbmcgui.Dialog().ok('NLZiet', get_string('credentials_saved_warning'))
-                        # Save credentials
-                        ADDON.setSetting('username', email)
-                        ADDON.setSetting('password', password)
-                        ADDON.setSetting('save_credentials', 'true')
+                    # If user didn't use saved credentials, ask how to save the session
+                    if not use_saved and not save_creds:
+                        try:
+                            options = [
+                                get_string('save_option_tokens_only'),
+                                get_string('save_option_with_credentials')
+                            ]
+                            choice = xbmcgui.Dialog().select(get_string('save_options_title'), options)
+                            
+                            if choice == 0:
+                                # User chose tokens only (recommended)
+                                xbmcgui.Dialog().ok('NLZiet', get_string('tokens_only_info'))
+                            elif choice == 1:
+                                # User chose to save email and password
+                                xbmcgui.Dialog().ok('NLZiet', get_string('credentials_saved_warning'))
+                                # Save credentials
+                                ADDON.setSetting('username', email)
+                                ADDON.setSetting('password', password)
+                                ADDON.setSetting('save_credentials', 'true')
+                        except Exception:
+                            pass
+                else:
+                    xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_no_tokens'), xbmcgui.NOTIFICATION_INFO)
+                
+                try:
+                    refresh_account_info()
                 except Exception:
                     pass
-        else:
-            xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_no_tokens'), xbmcgui.NOTIFICATION_INFO)
+                return
+            else:
+                # Login failed - offer to retry
+                xbmc.log(f"NLZiet: login failed for {email} (attempt {attempt}/{max_attempts})", xbmc.LOGINFO)
+                
+                # If we have more attempts, ask user if they want to retry
+                if attempt < max_attempts:
+                    retry_msg = f"{get_string('login_invalid_credentials')}\n\n{get_string('login_try_again')}"
+                    
+                    if xbmcgui.Dialog().yesno('NLZiet', retry_msg):
+                        # Show login dialog again with email/password pre-filled
+                        new_email, new_password = show_login_dialog(email, password)
+                        if new_email and new_password:
+                            email = new_email
+                            password = new_password
+                            # Loop will continue to next attempt
+                        else:
+                            # User cancelled
+                            return
+                    else:
+                        # User doesn't want to retry
+                        return
+                else:
+                    # Max attempts reached
+                    xbmcgui.Dialog().notification('NLZiet', 'Login failed - max attempts reached', xbmcgui.NOTIFICATION_ERROR)
+                    return
         
-        try:
-            refresh_account_info()
-        except Exception:
-            pass
-    else:
-        xbmcgui.Dialog().notification('NLZiet', get_string('login_failed_demo'), xbmcgui.NOTIFICATION_INFO)
+        except Exception as e:
+            xbmc.log(f"NLZiet: login exception (attempt {attempt}/{max_attempts}): {e}", xbmc.LOGWARNING)
+            xbmcgui.Dialog().notification('NLZiet', f'Login error: {str(e)[:50]}', xbmcgui.NOTIFICATION_ERROR)
+            return
 
 
 def manage_profiles():
@@ -2301,6 +2345,55 @@ def search_group(q, group):
     xbmcplugin.endOfDirectory(HANDLE)
 
 
+def filter_manifest_subtitles(manifest_url):
+    """
+    Placeholder for future manifest filtering.
+    Currently unused - we use player subtitle API instead.
+    """
+    return manifest_url
+
+
+class NLZietPlaybackMonitor(xbmc.Monitor):
+    """Monitor for live TV playback to disable subtitles if setting is off."""
+    
+    def __init__(self, disable_subs=False):
+        super().__init__()
+        self.disable_subs = disable_subs
+        self.subtitle_disabled = False
+        xbmc.log(f"NLZiet: PlaybackMonitor created with disable_subs={disable_subs}", xbmc.LOGINFO)
+        
+    def onPlayBackStarted(self):
+        """Called when playback starts - disable subtitles if needed."""
+        if self.disable_subs and not self.subtitle_disabled:
+            try:
+                import time
+                # Give player a moment to initialize and load manifest
+                time.sleep(1)
+                
+                # Get the active player
+                player = xbmc.Player()
+                
+                if player.isPlaying():
+                    xbmc.log("NLZiet: playback detected, disabling subtitles", xbmc.LOGINFO)
+                    # Try to disable subtitles using showSubtitles(False)
+                    try:
+                        player.showSubtitles(False)
+                        xbmc.log("NLZiet: called player.showSubtitles(False)", xbmc.LOGINFO)
+                        self.subtitle_disabled = True
+                    except AttributeError:
+                        # Fallback: try setSubtitleStream(-1) if showSubtitles doesn't exist
+                        try:
+                            player.setSubtitleStream(-1)
+                            xbmc.log("NLZiet: called player.setSubtitleStream(-1)", xbmc.LOGINFO)
+                            self.subtitle_disabled = True
+                        except Exception as e:
+                            xbmc.log(f"NLZiet: setSubtitleStream failed: {e}", xbmc.LOGWARNING)
+                else:
+                    xbmc.log("NLZiet: playback not detected yet", xbmc.LOGDEBUG)
+            except Exception as e:
+                xbmc.log(f"NLZiet PlaybackMonitor.onPlayBackStarted exception: {e}", xbmc.LOGWARNING)
+
+
 def ensure_inputstream_for_drm():
     try:
         xbmcaddon.Addon('inputstream.adaptive')
@@ -2309,6 +2402,9 @@ def ensure_inputstream_for_drm():
         xbmcgui.Dialog().ok('Dependency missing', 'Please install inputstream.adaptive to play DRM streams.')
         return False
 
+
+# Global playback monitor for live TV subtitle control
+_playback_monitor = None
 
 def play_item(content_id, fmt=None):
     username = ADDON.getSetting('username')
@@ -2334,6 +2430,37 @@ def play_item(content_id, fmt=None):
     if not manifest:
         xbmcgui.Dialog().notification('NLZiet', 'No manifest available', xbmcgui.NOTIFICATION_ERROR)
         return
+
+    # Check subtitle setting once for all processing
+    try:
+        enable_subs = ADDON.getSetting('subtitles_default')
+        xbmc.log(f"NLZiet DEBUG subtitles_default raw value: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+    except Exception as e:
+        enable_subs = None
+        xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
+    
+    # Convert to boolean - handle all possible Kodi return values
+    # Note: Kodi may return '0'/'1' or 'false'/'true' or boolean values
+    if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs == '0' or enable_subs is False:
+        subs_enabled = False
+    elif enable_subs == 'true' or enable_subs == '1' or enable_subs is True:
+        subs_enabled = True
+    else:
+        # Fallback: try string parsing
+        subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
+    
+    xbmc.log(f"NLZiet subtitles setting: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
+    is_live = (fmt == 'live')
+    xbmc.log(f"NLZiet play_item: fmt={fmt} is_live={is_live} subs_enabled={subs_enabled}", xbmc.LOGINFO)
+    
+    # For live TV with subtitles disabled: use a playback monitor to disable subs when play starts
+    # This prevents inputstream.adaptive from auto-loading subtitle tracks from the manifest
+    global _playback_monitor
+    if is_live and not subs_enabled:
+        xbmc.log(f"NLZiet LIVE TV: subtitle monitor enabled to disable subs on playback start", xbmc.LOGINFO)
+        _playback_monitor = NLZietPlaybackMonitor(disable_subs=True)
+    else:
+        _playback_monitor = None
 
     if info.get('is_drm'):
         if not ensure_inputstream_for_drm():
@@ -2471,41 +2598,23 @@ def play_item(content_id, fmt=None):
                     sub_urls.append(url)
             xbmc.log(f"NLZiet DRM extracted sub_urls: {sub_urls}", xbmc.LOGINFO)
             
-            if sub_urls:
+            if sub_urls and subs_enabled:
+                xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                 try:
-                    enable_subs = ADDON.getSetting('subtitles_default')
-                    xbmc.log(f"NLZiet DEBUG subtitles_default raw value: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+                    li.setSubtitles(sub_urls)
                 except Exception as e:
-                    enable_subs = None
-                    xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
-                
-                # Convert to boolean - handle all possible Kodi return values
-                if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs is False:
-                    subs_enabled = False
-                elif enable_subs == 'true' or enable_subs is True or enable_subs == '1':
-                    subs_enabled = True
-                else:
-                    # Fallback: try string parsing
-                    subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
-                
-                xbmc.log(f"NLZiet DRM subtitles: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
-                
-                if subs_enabled:
-                    xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
+                    xbmc.log(f"NLZiet subtitle attach failed: {e}", xbmc.LOGINFO)
+                    # fallback: store as property for debugging or later handling
                     try:
-                        li.setSubtitles(sub_urls)
-                    except Exception as e:
-                        xbmc.log(f"NLZiet subtitle attach failed: {e}", xbmc.LOGINFO)
-                        # fallback: store as property for debugging or later handling
-                        try:
-                            li.setProperty('nlziet.subtitles', ';'.join(sub_urls))
-                        except Exception:
-                            pass
-                else:
-                    xbmc.log(f'NLZiet: auto-subtitles disabled', xbmc.LOGINFO)
+                        li.setProperty('nlziet.subtitles', ';'.join(sub_urls))
+                    except Exception:
+                        pass
+            elif sub_urls and not subs_enabled:
+                xbmc.log(f'NLZiet: external subtitles found but disabled in settings', xbmc.LOGINFO)
             else:
-                xbmc.log(f'NLZiet: no subtitles in stream response', xbmc.LOGINFO)
-        except Exception:
+                xbmc.log(f'NLZiet: no external subtitles in stream response', xbmc.LOGINFO)
+        except Exception as e:
+            xbmc.log(f"NLZiet exception in subtitle handling: {e}", xbmc.LOGINFO)
             pass
 
         # do not override inputstream's PSSH handling by supplying malformed
@@ -2519,6 +2628,25 @@ def play_item(content_id, fmt=None):
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
         li = xbmcgui.ListItem(path=manifest)
+        
+        # Check subtitle setting once
+        try:
+            enable_subs = ADDON.getSetting('subtitles_default')
+            xbmc.log(f"NLZiet DEBUG non-DRM subtitles_default raw: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+        except Exception as e:
+            enable_subs = None
+            xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
+        
+        # Convert to boolean - handle all possible return values from Kodi
+        if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs is False:
+            subs_enabled = False
+        elif enable_subs == 'true' or enable_subs is True or enable_subs == '1':
+            subs_enabled = True
+        else:
+            # Fallback: try string parsing
+            subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
+        
+        xbmc.log(f"NLZiet non-DRM subtitles setting: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
         
         # Also handle subtitles for non-DRM streams
         try:
@@ -2535,31 +2663,16 @@ def play_item(content_id, fmt=None):
                     sub_urls.append(url)
             xbmc.log(f"NLZiet non-DRM extracted sub_urls: {sub_urls}", xbmc.LOGINFO)
             
-            if sub_urls:
+            if sub_urls and subs_enabled:
+                xbmc.log(f"NLZiet non-DRM attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                 try:
-                    enable_subs = ADDON.getSetting('subtitles_default')
-                    xbmc.log(f"NLZiet DEBUG non-DRM subtitles_default raw: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+                    li.setSubtitles(sub_urls)
                 except Exception as e:
-                    enable_subs = None
-                    xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
-                
-                # Convert to boolean - handle all possible return values from Kodi
-                if enable_subs is None or enable_subs == '' or enable_subs == 'false' or enable_subs is False:
-                    subs_enabled = False
-                elif enable_subs == 'true' or enable_subs is True or enable_subs == '1':
-                    subs_enabled = True
-                else:
-                    # Fallback: try string parsing
-                    subs_enabled = str(enable_subs).lower().strip() in ('true', '1', 'yes', 'on')
-                
-                xbmc.log(f"NLZiet non-DRM subtitles: raw={repr(enable_subs)} -> enabled={subs_enabled}", xbmc.LOGINFO)
-                
-                if subs_enabled:
-                    xbmc.log(f"NLZiet non-DRM attaching subtitles: {sub_urls}", xbmc.LOGINFO)
-                    try:
-                        li.setSubtitles(sub_urls)
-                    except Exception as e:
-                        xbmc.log(f"NLZiet non-DRM subtitle attach failed: {e}", xbmc.LOGINFO)
+                    xbmc.log(f"NLZiet non-DRM subtitle attach failed: {e}", xbmc.LOGINFO)
+            elif sub_urls:
+                xbmc.log(f'NLZiet non-DRM: external subtitles found but disabled in settings', xbmc.LOGINFO)
+            else:
+                xbmc.log(f'NLZiet non-DRM: no subtitles in stream response', xbmc.LOGINFO)
         except Exception as e:
             xbmc.log(f"NLZiet exception in non-DRM subtitle handling: {e}", xbmc.LOGINFO)
         
