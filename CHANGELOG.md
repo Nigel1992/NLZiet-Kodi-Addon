@@ -4,45 +4,58 @@ All notable changes to this project are recorded in this file.
 
 ## [Unreleased]
 
-### Added
-- **Live TV EPG Display**: Current program ("Nu live") and next program ("Straks") now display in channel descriptions with broadcast times (HH:MM-HH:MM).
-- **Performance Cache**: Added 45-second fast channel EPG cache to reduce menu load time.
-
-### Fixed
-- **EPG Data Missing on Live TV**: Fixed parsing of nested channel/programLocations API response structure. Program titles, times, and descriptions now correctly extract from nested content objects.
-- **Wrong Program Showing**: Fixed EPG selection logic to prioritize currently-playing programs over future/past programs.
-- **Context Menu on Live TV**: Prevented Kodi's "Resume from" and "Play from beginning" context menu options from appearing on live channels. Live streams now play directly via `ResumeTime`, `TotalTime`, and `IsLive` properties.
-- **Performance Delay on Live TV Cancel**: Removed unnecessary 1-second sleep and per-channel fallback logic that caused delays when canceling playback.
-
-### Changed
-- EPG labels now use Dutch localization ("Nu live" and "Straks") for consistency with user preferences.
-
-----
-
-### Added
-- **Kodi fanart support**: Added addon fanart metadata and menu-level fanart assignment so skins can render `resources/media/background.jpg` when opening/browsing the addon.
-- **Logout icon asset**: Added dedicated `menu_logout.png` and wired main menu logout item to prefer this asset.
-- **Converted localization catalogs**: Added `resource.language.en_gb/strings.po` and `resource.language.nl_nl/strings.po` for converted settings string resolution.
-
-### Changed
-- Settings now run in Dutch-only mode for addon settings UI: removed language switch controls from settings and removed language-dependent branching in settings label paths.
-- Localization layout migrated from legacy `resources/language/English|Dutch/strings.xml` to Kodi resource language folders used by converted settings.
-- Service wrapper simplified to a minimal monitor loop; removed language-change monitor/state persistence logic.
-- Addon metadata now keeps Dutch summary/description only.
-
-### Fixed
-- Fixed missing/blank settings labels by keeping converted `version="1"` settings structure and providing matching string IDs in resource language catalogs.
-- Fixed inconsistent language rendering in settings by using Dutch labels in both fallback catalogs.
-
-### Notes
-- `resources/settings.xml` remains in converted format (`<settings version="1">` + section/category/group/setting/control hierarchy) per Kodi conversion guidance.
-
-----
 
 ## [1.0.0] - 2026-04-06
 
+### Added
+- **Token-Based OAuth2 Authentication**: Secure PKCE-based login flow with automatic token refresh. Sessions persist across Kodi restarts via cookie storage.
+- **Dialog-Based Login**: Modern Kodi dialog login interface — credentials are never exposed in addon settings menu for better security and UX.
+- **Optional Credential Storage**: Users choose between "Save tokens only" (recommended, requires login only when tokens expire) or "Save email+password" (auto-refresh convenience).
+- **Auto-Token Refresh**: Sessions automatically refresh when tokens expire with 60-second proactive buffer. Fallback to form login if refresh fails, with user re-login prompt.
+- **Dynamic Login/Sign Out Button**: Main menu displays "Login" when not authenticated and "Sign Out" when user has active session.
+- **Protected Content Menu**: Series, Movies, TV Shows, Search, and My List menu items hidden for unauthenticated users.
+- **Logout Confirmation Flow**: Two-step logout with optional "Keep My List" to preserve favorites after sign out.
+- **Live TV EPG Display**: Current program ("Nu live") and next program ("Straks") now display in channel descriptions with broadcast times (HH:MM-HH:MM).
+- **Global API Instance Caching**: 5-minute TTL cache reduces initialization overhead and disk I/O on every menu interaction.
+- **Fast EPG Channel Cache**: 45-second cache for channel menu EPG to reduce load time while keeping data fresh.
+- **Smart Artwork by Aspect Ratio**: Automatically separates and assigns images based on aspect ratio — landscape (16:9) for fanart, portrait (2:3) for covers, preventing face-cutting.
+- **High-Resolution Fanart Images**: Image URLs now request 3840px width from the NLZiet image service, rendering crisp 4K-quality artwork instead of pixelated thumbnails.
+- **Kodi Fanart Support**: Added addon fanart metadata and menu-level fanart assignment so skins can render `resources/media/background.jpg` when opening/browsing the addon.
+- **Logout Icon Asset**: Added dedicated `menu_logout.png` and wired main menu logout item to prefer this asset.
+- **Converted Localization Catalogs**: Added `resource.language.en_gb/strings.po` and `resource.language.nl_nl/strings.po` for converted settings string resolution.
+- **InputStream Helper Integration**: Uses `script.module.inputstreamhelper` v0.6.0 for DRM verification before playback. Ensures `inputstream.adaptive` and Widevine CDM are properly installed.
+
 ### Changed
-- Version bump to **v1.0.0**.
+- Authentication workflow completely redesigned: moved from settings-based credentials to secure dialog-based OAuth2 flow.
+- API instance creation now centralized via `get_api_instance()` function with caching logic for 15+ menu functions.
+- Image optimization function now requests 3840px width instead of stripping parameters, ensuring high-quality fanart display.
+- Context menu items now use cached API instances instead of creating new NLZietAPI objects per item interaction.
+- Settings now run in Dutch-only mode for addon settings UI: removed language switch controls and language-dependent branching in settings label paths.
+- Localization layout migrated from legacy `resources/language/English|Dutch/strings.xml` to Kodi resource language folders.
+- Service wrapper simplified to a minimal monitor loop; removed language-change monitor/state persistence logic.
+- Addon metadata now keeps Dutch summary/description only.
+- EPG labels now use Dutch localization ("Nu live" and "Straks") for consistency with user preferences.
+
+### Fixed
+- **EPG Data Missing on Live TV**: Fixed parsing of nested channel/programLocations API response structure. Program titles, times, and descriptions now correctly extract from nested content objects.
+- **Wrong Program Showing on Live TV**: Fixed EPG selection logic to prioritize currently-playing programs over future/past programs.
+- **Context Menu on Live TV**: Prevented Kodi's "Resume from" and "Play from beginning" context menu options from appearing on live channels. Live streams now play directly via `ResumeTime`, `TotalTime`, and `IsLive` properties.
+- **Performance Delay on Live TV Cancel**: Removed unnecessary 1-second sleep and per-channel fallback logic that caused delays when canceling playback.
+- **Channel Menus 404 Errors**: Channel menus no longer generate 404 errors from unsupported `/v9/content/detail` endpoint.
+- **Image Aspect Ratio Issues**: Image aspect ratio correctly preserved in Kodi artwork keys — landscape images no longer assigned to portrait keys and vice versa.
+- **Pixelated Fanart Images**: Small fanart now requests higher resolution from API (3840px), eliminating zoom/crop appearance on large screens.
+- **Slow Menu Response**: Menu response time reduced from 2-3 seconds to near-instant for context operations (Add/Remove My List).
+- **Undefined Variable References (#8)**: Fixed undefined reference to series_detail() in series listing; removed erroneous per-series season fallback attempt from functions that don't operate on individual series IDs.
+- **Missing/Blank Settings Labels**: Fixed by keeping converted `version="1"` settings structure and providing matching string IDs in resource language catalogs.
+- **Inconsistent Settings Language Rendering**: Fixed by using Dutch labels in both fallback catalogs.
+- **Token Refresh Without Refresh_Token**: Implemented PKCE-based fallback renewal when refresh_token is unavailable, using preserved cookie session to silently re-authorize.
+
+### Notes
+- OAuth2 PKCE flow ensures secure token exchange without exposing client secrets.
+- Cookie-based session persistence uses HTTP LWP format for cross-session recognition with ~30 day lifetime (idsrv cookie).
+- Token expiry buffer set to 60 seconds for proactive refresh before actual expiration.
+- `resources/settings.xml` remains in converted format (`<settings version="1">` + section/category/group/setting/control hierarchy) per Kodi conversion guidance.
+- InputStream Helper checks are performed before DRM playback to ensure dependencies are available.
 
 ----
 

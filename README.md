@@ -25,7 +25,7 @@
 - <span style="color:#007ACC;">**Series**</span>: Browse, search, and play series with full season/episode navigation.
 - <span style="color:#F39C12;">**Movies**</span>: Discover and watch movies from the NLZiet catalog.
 - <span style="color:#27AE60;">**Profile Management**</span>: Switch between user profiles from the Kodi UI.
-- <span style="color:#8E44AD;">**DRM Support**</span>: Widevine-protected streams via `inputstream.adaptive`.
+- <span style=\"color:#8E44AD;\">**DRM Support**</span>: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
 - <span style="color:#2980B9;">**Placement Rows**</span>: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
 - <span style="color:#C0392B;">**Episode Numbering**</span>: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
 - <span style="color:#16A085;">**Search**</span>: Find series, movies, and episodes by title.
@@ -35,16 +35,42 @@
 ----
 ### New in v1.0.0
 
-- **Token-Based Authentication**: Secure OAuth2 PKCE-based login with optional credential storage. Users can choose to save only tokens (recommended, auto-refresh) or tokens+credentials (convenience).
-- **Dialog-Based Login**: Modern login UI via Kodi dialogs instead of addon settings — credentials never appear in Settings menu.
-- **Auto-Token Refresh**: Sessions automatically refresh when tokens expire. If refresh fails, users are prompted to re-login.
-- **Sign Out Button**: Dynamic main menu button shows "Login" when not authenticated and "Sign Out" when logged in.
-- **Protected Menu Content**: All series, movies, TV shows, search, and My List are hidden until user logs in. Prevents errors for unauthenticated users.
-- **My List Preservation**: Two-step logout flow asks whether to keep or clear the user's My List.
-- **Performance Optimization**: Global API instance caching with 5-minute TTL eliminates repeated initialization. Context menu operations now instant instead of 2-3 second delays.
-- **Channel Optimization**: Fixed unnecessary 404 requests to `/v9/content/detail` for channels (endpoint not supported).
-- **Smart Artwork Assignment**: Images automatically separated by aspect ratio — landscape images for fanart, portrait for posters, preventing face-cutting.
-- **High-Resolution Fanart**: Image URLs now request 3840px width from the NLZiet image service, rendering crisp 4K-quality artwork instead of small pixelated images.
+**Authentication & Security:**
+- **Token-Based OAuth2 Authentication**: Secure PKCE-based login flow with automatic token refresh. Sessions persist across Kodi restarts via cookie storage.
+- **Dialog-Based Login**: Modern login interface — credentials never appear in addon settings menu for better security.
+- **Optional Credential Storage**: Choose between "Save tokens only" (recommended) or "Save tokens+credentials" (convenience).
+- **Auto-Token Refresh**: Sessions automatically refresh when tokens expire, with 60-second proactive buffer. Falls back to re-login if needed.
+- **Cookie-Based Session Fallback**: When refresh_token unavailable, uses preserved session cookie for silent PKCE re-authorization.
+- **Sign Out Button**: Dynamic main menu button shows "Login" or "Sign Out" based on authentication status.
+
+**Live TV & EPG:**
+- **Live TV EPG Display**: Current program ("Nu live") and next program ("Straks") display with broadcast times (HH:MM-HH:MM).
+- **EPG Parser Improvements**: Fixed nested API response structure; correctly extracts program titles, times, descriptions from nested content objects.
+- **Smart Program Selection**: Prioritizes currently-playing programs over future/past programs for accurate EPG display.
+- **EPG Performance Cache**: 45-second fast cache reduces menu load time while keeping data fresh.
+
+**Performance & Optimization:**
+- **Global API Instance Caching**: 5-minute TTL cache eliminates repeated API initialization and disk I/O overhead.
+- **Context Menu Instant Response**: Operations (Add/Remove My List, etc.) now near-instantaneous using cached API instances.
+- **Live TV Performance**: Removed unnecessary 1-second sleep and per-channel fallback logic; reduced cancel delay significantly.
+- **Channel Optimization**: Skips unsupported `/v9/content/detail` requests for channels, eliminating 404 errors.
+
+**UI/UX & Media:**
+- **Smart Artwork by Aspect Ratio**: Automatically separates landscape (16:9) for fanart and portrait (2:3) for covers, preventing face-cutting.
+- **High-Resolution Fanart**: Image URLs request 3840px from NLZiet service, rendering crisp 4K artwork instead of pixelated images.
+- **Fanart Support**: Added addon fanart metadata for skin integration; renders `resources/media/background.jpg` seamlessly.
+- **Live TV Context Menu Fix**: Prevented "Resume from" and "Play from beginning" options on live channels; streams play directly via properties.
+
+**DRM & Dependencies:**
+- **InputStream Helper Integration**: Uses `script.module.inputstreamhelper` v0.6.0 for automatic DRM dependency verification.
+- **Widevine Support**: Ensures `inputstream.adaptive` v2.6.18+ and Widevine CDM are installed before DRM playback.
+
+**Bug Fixes:**
+- Fixed undefined variable references in series detail fallback logic (#8).
+- Fixed missing settings labels with converted settings structure (v1 format).
+- Fixed inconsistent language rendering in settings UI.
+- Fixed image aspect ratio assignment preventing landscape/portrait confusion.
+- Fixed pixelated fanart by requesting optimal resolution.
 
 ### New in v0.0.8
 
@@ -95,19 +121,21 @@ Coming soon...
 1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 2. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded zip.
 3. Configure your NLZiet credentials in the add-on settings.
-4. (Optional) Install `inputstream.adaptive` for DRM playback.
+4. (Optional) Install `inputstream.adaptive` for DRM playback. The addon will verify installation automatically via `inputstreamhelper`.
 
 ---
 
 ## 🛣️ Roadmap / Coming Soon
 
-- **My List**: Add/remove favorites and resume playback.
+- **Resume Playback**: Remember last watched position for series and movies.
 - **Kids Profile Support**: Full kids mode and parental controls.
-- **Improved Search**: Filter by genre, year, and more.
-- **Offline Viewing**: Download for offline playback (if supported).
+- **Improved Search**: Filter by genre, year, release date, and more.
+- **Offline Viewing**: Download for offline playback (if supported by NLZiet).
 - **Multi-language Subtitles**: Enhanced subtitle selection and download.
-- **UI Polish**: More artwork, skin integration, and info dialogs.
-- **Automated Testing**: CI for code quality and releases.
+- **Playback History**: Track watched episodes and movies.
+- **Advanced Sorting**: Sort series by newest, oldest, alphabetical, popularity.
+- **UI Polish**: Enhanced skins integration, custom info dialogs, and animations.
+- **Automated Testing**: CI/CD pipeline for code quality and automated releases.
 
 ---
 
