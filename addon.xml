@@ -8,7 +8,7 @@
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
   </extension>
-  <extension point="xbmc.service" library="service.py" start="startup" />
+  <extension point="xbmc.service" library="service.py" />
   <extension point="xbmc.addon.metadata">
     <summary lang="nl">NLZiet streaming addon</summary>
     <description lang="nl">Stream NLZiet content via de service API (vereist account)</description>
