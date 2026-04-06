@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<strings>
+  <string id="30003">Account</string>
+  <string id="30004">Profielen</string>
+  <string id="30005">Geavanceerd</string>
+  <string id="30006">Afspelen</string>
+  <string id="30007">Debug</string>
+  <string id="30103">Abonnement</string>
+  <string id="30104">Abonnement verloopt</string>
+  <string id="30105">Max apparaten</string>
+  <string id="30106">Afmelden en lokale gegevens wissen</string>
+  <string id="30107">Actieve profiel-ID</string>
+  <string id="30108">Actieve profielnaam</string>
+  <string id="30109">API-basis-URL (optioneel)</string>
+  <string id="30110">Ondertitels standaard inschakelen</string>
+  <string id="30111">Debug HTTP-verzoeken</string>
+</strings>

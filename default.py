@@ -21,6 +21,12 @@ _api_cache = None
 _api_cache_time = 0
 _api_cache_timeout = 300  # 5 minutes - refresh cache after this
 
+# Short-lived channels listing cache to make return-from-playback instant.
+_channel_menu_cache_data = []
+_channel_menu_cache_epg = {}
+_channel_menu_cache_time = 0
+_channel_menu_cache_ttl = 45  # seconds
+
 def get_api_instance():
     """Get or create a cached API instance to avoid repeated disk I/O and initialization."""
     global _api_cache, _api_cache_time
@@ -40,8 +46,47 @@ def get_api_instance():
 def clear_api_cache():
     """Clear the API instance cache (call after logout)."""
     global _api_cache, _api_cache_time
+    global _channel_menu_cache_data, _channel_menu_cache_epg, _channel_menu_cache_time
     _api_cache = None
     _api_cache_time = 0
+    _channel_menu_cache_data = []
+    _channel_menu_cache_epg = {}
+    _channel_menu_cache_time = 0
+
+
+def set_api_instance(api_instance):
+    """Replace the API cache with a known-good instance (e.g. after login)."""
+    global _api_cache, _api_cache_time
+    _api_cache = api_instance
+    _api_cache_time = time.time()
+
+
+def get_channels_menu_data(api_instance):
+    """Return channels + EPG data with short-lived in-memory caching.
+
+    This avoids re-fetching channels/EPG immediately after stopping Live TV,
+    which makes menu return feel instant.
+    """
+    global _channel_menu_cache_data, _channel_menu_cache_epg, _channel_menu_cache_time
+    now = time.time()
+    if _channel_menu_cache_time and (now - _channel_menu_cache_time) < _channel_menu_cache_ttl:
+        return _channel_menu_cache_data or [], _channel_menu_cache_epg or {}
+
+    results = api_instance.get_channels() or []
+    epg_map = {}
+    channel_ids = [r.get('id') for r in results if r.get('id')]
+    if channel_ids:
+        try:
+            # Fetch EPG for all specified channels
+            epg_map = api_instance.get_current_programs(channel_ids) or {}
+        except Exception as e:
+            xbmc.log(f"get_channels_menu_data: EPG fetch failed: {e}", xbmc.LOGWARNING)
+            epg_map = {}
+
+    _channel_menu_cache_data = results
+    _channel_menu_cache_epg = epg_map
+    _channel_menu_cache_time = now
+    return results, epg_map
 
 # Raw expiry color to test — change this to 'orange' or a hex like 'FFA500' or
 # try the exact raw tag you suggested ('ffoooo66') to experiment.
@@ -127,6 +172,8 @@ def get_string(key, *args):
         Translated string in Dutch
     """
     text = TRANSLATIONS.get(key, {}).get('nl', key)
+    if not isinstance(text, str):
+        text = str(key)
     if args:
         try:
             text = text.format(*args)
@@ -167,18 +214,35 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         # Use smart artwork assignment to respect aspect ratios
         # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
         _set_smart_artwork(li, content, thumb=thumb)
+    
+    # For live TV (fmt='live'), display EPG without context menu options
+    is_live = isinstance(query, dict) and query.get('fmt') == 'live'
+    
     if info:
-        li.setInfo('video', info)
-        # set a short summary for skins that display a second label
-        try:
-            short = info.get('plotoutline') or info.get('plot') or ''
-            if short:
-                li.setLabel2(short)
-        except Exception:
-            pass
+        if is_live:
+            # For live TV, set video info to display EPG, but don't track resume points
+            # Clear any bookmark/resume data so context menu doesn't appear
+            info_copy = info.copy()
+            info_copy.pop('resume', None)  # Remove any resume position
+            li.setInfo('video', info_copy)
+        else:
+            # For on-demand content, set full video info (allows resume functionality)
+            li.setInfo('video', info)
+            try:
+                short = info.get('plotoutline') or info.get('plot') or ''
+                if short:
+                    li.setLabel2(short)
+            except Exception:
+                pass
     # mark non-folder items as playable so Enter/Select triggers playback
     if not is_folder:
         li.setProperty('IsPlayable', 'true')
+    
+    # For live TV, prevent Kodi from showing resume/playback context menu
+    if is_live:
+        li.setProperty('ResumeTime', '0')
+        li.setProperty('TotalTime', '0')
+        li.setProperty('IsLive', 'true')  # Mark as live for skin awareness
     # Add context-menu entry for My List when we can determine a content id
     try:
         content_id = None
@@ -772,6 +836,7 @@ def show_series_season(series_id, season_id):
         # If present, extract the remainder of the subtitle after the code and
         # prefer that as the human-friendly episode title ("S1:A2 <ep title>").
         subtitle_code = None
+        sub = ''
         try:
             sub = ep.get('subtitle') or ''
             if sub and isinstance(sub, str):
@@ -1250,9 +1315,9 @@ def refresh_account_info(notify=True):
 
     if notify:
         if display_values:
-            xbmcgui.Dialog().ok('NLZiet', get_string('account_updated') + '\n' + '\n'.join(display_values))
+            xbmcgui.Dialog().ok('NLZiet', (get_string('account_updated') or 'Account updated') + '\n' + '\n'.join(display_values))
         else:
-            xbmcgui.Dialog().ok('NLZiet', get_string('account_parse_error'))
+            xbmcgui.Dialog().ok('NLZiet', get_string('account_parse_error') or 'Account info could not be parsed')
     else:
         if display_values:
             xbmc.log('NLZiet: Account info updated: ' + ', '.join(display_values), xbmc.LOGDEBUG)
@@ -1315,7 +1380,7 @@ def do_logout(keep_mylist=False):
     
     # Clear relevant addon settings so the addon appears fresh
     try:
-        for key in ('profile_id', 'profile_name', 'subscription_name', 'subscription_type', 'subscription_expires', 'max_devices', 'username', 'password', 'save_credentials'):
+        for key in ('profile_id', 'profile_name', 'subscription_name', 'subscription_type', 'subscription_expires', 'max_devices', 'username', 'password', 'save_credentials', 'access_token', 'refresh_token', 'token_expires_at'):
             try:
                 ADDON.setSetting(key, '')
             except Exception:
@@ -1438,6 +1503,26 @@ def do_login():
                 # attempt PKCE authorize + token exchange (uses the saved cookie session)
                 tokens = api.perform_pkce_authorize_and_exchange()
                 if tokens:
+                    try:
+                        api._append_debug(
+                            "LOGIN FLOW: PKCE returned tokens access={} refresh={}".format(
+                                bool((tokens or {}).get('access_token')),
+                                bool((tokens or {}).get('refresh_token')),
+                            )
+                        )
+                        api._debug_auth_state('default_do_login_tokens_received')
+                    except Exception:
+                        pass
+
+                    try:
+                        if isinstance(tokens, dict):
+                            api.tokens.update(tokens)
+                        if api.tokens.get('access_token'):
+                            api.token = api.tokens.get('access_token')
+                            api.save_tokens()
+                    except Exception:
+                        pass
+
                     # Store tokens in API (they're persistent via save_tokens)
                     xbmcgui.Dialog().notification('NLZiet', get_string('session_token_obtained'), xbmcgui.NOTIFICATION_INFO)
                     
@@ -1463,10 +1548,35 @@ def do_login():
                         except Exception:
                             pass
                 else:
+                    try:
+                        api._append_debug('LOGIN FLOW: form login succeeded but PKCE/token exchange returned no tokens')
+                        api._debug_auth_state('default_do_login_no_tokens')
+                    except Exception:
+                        pass
                     xbmcgui.Dialog().notification('NLZiet', get_string('login_successful_no_tokens'), xbmcgui.NOTIFICATION_INFO)
-                
+
+                # Keep runtime state consistent: startup may have cached an unauthenticated
+                # API instance. Replace it with this authenticated one immediately.
                 try:
-                    refresh_account_info()
+                    set_api_instance(api)
+                    try:
+                        api._append_debug('LOGIN FLOW: cached API instance replaced with authenticated instance')
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
+                try:
+                    # Avoid showing a confusing parse-error popup directly after login
+                    # when account summary fields are temporarily unavailable.
+                    refresh_account_info(notify=False)
+                except Exception:
+                    pass
+
+                # Refresh main menu so authenticated entries are shown right away.
+                try:
+                    main_url = build_url({})
+                    xbmc.executebuiltin('Container.Update(%s,replace)' % main_url)
                 except Exception:
                     pass
                 return
@@ -1670,7 +1780,8 @@ def browse_my_list_group(group):
             continue
 
     if not filtered:
-        xbmcgui.Dialog().notification('NLZiet', get_string('no_items_for_group').format(group), xbmcgui.NOTIFICATION_INFO)
+        no_items_text = get_string('no_items_for_group') or 'No items found for {}'
+        xbmcgui.Dialog().notification('NLZiet', no_items_text.format(group), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
@@ -2082,13 +2193,7 @@ def browse_category(content_type):
     elif content_type.lower() == 'documentary':
         results = api.get_documentaries()
     elif content_type.lower() == 'channels':
-        results = api.get_channels()
-        # fetch current program (EPG) for the visible channels and show it
-        channel_ids = [r.get('id') for r in results if r.get('id')]
-        try:
-            epg_map = api.get_current_programs(channel_ids)
-        except Exception:
-            epg_map = {}
+        results, epg_map = get_channels_menu_data(api)
     else:
         results = api.search(content_type, content_type=content_type)
     for item in results:
@@ -2134,94 +2239,75 @@ def browse_category(content_type):
                                 'plot': plot_full,
                                 'plotoutline': po,
                             }
-                # Attach 'Now' EPG info when available for channels
+                # Attach EPG info for channels (current 'Nu live' and next 'Straks')
                 if content_type.lower() == 'channels' and item.get('id'):
                     try:
-                        prog = epg_map.get(str(item.get('id'))) or epg_map.get(item.get('id'))
-                        if not prog:
-                            # Fallback: some handshakes include the current program (item/asset).
-                            try:
-                                hs_info = api.get_stream_info(item.get('id'), context='Live')
-                                hs = hs_info.get('handshake') or {}
-                                # prefer `item` then `asset` from the handshake
-                                hs_prog = None
-                                if isinstance(hs, dict):
-                                    hs_prog = hs.get('item') or hs.get('asset') or hs.get('streamSessionData') or None
-                                if hs_prog and isinstance(hs_prog, dict):
-                                    title_prog = hs_prog.get('title') or hs_prog.get('name') or (hs_prog.get('programmeTitle') if isinstance(hs_prog.get('programmeTitle'), str) else '')
-                                    # parse start/end from asset or streamSessionData if available
-                                    start_ts = None
-                                    end_ts = None
-                                    asset = hs.get('asset') or {}
-                                    if isinstance(asset, dict):
-                                        start_ts = api._parse_timestamp(asset.get('startAt') or asset.get('streamStartAt') or asset.get('start'))
-                                        end_ts = api._parse_timestamp(asset.get('endAt') or asset.get('streamEndAt') or asset.get('end'))
-                                    # as extra fallback, check streamSessionDataString
-                                    if (not start_ts or not end_ts) and hs.get('streamSessionData'):
-                                        ssd = hs.get('streamSessionData')
-                                        if isinstance(ssd, dict):
-                                            ssd_str = ssd.get('streamSessionDataString') or ssd.get('streamSessionData')
-                                            try:
-                                                import json as _json
-                                                if isinstance(ssd_str, str):
-                                                    parsed_ssd = _json.loads(ssd_str)
-                                                    start_ts = start_ts or api._parse_timestamp(parsed_ssd.get('epgAssetStartAt') or parsed_ssd.get('streamStartAt') or parsed_ssd.get('start'))
-                                                    end_ts = end_ts or api._parse_timestamp(parsed_ssd.get('endAt') or parsed_ssd.get('streamEndAt') or parsed_ssd.get('end'))
-                                            except Exception:
-                                                pass
-                                    prog = {'title': title_prog or '', 'desc': hs_prog.get('description') or hs_prog.get('summary') or '', 'start': start_ts, 'end': end_ts, 'raw': hs_prog, 'in_now': False}
-                            except Exception:
-                                prog = None
+                        channel_id = item.get('id')
+                        # Try multiple key formats to handle ID type mismatches (string vs int)
+                        channel_epg = None
+                        for key_variant in [str(channel_id), channel_id]:
+                            if key_variant is not None:
+                                channel_epg = epg_map.get(key_variant)
+                                if channel_epg:
+                                    break
 
-                        if prog:
-                            title_prog = prog.get('title') or ''
-                            start_ts = prog.get('start')
-                            end_ts = prog.get('end')
-                            try:
-                                start_s = time.strftime('%H:%M', time.localtime(start_ts)) if start_ts else ''
-                            except Exception:
-                                start_s = ''
-                            try:
-                                end_s = time.strftime('%H:%M', time.localtime(end_ts)) if end_ts else ''
-                            except Exception:
-                                end_s = ''
-                            time_range = ''
-                            if start_s and end_s:
-                                time_range = f"{start_s}-{end_s}"
-                            elif start_s:
-                                time_range = start_s
-                            program_line = f"Now: {title_prog}" + (f" ({time_range})" if time_range else '')
-                            desc_text = prog.get('desc') or ''
-                            # prepare truncated outline and full plot including description
-                            try:
-                                desc_short = (desc_text[:120] + '...') if len(desc_text) > 120 else desc_text
-                            except Exception:
-                                desc_short = ''
-
-                            if info:
-                                old_po = info.get('plotoutline', '')
-                                old_plot = info.get('plot', '')
-
-                                po_new = program_line
-                                if desc_short:
-                                    po_new = f"{po_new} — {desc_short}"
-                                if old_po:
-                                    po_new = f"{po_new}\n{old_po}"
-                                info['plotoutline'] = po_new
-
-                                plot_new = program_line
-                                if desc_text:
-                                    plot_new = f"{plot_new}\n{desc_text}"
-                                if old_plot:
-                                    plot_new = f"{plot_new}\n{old_plot}"
-                                info['plot'] = plot_new
-                            else:
-                                po_val = program_line + (f" — {desc_short}" if desc_short else '')
-                                plot_val = program_line + (f"\n{desc_text}" if desc_text else '')
-                                info = {'title': item.get('title'), 'plotoutline': po_val, 'plot': plot_val}
+                        # New structure: channel_epg has 'current' and 'next' keys
+                        if channel_epg and isinstance(channel_epg, dict) and 'current' in channel_epg:
+                            current_prog = channel_epg.get('current')
+                            next_prog = channel_epg.get('next')
+                            
+                            # Build display lines for current and next programs
+                            epg_lines = []
+                            
+                            if current_prog and isinstance(current_prog, dict):
+                                title_prog = current_prog.get('title') or ''
+                                start_ts = current_prog.get('start')
+                                end_ts = current_prog.get('end')
+                                try:
+                                    start_s = time.strftime('%H:%M', time.localtime(start_ts)) if start_ts else ''
+                                    end_s = time.strftime('%H:%M', time.localtime(end_ts)) if end_ts else ''
+                                except Exception:
+                                    start_s = end_s = ''
+                                
+                                time_range = ''
+                                if start_s and end_s:
+                                    time_range = f"{start_s}-{end_s}"
+                                elif start_s:
+                                    time_range = start_s
+                                
+                                current_line = f"Nu live: {title_prog}" + (f" ({time_range})" if time_range else '')
+                                epg_lines.append(current_line)
+                            
+                            if next_prog and isinstance(next_prog, dict):
+                                next_title = next_prog.get('title') or ''
+                                next_start_ts = next_prog.get('start')
+                                next_end_ts = next_prog.get('end')
+                                try:
+                                    next_start_s = time.strftime('%H:%M', time.localtime(next_start_ts)) if next_start_ts else ''
+                                    next_end_s = time.strftime('%H:%M', time.localtime(next_end_ts)) if next_end_ts else ''
+                                except Exception:
+                                    next_start_s = next_end_s = ''
+                                
+                                next_time_range = ''
+                                if next_start_s and next_end_s:
+                                    next_time_range = f"{next_start_s}-{next_end_s}"
+                                elif next_start_s:
+                                    next_time_range = next_start_s
+                                
+                                next_line = f"Straks: {next_title}" + (f" ({next_time_range})" if next_time_range else '')
+                                epg_lines.append(next_line)
+                            
+                            # Update info with EPG data
+                            if epg_lines:
+                                epg_text = '\n'.join(epg_lines)
+                                if info:
+                                    info['plotoutline'] = epg_text
+                                    info['plot'] = epg_text
+                                else:
+                                    info = {'title': item.get('title'), 'plotoutline': epg_text, 'plot': epg_text}
                     except Exception:
                         pass
-        except Exception:
+        except Exception as e:
             info = None
         
         # Determine query mode based on item type
@@ -2404,54 +2490,70 @@ def filter_manifest_subtitles(manifest_url):
     return manifest_url
 
 
-class NLZietPlaybackMonitor(xbmc.Monitor):
-    """Monitor for live TV playback to disable subtitles if setting is off."""
-    
+class NLZietPlaybackMonitor(xbmc.Player):
+    """Player callback helper for live TV subtitle control.
+
+    Keep this callback path non-blocking so stop/back returns to the menu instantly.
+    """
+
     def __init__(self, disable_subs=False):
         super().__init__()
         self.disable_subs = disable_subs
         self.subtitle_disabled = False
         xbmc.log(f"NLZiet: PlaybackMonitor created with disable_subs={disable_subs}", xbmc.LOGINFO)
-        
-    def onPlayBackStarted(self):
-        """Called when playback starts - disable subtitles if needed."""
-        if self.disable_subs and not self.subtitle_disabled:
+
+    def _disable_subtitles_if_needed(self):
+        if not self.disable_subs or self.subtitle_disabled:
+            return
+        try:
+            if not self.isPlaying():
+                return
+            xbmc.log("NLZiet: playback detected, disabling subtitles", xbmc.LOGINFO)
             try:
-                import time
-                # Give player a moment to initialize and load manifest
-                time.sleep(1)
-                
-                # Get the active player
-                player = xbmc.Player()
-                
-                if player.isPlaying():
-                    xbmc.log("NLZiet: playback detected, disabling subtitles", xbmc.LOGINFO)
-                    # Try to disable subtitles using showSubtitles(False)
-                    try:
-                        player.showSubtitles(False)
-                        xbmc.log("NLZiet: called player.showSubtitles(False)", xbmc.LOGINFO)
-                        self.subtitle_disabled = True
-                    except AttributeError:
-                        # Fallback: try setSubtitleStream(-1) if showSubtitles doesn't exist
-                        try:
-                            player.setSubtitleStream(-1)
-                            xbmc.log("NLZiet: called player.setSubtitleStream(-1)", xbmc.LOGINFO)
-                            self.subtitle_disabled = True
-                        except Exception as e:
-                            xbmc.log(f"NLZiet: setSubtitleStream failed: {e}", xbmc.LOGWARNING)
-                else:
-                    xbmc.log("NLZiet: playback not detected yet", xbmc.LOGDEBUG)
-            except Exception as e:
-                xbmc.log(f"NLZiet PlaybackMonitor.onPlayBackStarted exception: {e}", xbmc.LOGWARNING)
+                self.showSubtitles(False)
+                xbmc.log("NLZiet: called player.showSubtitles(False)", xbmc.LOGINFO)
+                self.subtitle_disabled = True
+            except AttributeError:
+                try:
+                    self.setSubtitleStream(-1)
+                    xbmc.log("NLZiet: called player.setSubtitleStream(-1)", xbmc.LOGINFO)
+                    self.subtitle_disabled = True
+                except Exception as e:
+                    xbmc.log(f"NLZiet: setSubtitleStream failed: {e}", xbmc.LOGWARNING)
+        except Exception as e:
+            xbmc.log(f"NLZiet PlaybackMonitor subtitle disable exception: {e}", xbmc.LOGWARNING)
+
+    def onPlayBackStarted(self):
+        self._disable_subtitles_if_needed()
+
+    def onAVStarted(self):
+        # Some Kodi versions trigger onAVStarted more reliably than onPlayBackStarted.
+        self._disable_subtitles_if_needed()
 
 
 def ensure_inputstream_for_drm():
+    """Ensure DRM playback dependencies using script.module.inputstreamhelper.
+
+    Returns:
+        inputstreamhelper.Helper instance when ready, otherwise None.
+    """
     try:
-        xbmcaddon.Addon('inputstream.adaptive')
-        return True
+        import inputstreamhelper
     except Exception:
-        xbmcgui.Dialog().ok('Dependency missing', 'Please install inputstream.adaptive to play DRM streams.')
-        return False
+        xbmcgui.Dialog().ok(
+            'Dependency missing',
+            'Please install script.module.inputstreamhelper to play DRM streams.'
+        )
+        return None
+
+    try:
+        helper = inputstreamhelper.Helper('mpd', drm='com.widevine.alpha')
+        if helper.check_inputstream():
+            return helper
+    except Exception as e:
+        xbmc.log(f"NLZiet inputstreamhelper check failed: {e}", xbmc.LOGERROR)
+
+    return None
 
 
 # Global playback monitor for live TV subtitle control
@@ -2514,11 +2616,18 @@ def play_item(content_id, fmt=None):
         _playback_monitor = None
 
     if info.get('is_drm'):
-        if not ensure_inputstream_for_drm():
+        is_helper = ensure_inputstream_for_drm()
+        if not is_helper:
             return
         li = xbmcgui.ListItem(path=manifest, offscreen=True)
+        # Use the inputstream addon resolved by InputStream Helper.
+        try:
+            inputstream_addon = is_helper.inputstream_addon
+        except Exception:
+            inputstream_addon = 'inputstream.adaptive'
+
         # prefer new property if available
-        li.setProperty('inputstream', 'inputstream.adaptive')
+        li.setProperty('inputstream', inputstream_addon)
         li.setProperty('inputstream.adaptive.manifest_type', 'mpd')
         li.setProperty('inputstream.adaptive.license_type', 'com.widevine.alpha')
         license_url = info.get('license_url') or ''
@@ -2755,6 +2864,8 @@ def router(paramstring):
         browse_series()
     elif mode == 'logout':
         do_logout()
+    elif mode == 'logout_keep_mylist':
+        do_logout(keep_mylist=True)
     elif mode == 'logout_confirm':
         confirm_logout()
     elif mode == 'account_summary':

@@ -1,0 +1,125 @@
+# Kodi Media Center language file
+# Addon Name: NLZiet
+# Addon id: plugin.video.nlziet
+# Addon Provider: Nigel1992
+msgid ""
+msgstr ""
+"Project-Id-Version: Kodi Addons\n"
+"Report-Msgid-Bugs-To: translations@kodi.tv\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Kodi Translation Team\n"
+"Language-Team: Dutch (Netherlands)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: nl\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#30001"
+msgid "Language"
+msgstr "Taal"
+
+msgctxt "#30003"
+msgid "Account"
+msgstr "Account"
+
+msgctxt "#30004"
+msgid "Profiles"
+msgstr "Profielen"
+
+msgctxt "#30005"
+msgid "Advanced"
+msgstr "Geavanceerd"
+
+msgctxt "#30006"
+msgid "Playback"
+msgstr "Afspelen"
+
+msgctxt "#30007"
+msgid "Debug"
+msgstr "Debug"
+
+msgctxt "#30100"
+msgid "Language"
+msgstr "Taal"
+
+msgctxt "#30103"
+msgid "Subscription"
+msgstr "Abonnement"
+
+msgctxt "#30104"
+msgid "Subscription expires"
+msgstr "Abonnement verloopt"
+
+msgctxt "#30105"
+msgid "Max devices"
+msgstr "Max apparaten"
+
+msgctxt "#30106"
+msgid "Logout and clear local data"
+msgstr "Afmelden en lokale gegevens wissen"
+
+msgctxt "#30107"
+msgid "Active profile ID"
+msgstr "Actieve profiel-ID"
+
+msgctxt "#30108"
+msgid "Active profile name"
+msgstr "Actieve profielnaam"
+
+msgctxt "#30109"
+msgid "API base URL (optional)"
+msgstr "API-basis-URL (optioneel)"
+
+msgctxt "#30110"
+msgid "Enable subtitles by default"
+msgstr "Ondertitels standaard inschakelen"
+
+msgctxt "#30111"
+msgid "Debug HTTP requests"
+msgstr "Debug HTTP-verzoeken"
+
+msgctxt "#30113"
+msgid "English"
+msgstr "Engels"
+
+msgctxt "#30114"
+msgid "Dutch"
+msgstr "Nederlands"
+
+msgctxt "#30115"
+msgid "Debug enabled"
+msgstr "Debug ingeschakeld"
+
+msgctxt "#30116"
+msgid "Subscription type"
+msgstr "Abonnement type"
+
+msgctxt "#30117"
+msgid "Restart Kodi to apply language changes"
+msgstr "Herstart Kodi om taalwijzigingen toe te passen"
+
+msgctxt "#30118"
+msgid "Your subscription name"
+msgstr "Uw abonnementsnaam"
+
+msgctxt "#30119"
+msgid "Type of subscription plan"
+msgstr "Type abonnementplan"
+
+msgctxt "#30120"
+msgid "Date when subscription expires"
+msgstr "Datum waarop het abonnement vervalt"
+
+msgctxt "#30121"
+msgid "Number of devices allowed on this account"
+msgstr "Aantal apparaten dat op dit account is toegestaan"
+
+msgctxt "#30122"
+msgid "Subscription Information"
+msgstr "Abonnement informatie"
+
+msgctxt "#30123"
+msgid "Refresh account information"
+msgstr "Accountinformatie verversen"

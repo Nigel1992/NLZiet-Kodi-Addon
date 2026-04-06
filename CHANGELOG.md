@@ -5,6 +5,21 @@ All notable changes to this project are recorded in this file.
 ## [Unreleased]
 
 ### Added
+- **Live TV EPG Display**: Current program ("Nu live") and next program ("Straks") now display in channel descriptions with broadcast times (HH:MM-HH:MM).
+- **Performance Cache**: Added 45-second fast channel EPG cache to reduce menu load time.
+
+### Fixed
+- **EPG Data Missing on Live TV**: Fixed parsing of nested channel/programLocations API response structure. Program titles, times, and descriptions now correctly extract from nested content objects.
+- **Wrong Program Showing**: Fixed EPG selection logic to prioritize currently-playing programs over future/past programs.
+- **Context Menu on Live TV**: Prevented Kodi's "Resume from" and "Play from beginning" context menu options from appearing on live channels. Live streams now play directly via `ResumeTime`, `TotalTime`, and `IsLive` properties.
+- **Performance Delay on Live TV Cancel**: Removed unnecessary 1-second sleep and per-channel fallback logic that caused delays when canceling playback.
+
+### Changed
+- EPG labels now use Dutch localization ("Nu live" and "Straks") for consistency with user preferences.
+
+----
+
+### Added
 - **Kodi fanart support**: Added addon fanart metadata and menu-level fanart assignment so skins can render `resources/media/background.jpg` when opening/browsing the addon.
 - **Logout icon asset**: Added dedicated `menu_logout.png` and wired main menu logout item to prefer this asset.
 - **Converted localization catalogs**: Added `resource.language.en_gb/strings.po` and `resource.language.nl_nl/strings.po` for converted settings string resolution.
@@ -21,6 +36,13 @@ All notable changes to this project are recorded in this file.
 
 ### Notes
 - `resources/settings.xml` remains in converted format (`<settings version="1">` + section/category/group/setting/control hierarchy) per Kodi conversion guidance.
+
+----
+
+## [1.0.0] - 2026-04-06
+
+### Changed
+- Version bump to **v1.0.0**.
 
 ----
 

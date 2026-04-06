@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<strings>
+  <!-- Category labels (30001-30007) -->
+  <string id="30001">Language</string>
+  <string id="30003">Account</string>
+  <string id="30004">Profiles</string>
+  <string id="30005">Advanced</string>
+  <string id="30006">Playback</string>
+  <string id="30007">Debug</string>
+
+  <!-- Setting labels (30100+) -->
+  <string id="30100">Language</string>
+  <string id="30103">Subscription</string>
+  <string id="30104">Subscription expires</string>
+  <string id="30105">Max devices</string>
+  <string id="30106">Logout and clear local data</string>
+  <string id="30107">Active profile ID</string>
+  <string id="30108">Active profile name</string>
+  <string id="30109">API base URL (optional)</string>
+  <string id="30110">Enable subtitles by default</string>
+  <string id="30111">Debug HTTP requests</string>
+  <string id="30113">English</string>
+  <string id="30114">Dutch</string>
+  <string id="30115">Debug enabled</string>
+  <string id="30116">Subscription type</string>
+  <string id="30117">Restart Kodi to apply language changes</string>
+  <string id="30118">Your subscription name</string>
+  <string id="30119">Type of subscription plan</string>
+  <string id="30120">Date when subscription expires</string>
+  <string id="30121">Number of devices allowed on this account</string>
+  <string id="30122">Subscription Information</string>
+  <string id="30123">Refresh account information</string>
+</strings>
