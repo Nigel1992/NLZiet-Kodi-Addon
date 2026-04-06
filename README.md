@@ -2,14 +2,14 @@
 
 <img src="https://raw.githubusercontent.com/Nigel1992/NLZiet-Kodi-Addon/master/icon.png" width="300" alt="NLZiet Kodi Addon Logo"/>
 
-# <span style="color:#E60000;">NLZiet Kodi Addon</span>
+# NLZiet Kodi Addon
 
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Latest release:** v1.0.0 — 2026-04-06. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
-<sub><sup>Unofficial NLZiet Kodi Addon &mdash; Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sup></sub>
+<sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
 </div>
 
@@ -21,18 +21,18 @@
 
 ## ✨ Features
 
-- <span style="color:#E60000;">**Live TV**</span>: Stream all supported NLZiet channels with EPG info.
-- <span style="color:#007ACC;">**Series**</span>: Browse, search, and play series with full season/episode navigation.
-- <span style="color:#F39C12;">**Movies**</span>: Discover and watch movies from the NLZiet catalog.
-- <span style="color:#27AE60;">**Profile Management**</span>: Switch between user profiles from the Kodi UI.
-- <span style=\"color:#8E44AD;\">**DRM Support**</span>: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
-- <span style="color:#2980B9;">**Placement Rows**</span>: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
-- <span style="color:#C0392B;">**Episode Numbering**</span>: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
-- <span style="color:#16A085;">**Search**</span>: Find series, movies, and episodes by title.
-- <span style="color:#34495E;">**Robust Handshake**</span>: Automatic manifest/license extraction and fallback logic.
-- <span style="color:#E67E22;">**Debug Logging**</span>: Easy log collection for troubleshooting.
+- **Live TV**: Stream all supported NLZiet channels with EPG info.
+- **Series**: Browse, search, and play series with full season/episode navigation.
+- **Movies**: Discover and watch movies from the NLZiet catalog.
+- **Profile Management**: Switch between user profiles from the Kodi UI.
+- **DRM Support**: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
+- **Placement Rows**: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
+- **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
+- **Search**: Find series, movies, and episodes by title.
+- **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
+- **Debug Logging**: Easy log collection for troubleshooting.
 
-----
+---
 ### New in v1.0.0
 
 **Authentication & Security:**
@@ -104,7 +104,7 @@
 ---
 
 
-----
+---
 
 ## 🖼️ Screenshots
 
@@ -156,7 +156,7 @@ Coming soon...
 
 ## 🤝 Contributing
 
-Pull requests, bug reports, and feature suggestions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Pull requests, bug reports, and feature suggestions are welcome. Open an issue or pull request in this repository.
 
 ---
 
