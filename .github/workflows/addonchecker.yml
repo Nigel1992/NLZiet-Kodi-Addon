@@ -58,8 +58,19 @@ jobs:
             --exclude '.git/' \
             --exclude '.github/' \
             --exclude '.venv/' \
+            --exclude 'venv/' \
+            --exclude '.env/' \
+            --exclude '.vscode/' \
+            --exclude '.idea/' \
+            --exclude '.cache/' \
+            --exclude 'cache/' \
             --exclude '__pycache__/' \
             --exclude '.pytest_cache/' \
+            --exclude '.mypy_cache/' \
+            --exclude '.ruff_cache/' \
+            --exclude '.tox/' \
+            --exclude '.nox/' \
+            --exclude '.addon-check-run.log' \
             --exclude '*.pyc' \
             --exclude '*.pyo' \
             --exclude '.DS_Store' \

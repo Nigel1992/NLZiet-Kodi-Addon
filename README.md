@@ -123,6 +123,20 @@ Coming soon...
 3. Configure your NLZiet credentials in the add-on settings.
 4. (Optional) Install `inputstream.adaptive` for DRM playback. The addon will verify installation automatically via `inputstreamhelper`.
 
+### Local Addon Check (Filtered Source)
+
+To run addon-check locally without scanning local environment/cache folders, use:
+
+```bash
+scripts/run-addon-check-local.sh
+```
+
+Run a specific branch only:
+
+```bash
+scripts/run-addon-check-local.sh --branch omega
+```
+
 ---
 
 ## 🛣️ Roadmap / Coming Soon
