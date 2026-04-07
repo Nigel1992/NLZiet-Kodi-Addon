@@ -141,11 +141,8 @@ scripts/run-addon-check-local.sh --branch omega
 
 ## 🛣️ Roadmap / Coming Soon
 
-- **Resume Playback**: Remember last watched position for series and movies.
 - **Kids Profile Support**: Full kids mode and parental controls.
 - **Improved Search**: Filter by genre, year, release date, and more.
-- **Offline Viewing**: Download for offline playback (if supported by NLZiet).
-- **Multi-language Subtitles**: Enhanced subtitle selection and download.
 - **Playback History**: Track watched episodes and movies.
 - **Advanced Sorting**: Sort series by newest, oldest, alphabetical, popularity.
 - **UI Polish**: Enhanced skins integration, custom info dialogs, and animations.
