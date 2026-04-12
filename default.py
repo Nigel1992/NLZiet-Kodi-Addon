@@ -241,7 +241,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     # For live TV, prevent Kodi from showing resume/playback context menu
     if is_live:
         li.setProperty('ResumeTime', '0')
-        li.setProperty('TotalTime', '0')
+        li.setProperty('TotalTime', '3600')
         li.setProperty('IsLive', 'true')  # Mark as live for skin awareness
     # Add context-menu entry for My List when we can determine a content id
     try:
