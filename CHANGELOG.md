@@ -8,8 +8,18 @@ All notable changes to this project are recorded in this file.
 
 ## [1.0.1] - 2026-04-20
 
+### New
+- Bundled urllib3 1.26.12 directly into addon `resources/lib/` for reliable dependency resolution on minimal Kodi distributions like LibreELEC.
+
+### Updated
+- Enhanced `nlziet_api.py` to add local `resources/lib` directory to Python path before importing requests, ensuring urllib3 is located first.
+
 ### Fixed
-- **Bundle urllib3 locally**: Bundled urllib3 1.26.12 into addon to fix LibreELEC compatibility. Removed external `script.module.urllib3` dependency since minimal Kodi distros may not have it installed. urllib3 is now included in `resources/lib/` and imported locally before `requests` initialization.
+- **LibreELEC Compatibility**: Resolved `ModuleNotFoundError: No module named 'urllib3'` by bundling urllib3 locally instead of relying on external `script.module.urllib3` addon dependency, which may not be available on minimal Kodi systems.
+- Improved addon check script to clean up pip-installed artifacts (`.pyc`, `__pycache__`, `.so` files) that shouldn't be included in releases.
+
+### Removed
+- External `script.module.urllib3` dependency from `addon.xml` — urllib3 is now self-contained in the addon.
 
 
 ## [1.0.0] - 2026-04-06
