@@ -159,6 +159,13 @@
             <visible>false</visible>
             <control type="edit" format="string" />
         </setting>
+        <setting id="library_path" label="30136" type="string" help="">
+            <level>0</level>
+            <default>/storage/emulated/0/KodiNLZietLibrary/TV Shows</default>
+            <control type="edit" format="string">
+                <heading>30136</heading>
+            </control>
+        </setting>
       </group>
     </category>
 

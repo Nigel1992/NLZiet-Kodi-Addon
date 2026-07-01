@@ -9,6 +9,7 @@ import xbmcplugin
 import time
 import threading
 from datetime import datetime, timedelta
+from xml.sax.saxutils import escape
 
 try:
     from zoneinfo import ZoneInfo
@@ -163,6 +164,9 @@ TRANSLATIONS = {
     'subscription_type_label': {'nl': 'Type', 'en': 'Type'},
     'max_devices_label': {'nl': 'Max apparaten', 'en': 'Max devices'},
     'expires_label': {'nl': 'Verloopt', 'en': 'Expires'},
+    'add_to_library': {'nl': 'Toevoegen aan bibliotheek', 'en': 'Add to library'},
+    'library_exported': {'nl': '{} afleveringen geexporteerd naar bibliotheek', 'en': '{} episodes exported to library'},
+    'library_export_failed': {'nl': 'Bibliotheek export mislukt', 'en': 'Library export failed'},
 }
 
 
@@ -292,6 +296,12 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
             try:
                 cm_url = build_url(cm_query)
                 li.addContextMenuItems([(cm_label, f"RunPlugin({cm_url})")])
+            except Exception:
+                pass
+        if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
+            try:
+                cm_url = build_url({'mode': 'export_series_library', 'series_id': str(content_id)})
+                li.addContextMenuItems([(get_string('add_to_library'), f"RunPlugin({cm_url})")])
             except Exception:
                 pass
     except Exception:
@@ -760,32 +770,38 @@ def show_series_detail(series_id):
     else:
         for s in seasons:
             title = s.get('title') or f"{get_string('season')} {s.get('id')}"
-            add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id')}, is_folder=True)
+            add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id'), 'episodes_url': s.get('episodes_url') or ''}, is_folder=True)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def show_series_season(series_id, season_id):
-    if not series_id:
-        xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
-        return
+def _get_series_season_episodes(api, series_id, season_id=None, episodes_url=None, limit=400):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for faster episode loading
     try:
-        api = get_api_instance()
+        api = api or get_api_instance()
     except Exception:
         api = NLZietAPI(username=username, password=password)
     xbmc.log(f"NLZiet show_series_season: series_id={series_id} season_id={season_id}", xbmc.LOGDEBUG)
-    episodes = api.get_series_episodes(series_id, season_id=season_id or None, limit=400)
+    episodes = api.get_series_episodes(series_id, season_id=season_id or None, limit=limit)
     # If the API returned no episodes, but the `season_id` appears to be
     # an items/episodes URL, attempt to fetch items directly from that URL
     # (some detail payloads expose an `episodes_url` instead of numeric ids).
-    if not episodes and season_id and isinstance(season_id, str) and (season_id.startswith('http') or '/episodes' in season_id or 'items' in season_id):
+    fallback_url = episodes_url or season_id
+    if not episodes and fallback_url and isinstance(fallback_url, str) and (fallback_url.startswith('http') or '/episodes' in fallback_url or 'items' in fallback_url):
         try:
             xbmc.log(f"NLZiet attempting fallback get_items_from_url for season_id={season_id}", xbmc.LOGDEBUG)
-            episodes = api.get_items_from_url(season_id) or []
+            episodes = api.get_items_from_url(fallback_url) or []
         except Exception:
             episodes = []
+    return episodes or []
+
+
+def show_series_season(series_id, season_id, episodes_url=None):
+    if not series_id:
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    episodes = _get_series_season_episodes(None, series_id, season_id, episodes_url)
     if not episodes:
         xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
         return
@@ -897,6 +913,121 @@ def show_series_season(series_id, season_id):
 
         add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=ep)
     xbmcplugin.endOfDirectory(HANDLE)
+
+
+def _safe_filename(value):
+    value = re.sub(r'[\\/:*?"<>|]+', ' ', str(value or '')).strip()
+    return re.sub(r'\s+', ' ', value) or 'NLZiet'
+
+
+def _date_only(value):
+    if not value:
+        return None
+    try:
+        if isinstance(value, str) and 'T' in value:
+            return datetime.fromisoformat(value.replace('Z', '+00:00')).date().isoformat()
+        if isinstance(value, str) and re.match(r'^\d{4}-\d{2}-\d{2}$', value):
+            return value
+    except Exception:
+        pass
+    return None
+
+
+def _int_or(value, fallback):
+    try:
+        match = re.search(r'\d+', str(value))
+        return int(match.group(0)) if match else fallback
+    except Exception:
+        return fallback
+
+
+def _episode_airdate(ep):
+    raw = ep.get('raw') if isinstance(ep.get('raw'), dict) else {}
+    for value in (
+        ep.get('aired_date'), raw.get('firstBroadcast'), raw.get('broadcastAt'),
+        raw.get('broadcastDate'), ep.get('release_date'), ep.get('available_from'),
+    ):
+        date_value = _date_only(value)
+        if date_value:
+            return date_value
+    return None
+
+
+def _write_text(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+
+def export_series_library(series_id):
+    if not series_id:
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    try:
+        api = get_api_instance()
+        detail = api.get_series_detail(series_id) or {}
+        series_title = detail.get('title') or str(series_id)
+        episodes = []
+        seasons = detail.get('seasons') or []
+        if seasons:
+            for season_info in seasons:
+                episodes.extend(_get_series_season_episodes(
+                    api,
+                    series_id,
+                    season_info.get('id'),
+                    season_info.get('episodes_url'),
+                    limit=1000,
+                ))
+        else:
+            episodes = api.get_series_episodes(series_id, limit=1000) or []
+        if not episodes:
+            xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
+            return
+
+        base_dir = ADDON.getSetting('library_path') or '/storage/emulated/0/KodiNLZietLibrary/TV Shows'
+        show_dir = os.path.join(base_dir, _safe_filename(series_title))
+        _write_text(
+            os.path.join(show_dir, 'tvshow.nfo'),
+            '<tvshow>\n<title>{}</title>\n<plot>{}</plot>\n</tvshow>\n'.format(
+                escape(series_title), escape(detail.get('description') or '')
+            ),
+        )
+
+        dated = []
+        for ep in episodes:
+            airdate = _episode_airdate(ep)
+            dated.append((airdate or '9999-12-31', ep))
+        dated.sort(key=lambda item: (item[0], str(item[1].get('title') or item[1].get('subtitle') or '')))
+
+        per_season_count = {}
+        exported = 0
+        for airdate, ep in dated:
+            if not ep.get('id'):
+                continue
+            # ponytail: dated NLZiet exports use broadcast-year seasons; switch to API season IDs if NLZiet exposes stable TVDB-like numbering.
+            season = int(airdate[:4]) if airdate != '9999-12-31' else _int_or(ep.get('season_number'), 1)
+            per_season_count[season] = per_season_count.get(season, 0) + 1
+            episode_no = per_season_count[season] if airdate != '9999-12-31' else _int_or(ep.get('episode_number'), per_season_count[season])
+            title = ep.get('subtitle') or ep.get('title') or f"Episode {episode_no}"
+            filename = f"{_safe_filename(series_title)} S{season:04d}E{episode_no:02d}"
+            season_dir = os.path.join(show_dir, f"Season {season}")
+            strm_path = os.path.join(season_dir, filename + '.strm')
+            nfo_path = os.path.join(season_dir, filename + '.nfo')
+            plugin_url = 'plugin://{}?{}'.format(ADDON.getAddonInfo('id'), urllib.parse.urlencode({'mode': 'play', 'id': ep.get('id')}))
+            _write_text(strm_path, plugin_url + '\n')
+            _write_text(
+                nfo_path,
+                '<episodedetails>\n<title>{}</title>\n<showtitle>{}</showtitle>\n<season>{}</season>\n<episode>{}</episode>\n<aired>{}</aired>\n<plot>{}</plot>\n</episodedetails>\n'.format(
+                    escape(title), escape(series_title), season, episode_no,
+                    '' if airdate == '9999-12-31' else airdate,
+                    escape(ep.get('description') or ''),
+                ),
+            )
+            exported += 1
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_exported', exported), xbmcgui.NOTIFICATION_INFO)
+    except Exception as e:
+        xbmc.log(f"NLZiet library export failed for series={series_id}: {e}", xbmc.LOGERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_export_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
 def browse_tv_shows():
@@ -2884,7 +3015,9 @@ def router(paramstring):
     elif mode == 'series_detail':
         show_series_detail(params.get('series_id'))
     elif mode == 'series_season':
-        show_series_season(params.get('series_id'), params.get('season_id'))
+        show_series_season(params.get('series_id'), params.get('season_id'), params.get('episodes_url'))
+    elif mode == 'export_series_library':
+        export_series_library(params.get('series_id'))
     elif mode == 'placement_row':
         browse_placement_row(params.get('items_url'), params.get('placement_id'), params.get('comp_index'))
     elif mode == 'browse_tv_shows':
