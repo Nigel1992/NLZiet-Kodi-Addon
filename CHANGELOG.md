@@ -1,10 +1,18 @@
 # Changelog
 
-> **Latest Version:** v1.0.1 (April 20, 2026)
+> **Latest Version:** v1.0.2 (August 19, 2026)
 
 All notable changes to this project are recorded in this file.
 
 ## [Unreleased]
+
+## [1.0.2] - 2026-08-19
+
+### Fixed
+- **LibreELEC Compatibility**: Resolved `The dependency on script.module.charset-normalizer version 2.0.12 could not be satisfied` by bundling `charset-normalizer` 2.0.12 locally in `resources/lib/` instead of relying on the external `script.module.charset-normalizer` Kodi addon, which is not available in minimal distributions like LibreELEC. The same self-contained approach was applied to `certifi` to prevent similar installation failures.
+
+### Removed
+- External `script.module.charset-normalizer` and `script.module.certifi` dependencies from `addon.xml` — both libraries are now self-contained in the addon's `resources/lib/`.
 
 ## [1.0.1] - 2026-04-20
 

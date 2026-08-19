@@ -18,7 +18,8 @@ import json
 import time
 import xbmcaddon
 
-# Add local lib directory first so bundled urllib3 is found
+# Add local lib directory first so bundled urllib3, charset_normalizer, and
+# certifi are found before any system-installed script.module.* variants.
 local_lib_path = os.path.join(os.path.dirname(__file__))
 if local_lib_path not in sys.path:
     sys.path.insert(0, local_lib_path)
