@@ -2198,6 +2198,23 @@ class NLZietAPI:
                     pass
         return None
 
+    def _extract_date(self, src, keys):
+        """Return YYYY-MM-DD from the first usable timestamp in src."""
+        import datetime
+        try:
+            from zoneinfo import ZoneInfo
+        except ImportError:
+            from backports.zoneinfo import ZoneInfo
+
+        for key in keys:
+            value = src.get(key) if isinstance(src, dict) else None
+            parsed = self._parse_timestamp(value)
+            if parsed:
+                return datetime.datetime.fromtimestamp(parsed, tz=ZoneInfo('Europe/Amsterdam')).date().isoformat()
+            if isinstance(value, str) and re.match(r'^\d{4}-\d{2}-\d{2}$', value):
+                return value
+        return None
+
     def get_profiles(self):
         """Return list of profiles for the current account (requires an access token)."""
         try:
@@ -3257,12 +3274,13 @@ class NLZietAPI:
             with self._open_with_opener(self.opener, req, timeout=20) as r:
                 data = json.load(r)
 
+            content_container = data.get('content') if isinstance(data, dict) and isinstance(data.get('content'), dict) else {}
             # Attempt to extract title/description/thumb
-            title = data.get('title') or data.get('name') or ''
-            desc = data.get('description') or data.get('plot') or ''
+            title = data.get('title') or data.get('name') or content_container.get('title') or content_container.get('name') or ''
+            desc = data.get('description') or data.get('plot') or content_container.get('description') or content_container.get('plot') or ''
             thumb = None
             try:
-                img = data.get('posterUrl') or (data.get('image') or {})
+                img = data.get('posterUrl') or (data.get('image') or {}) or content_container.get('posterUrl') or (content_container.get('image') or {})
                 if isinstance(img, dict):
                     thumb = img.get('portraitUrl') or img.get('landscapeUrl') or img.get('posterUrl')
                 elif isinstance(img, str):
@@ -3273,7 +3291,6 @@ class NLZietAPI:
             # If the API embeds an explicit `content.seasons` list prefer that
             # structure: each entry typically contains a title and episodeCount.
             try:
-                content_container = data.get('content') if isinstance(data, dict) else None
                 if isinstance(content_container, dict):
                     cs = content_container.get('seasons') or content_container.get('seasonList') or None
                     if isinstance(cs, list) and cs:
@@ -3383,7 +3400,11 @@ class NLZietAPI:
         if not series_id:
             return []
         try:
-            params = {'limit': str(limit), 'offset': str(offset)}
+            # ponytail: NLZiet returns HTTP 400 above 400; add paging if a season ever exceeds this.
+            limit = min(int(limit or 400), 400)
+            params = {'limit': str(limit)}
+            if offset:
+                params['offset'] = str(offset)
             if season_id:
                 params['seasonId'] = season_id
             qs = urllib.parse.urlencode(params)
@@ -3465,7 +3486,12 @@ class NLZietAPI:
                 except Exception:
                     pass
 
-                # Release/availability timestamps
+                # Broadcast/release timestamps
+                aired_date = self._extract_date(src, (
+                    'firstBroadcast', 'broadcastAt', 'broadcastDate', 'aired',
+                    'episodeAired', 'firstAired', 'transmissionDate', 'premiere',
+                    'releaseDate', 'publishedAt', 'availableFrom',
+                ))
                 release_date = src.get('availableFrom') or src.get('releaseDate') or src.get('publishedAt') or None
                 available_from = src.get('availableFrom') or src.get('startAt') or None
                 available_to = src.get('availableTo') or src.get('endAt') or None
@@ -3587,6 +3613,7 @@ class NLZietAPI:
                     'season_title': locals().get('season_title', None),
                     'episode_number': episode_number,
                     'formatted_episode_numbering': formatted,
+                    'aired_date': aired_date,
                     'release_date': release_date,
                     'available_from': available_from,
                     'available_to': available_to,

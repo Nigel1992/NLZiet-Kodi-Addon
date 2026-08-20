@@ -94,6 +94,10 @@ msgctxt "#30135"
 msgid "Select channels to include in Kodi's TV section\nIt can take several hours before changes take effect."
 msgstr "Selecteer de zenders die je wilt opnemen in het TV sectie van Kodi\nHet kan enkele uren duren voordat de wijzigingen zijn doorgevoerd."
 
+msgctxt "#30136"
+msgid "NLZiet library path"
+msgstr "NLZiet bibliotheekpad"
+
 # -------------
 # Comon strings
 # -------------
