@@ -18,8 +18,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
-          # Dynamically grab the correct Node ID whether it's an issue or a comment
-          TARGET_NODE_ID: ${{ github.event.comment.node_id || github.event.issue.node_id }}
+          COMMENT_NODE_ID: ${{ github.event.comment.node_id }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -35,7 +35,7 @@ jobs:
           }')
 
           RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$GEMINI_API_KEY" \
-            -H "Content-Type: application/json" \
+            -H "Content-Type: json" \
             -d "$PAYLOAD")
 
           RESULT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty')
@@ -44,8 +44,8 @@ jobs:
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
             echo "Content flagged as a violation. Taking action..."
             
-            # Minimize/hide the comment or issue body using the correct Node ID
-            if [ -n "$TARGET_NODE_ID" ]; then
+            # If it's a specific comment, minimize it
+            if [ -n "$COMMENT_NODE_ID" ]; then
               gh api graphql -f query='
                 mutation($input: MinimizeCommentInput!) {
                   minimizeComment(input: $input) {
@@ -53,7 +53,10 @@ jobs:
                       isMinimized
                     }
                   }
-                }' -f input[subjectId]="$TARGET_NODE_ID" -f input[classifier]="ABUSE" || echo "Failed to minimize via GraphQL"
+                }' -f input[subjectId]="$COMMENT_NODE_ID" -f input[classifier]="ABUSE" || echo "Failed to minimize comment"
+            else
+              # If the violation is in the main issue body, lock the issue to stop further interaction
+              gh issue lock "$ISSUE_NUMBER" --reason "too heated" || echo "Failed to lock issue"
             fi
             
             # Post a warning reply
