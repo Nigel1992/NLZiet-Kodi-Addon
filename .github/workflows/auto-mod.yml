@@ -20,7 +20,6 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
           COMMENT_NODE_ID: ${{ github.event.comment.node_id }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_URL: ${{ github.event.issue.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SAFE_TEXT=$(echo "$COMMENT_BODY" | jq -aRs .)
@@ -35,7 +34,7 @@ jobs:
           }')
 
           RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$GEMINI_API_KEY" \
-            -H "Content-Type: json" \
+            -H "Content-Type: application/json" \
             -d "$PAYLOAD")
 
           RESULT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty')
@@ -44,8 +43,8 @@ jobs:
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
             echo "Content flagged as a violation. Taking action..."
             
-            # If it's a specific comment, minimize it. If it's an issue, lock it safely.
             if [ -n "$COMMENT_NODE_ID" ]; then
+              # IT'S A COMMENT: Minimize it and post a warning in the thread
               gh api graphql -f query='
                 mutation($input: MinimizeCommentInput!) {
                   minimizeComment(input: $input) {
@@ -54,11 +53,13 @@ jobs:
                     }
                   }
                 }' -f input[subjectId]="$COMMENT_NODE_ID" -f input[classifier]="ABUSE" || echo "Failed to minimize comment"
+                
+              gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "⚠️ **Moderation Notice:** A comment in this thread has been hidden automatically for violating community guidelines regarding personal attacks or condescension."
             else
-              # Added --repo context to prevent git directory errors
+              # IT'S AN ISSUE BODY: Post warning, close it, and lock it
+              gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "⚠️ **Moderation Notice:** This issue has been closed and locked automatically for violating community guidelines regarding personal attacks or condescension."
+              
+              gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason "not planned" || echo "Failed to close issue"
               gh issue lock "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason "too_heated" || echo "Failed to lock issue"
             fi
-            
-            # Post a warning reply (also explicitly passing the repo context)
-            gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "⚠️ **Moderation Notice:** This content has been flagged automatically for violating community guidelines regarding personal attacks or condescension."
           fi
