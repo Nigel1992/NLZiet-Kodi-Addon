@@ -1,26 +1,37 @@
-name: Gemini Content Moderator
+name: Comment Moderation Check
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 jobs:
   moderate:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      contents: read
+      pull-requests: write
+    
     steps:
-      - name: Run Gemini Moderator
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Moderation Check
         uses: google-github-actions/run-gemini-cli@v1
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
-          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           prompt: |
-            Analyze the following GitHub text for toxic behavior, hostile personal attacks, or harassment:
-            "${{ github.event.comment.body || github.event.issue.body }}"
+            Analyze the following text posted on GitHub.
             
-            CONTEXT: The repository owner openly acknowledges using AI to build this project. Neutral mentions, questions, or facts about AI being used are completely fine and must NOT be flagged.
+            CONTEXT: The repository owner openly acknowledges using AI to build this project. Simply mentioning that AI is used is fine.
             
-            If it contains a severe violation, output "FLAGGED". Otherwise, output "OK".
+            CRITERIA FOR FLAGGING: Flag the content if it contains:
+            1. Condescending remarks, dismissive language, or insults targeting the repository owner's intelligence, technical ability, or competence (e.g., claiming the developer "has no clue what they are doing" or belittling them by saying an AI does all the work).
+            2. Toxic, hostile language, personal insults, harassment, or malicious attacks.
+            
+            If it meets these criteria, reply strictly with: [FLAGGED] followed by a short reason. Otherwise, reply with: [OK].
+            
+            Text to analyze:
+            ${{ github.event.comment.body || github.event.issue.body }}
