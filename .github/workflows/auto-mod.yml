@@ -18,6 +18,9 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
+          COMMENT_NODE_ID: ${{ github.event.comment.node_id }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SAFE_TEXT=$(echo "$COMMENT_BODY" | jq -aRs .)
           
@@ -34,11 +37,24 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
 
-          echo "Gemini Response: $RESPONSE"
-          
           RESULT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty')
           echo "Result: $RESULT"
           
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
-            echo "Content flagged as a violation."
+            echo "Content flagged as a violation. Taking action..."
+            
+            # If it's a comment, hide it as abusive/off-topic using GitHub CLI
+            if [ -n "$COMMENT_NODE_ID" ]; then
+              gh api graphql -f query='
+                mutation($input: MinimizeCommentInput!) {
+                  minimizeComment(input: $input) {
+                    minimizedComment {
+                      isMinimized
+                    }
+                  }
+                }' -f input[subjectId]="$COMMENT_NODE_ID" -f input[classifier]="ABUSE"
+            fi
+            
+            # Optional: Post a reply warning about the violation
+            gh issue comment "$ISSUE_URL" --body "⚠️ **Moderation Notice:** This comment has been flagged automatically for violating community guidelines regarding personal attacks or condescension."
           fi
