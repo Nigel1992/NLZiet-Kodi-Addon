@@ -14,24 +14,34 @@ jobs:
       pull-requests: write
     
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Run Moderation Check
-        uses: google-github-actions/run-gemini-cli@v1
+      - name: Analyze with Gemini API
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        with:
-          prompt: |
-            Analyze the following text posted on GitHub.
-            
-            CONTEXT: The repository owner openly acknowledges using AI to build this project. Simply mentioning that AI is used is fine.
-            
-            CRITERIA FOR FLAGGING: Flag the content if it contains:
-            1. Condescending remarks, dismissive language, or insults targeting the repository owner's intelligence, technical ability, or competence (e.g., claiming the developer "has no clue what they are doing" or belittling them by saying an AI does all the work).
-            2. Toxic, hostile language, personal insults, harassment, or malicious attacks.
-            
-            If it meets these criteria, reply strictly with: [FLAGGED] followed by a short reason. Otherwise, reply with: [OK].
-            
-            Text to analyze:
-            ${{ github.event.comment.body || github.event.issue.body }}
+          COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
+        run: |
+          # Escape quotes safely for JSON payload
+          SAFE_TEXT=$(echo "$COMMENT_BODY" | jq -aRs .)
+          
+          PROMPT="Analyze the following text posted on GitHub. 
+          CONTEXT: The repository owner openly acknowledges using AI to build this project. Simply mentioning that AI is used is fine. 
+          CRITERIA FOR FLAGGING: Flag if it contains: 1. Condescending remarks, dismissive language, or insults targeting the developer's competence (e.g., claiming the developer has no clue what they are doing or belittling them by saying an AI does all the work). 2. Toxic or hostile personal attacks. 
+          If it meets these criteria, reply strictly with [FLAGGED]. Otherwise, reply with [OK]. Text: $SAFE_TEXT"
+
+          PAYLOAD=$(jq -n --arg prompt "$PROMPT" '{
+            contents: [{ parts: [{ text: $prompt }] }]
+          }')
+
+          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          echo "Gemini Response: $RESPONSE"
+          
+          # Extract text output and check for FLAGGED
+          RESULT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty')
+          echo "Result: $RESULT"
+          
+          if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
+            echo "Content flagged as a violation."
+            # Add handling here (e.g., add label, hide comment, etc.)
+          fi
