@@ -30,8 +30,7 @@ jobs:
             contents: [{ parts: [{ text: $prompt }] }]
           }')
 
-          # Updated endpoint model to gemini-2.5-flash
-          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY" \
+          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$GEMINI_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
 
