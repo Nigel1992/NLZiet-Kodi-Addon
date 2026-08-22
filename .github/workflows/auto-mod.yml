@@ -18,7 +18,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
-          COMMENT_NODE_ID: ${{ github.event.comment.node_id }}
+          # Dynamically grab the correct Node ID whether it's an issue or a comment
+          TARGET_NODE_ID: ${{ github.event.comment.node_id || github.event.issue.node_id }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -43,8 +44,8 @@ jobs:
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
             echo "Content flagged as a violation. Taking action..."
             
-            # If it's a comment, hide it as abusive/off-topic using GitHub CLI
-            if [ -n "$COMMENT_NODE_ID" ]; then
+            # Minimize/hide the comment or issue body using the correct Node ID
+            if [ -n "$TARGET_NODE_ID" ]; then
               gh api graphql -f query='
                 mutation($input: MinimizeCommentInput!) {
                   minimizeComment(input: $input) {
@@ -52,9 +53,9 @@ jobs:
                       isMinimized
                     }
                   }
-                }' -f input[subjectId]="$COMMENT_NODE_ID" -f input[classifier]="ABUSE"
+                }' -f input[subjectId]="$TARGET_NODE_ID" -f input[classifier]="ABUSE" || echo "Failed to minimize via GraphQL"
             fi
             
-            # Optional: Post a reply warning about the violation
-            gh issue comment "$ISSUE_URL" --body "⚠️ **Moderation Notice:** This comment has been flagged automatically for violating community guidelines regarding personal attacks or condescension."
+            # Post a warning reply
+            gh issue comment "$ISSUE_URL" --body "⚠️ **Moderation Notice:** This content has been flagged automatically for violating community guidelines regarding personal attacks or condescension."
           fi
