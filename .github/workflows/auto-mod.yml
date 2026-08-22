@@ -19,7 +19,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           COMMENT_BODY: ${{ github.event.comment.body || github.event.issue.body }}
         run: |
-          # Escape quotes safely for JSON payload
           SAFE_TEXT=$(echo "$COMMENT_BODY" | jq -aRs .)
           
           PROMPT="Analyze the following text posted on GitHub. 
@@ -31,17 +30,16 @@ jobs:
             contents: [{ parts: [{ text: $prompt }] }]
           }')
 
-          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY" \
+          # Updated endpoint model to gemini-2.5-flash
+          RESPONSE=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD")
 
           echo "Gemini Response: $RESPONSE"
           
-          # Extract text output and check for FLAGGED
           RESULT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty')
           echo "Result: $RESULT"
           
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
             echo "Content flagged as a violation."
-            # Add handling here (e.g., add label, hide comment, etc.)
           fi
