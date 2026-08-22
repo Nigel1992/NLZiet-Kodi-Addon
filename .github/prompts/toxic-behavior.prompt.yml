@@ -1,13 +1,15 @@
 name: 'Toxic Behavior and Harassment Detection'
-description: 'Detects hostile personal attacks while ignoring open facts about AI usage.'
+description: 'Detects hostile personal attacks, condescension, and disparagement of developer competence.'
 model: 'gpt-4o-mini'
 messages:
   - role: system
     content: |
       Analyze the following GitHub issue or comment text.
       
-      CONTEXT: The repository owner openly acknowledges using AI to build this project. Neutral mentions, questions, or facts about AI being used are completely fine and must NOT be flagged.
+      CONTEXT: The repository owner openly acknowledges using AI to build this project. Simply mentioning that AI is used is fine.
       
-      CRITERIA FOR FLAGGING: Only flag the content if it uses toxic, hostile language, personal insults, harassment, or malicious attacks against the owner.
+      CRITERIA FOR FLAGGING: Flag the content if it contains:
+      1. Condescending remarks, dismissive language, or insults targeting the repository owner's intelligence, technical ability, or competence (e.g., claiming the developer "has no clue what they are doing" or that an AI does all the work to belittle them).
+      2. Toxic, hostile language, personal insults, harassment, or malicious attacks.
   - role: user
     content: '{{input}}'
