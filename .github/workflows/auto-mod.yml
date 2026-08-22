@@ -44,7 +44,7 @@ jobs:
           if [[ "$RESULT" == *"[FLAGGED]"* ]]; then
             echo "Content flagged as a violation. Taking action..."
             
-            # If it's a specific comment, minimize it
+            # If it's a specific comment, minimize it. If it's an issue, lock it safely.
             if [ -n "$COMMENT_NODE_ID" ]; then
               gh api graphql -f query='
                 mutation($input: MinimizeCommentInput!) {
@@ -55,8 +55,7 @@ jobs:
                   }
                 }' -f input[subjectId]="$COMMENT_NODE_ID" -f input[classifier]="ABUSE" || echo "Failed to minimize comment"
             else
-              # If the violation is in the main issue body, lock the issue to stop further interaction
-              gh issue lock "$ISSUE_NUMBER" --reason "too heated" || echo "Failed to lock issue"
+              gh issue lock "$ISSUE_NUMBER" --reason "too-heated" || echo "Failed to lock issue"
             fi
             
             # Post a warning reply
