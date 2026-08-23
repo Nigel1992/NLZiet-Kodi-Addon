@@ -9,6 +9,7 @@ class Recorder:
         self.set_content = []
         self.ended = []
         self.notifications = []
+        self.executed = []
 
     def reset(self):
         self.__init__()
@@ -48,6 +49,11 @@ def kodi_recorder():
     return RECORDER
 
 
+@pytest.fixture
+def fake_addon():
+    return FakeAddon()
+
+
 def _install_kodi_stubs():
     xbmc = types.ModuleType('xbmc')
     xbmc.LOGDEBUG = 0
@@ -56,7 +62,7 @@ def _install_kodi_stubs():
     xbmc.LOGERROR = 3
     xbmc.translatePath = lambda path: path
     xbmc.log = lambda *args, **kwargs: None
-    xbmc.executebuiltin = lambda *args, **kwargs: None
+    xbmc.executebuiltin = lambda command: RECORDER.executed.append(command)
     xbmc.Player = type('Player', (), {})
 
     xbmcgui = types.ModuleType('xbmcgui')
