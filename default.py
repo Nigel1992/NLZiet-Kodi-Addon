@@ -17,6 +17,8 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 from resources.lib.nlziet_api import NLZietAPI
+from resources.lib.app_context import AddonContext
+from resources.lib.router import Router
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -2977,75 +2979,43 @@ def select_iptv_channels():
     save_enabled_channels(api, enabled_channels)
 
 
+def get_route_handlers():
+    return {
+        'main_menu': main_menu,
+        'do_login': do_login,
+        'do_search': do_search,
+        'manage_profiles': manage_profiles,
+        'browse_my_list': browse_my_list,
+        'browse_my_list_group': browse_my_list_group,
+        'toggle_mylist': toggle_mylist,
+        'select_profile': select_profile,
+        'apply_profile': apply_profile,
+        'browse_series': browse_series,
+        'do_logout': do_logout,
+        'confirm_logout': confirm_logout,
+        'refresh_account_info': refresh_account_info,
+        'search_group': search_group,
+        'show_series_detail': show_series_detail,
+        'show_series_season': show_series_season,
+        'export_series_library': export_series_library,
+        'browse_placement_row': browse_placement_row,
+        'browse_tv_shows': browse_tv_shows,
+        'browse_tv_genre': browse_tv_genre,
+        'browse_series_categories': browse_series_categories,
+        'browse_series_genre': browse_series_genre,
+        'browse_movie_categories': browse_movie_categories,
+        'browse_movie_genre': browse_movie_genre,
+        'browse_category': browse_category,
+        'play_item': play_item,
+        'select_iptv_channels': select_iptv_channels,
+    }
+
+
 def router(paramstring):
-    params = dict(urllib.parse.parse_qsl(paramstring))
-    mode = params.get('mode')
-    if mode and mode not in ('profiles'):
-        xbmcplugin.setContent(HANDLE, 'videos')
-    if not mode:
-        main_menu()
-    elif mode == 'login':
-        do_login()
-    elif mode == 'search':
-        do_search()
-    elif mode == 'profiles':
-        manage_profiles()
-    elif mode == 'my_list':
-        browse_my_list()
-    elif mode == 'my_list_group':
-        browse_my_list_group(params.get('group'))
-    elif mode == 'toggle_mylist':
-        toggle_mylist(params.get('id'), params.get('title'), params.get('type'), params.get('thumb'))
-    elif mode == 'select_profile':
-        select_profile(params.get('profile_id'))
-    elif mode == 'apply_profile':
-        apply_profile()
-    elif mode == 'series':
-        browse_series()
-    elif mode == 'logout':
-        do_logout()
-    elif mode == 'logout_keep_mylist':
-        do_logout(keep_mylist=True)
-    elif mode == 'logout_confirm':
-        confirm_logout()
-    elif mode == 'account_summary':
-        refresh_account_info()
-    elif mode == 'search_group':
-        search_group(params.get('q'), params.get('group'))
-    elif mode == 'series_detail':
-        show_series_detail(params.get('series_id'))
-    elif mode == 'series_season':
-        show_series_season(params.get('series_id'), params.get('season_id'), params.get('episodes_url'))
-    elif mode == 'export_series_library':
-        export_series_library(params.get('series_id'))
-    elif mode == 'placement_row':
-        browse_placement_row(params.get('items_url'), params.get('placement_id'), params.get('comp_index'))
-    elif mode == 'browse_tv_shows':
-        browse_tv_shows()
-    elif mode == 'browse_tv_genre':
-        browse_tv_genre(params.get('genre'))
-    elif mode == 'browse_series_categories':
-        browse_series_categories()
-    elif mode == 'browse_series_genre':
-        browse_series_genre(params.get('genre'))
-    elif mode == 'browse_movie_categories':
-        browse_movie_categories()
-    elif mode == 'browse_movie_genre':
-        browse_movie_genre(params.get('genre'))
-    elif mode == 'browse':
-        browse_category(params.get('type', 'all'))
-    elif mode == 'play':
-        content_id = params.pop('id')
-        play_item(content_id, **params)
-    elif mode == 'iptv-select-channels':
-        select_iptv_channels()
-    elif mode == 'iptv-channels':
-        from resources.lib import iptvmgr
-        iptvmgr.IPTVManager(int(params['port'])).send_channels()
-    elif mode == 'iptv.epg':
-        from resources.lib import iptvmgr
-        iptvmgr.IPTVManager(int(params['port'])).send_epg()
+    context = AddonContext(ADDON, HANDLE, BASE_URL, paramstring)
+    Router(context, get_route_handlers()).dispatch(paramstring)
 
 
 if __name__ == '__main__':
-    router(sys.argv[2][1:] if len(sys.argv) > 2 else '')
+    context = AddonContext.from_kodi()
+    Router(context, get_route_handlers()).dispatch()
