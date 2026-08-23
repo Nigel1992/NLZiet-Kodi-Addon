@@ -17,6 +17,9 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 from resources.lib.nlziet_api import NLZietAPI
+from resources.lib.app_context import AddonContext
+from resources.lib.kodi import ui as kodi_ui
+from resources.lib.router import Router
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -197,116 +200,26 @@ def _make_color_tag(color_raw, text):
     variants; if the skin ignores color tags, we also prefix label2 with an
     emoji marker as a fallback (see code below).
     """
-    if not color_raw:
-        return f"[COLOR FFA500]{text}[/COLOR]"
-    return f"[COLOR {color_raw}]{text}[/COLOR]"
+    return kodi_ui.make_color_tag(color_raw, text)
 
 
 def build_url(query):
-    return BASE_URL + '?' + urllib.parse.urlencode(query)
+    return kodi_ui.build_url(BASE_URL, query)
 
 
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
-    url = build_url(query)
-    li = xbmcgui.ListItem(label=title, offscreen=True)
-    
-    # Set background image on each item for skin display
-    try:
-        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ADDON.getAddonInfo('path') or ''
-        background_path = os.path.join(addon_path, 'resources', 'media', 'background.jpg')
-        if os.path.exists(background_path):
-            li.setArt({'fanart': background_path})
-    except Exception:
-        pass
-    
-    if thumb or content:
-        # Use smart artwork assignment to respect aspect ratios
-        # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
-        _set_smart_artwork(li, content, thumb=thumb)
-    
-    # For live TV (fmt='live'), display EPG without context menu options
-    is_live = isinstance(query, dict) and query.get('fmt') == 'live'
-    
-    if info:
-        if is_live:
-            # For live TV, set video info to display EPG, but don't track resume points
-            # Clear any bookmark/resume data so context menu doesn't appear
-            info_copy = info.copy()
-            info_copy.pop('resume', None)  # Remove any resume position
-            li.setInfo('video', info_copy)
-        else:
-            # For on-demand content, set full video info (allows resume functionality)
-            li.setInfo('video', info)
-            try:
-                short = info.get('plotoutline') or info.get('plot') or ''
-                if short:
-                    li.setLabel2(short)
-            except Exception:
-                pass
-    # mark non-folder items as playable so Enter/Select triggers playback
-    if not is_folder:
-        li.setProperty('IsPlayable', 'true')
-    
-    # For live TV, prevent Kodi from showing resume/playback context menu
-    if is_live:
-        li.setProperty('ResumeTime', '0')
-        li.setProperty('TotalTime', '3600')
-        li.setProperty('IsLive', 'true')  # Mark as live for skin awareness
-    # Add context-menu entry for My List when we can determine a content id
-    try:
-        content_id = None
-        content_type = None
-        # Prefer explicit content dict when provided
-        if content and isinstance(content, dict):
-            content_id = content.get('id') or content.get('contentId') or content.get('content_id') or content.get('seriesId') or content.get('movieId') or content.get('assetId')
-            content_type = content.get('type') or content.get('contentType') or None
-        # Fallback: inspect the query params for common id keys
-        if not content_id and isinstance(query, dict):
-            for k in ('id', 'series_id', 'seriesId', 'movieId', 'contentId', 'content_id'):
-                if k in query and query.get(k):
-                    content_id = query.get(k)
-                    break
-        # Only allow My List for top-level Series or Movies (no Seasons/Episodes)
-        allow_mylist = False
-        if content and isinstance(content, dict):
-            ctype = (content_type or '')
-            ctype_l = (str(ctype).lower() if ctype else '')
-            if any(x in ctype_l for x in ('series', 'tvshow', 'movie', 'film')):
-                allow_mylist = True
-        elif isinstance(query, dict):
-            mode = (query.get('mode') or '').lower()
-            # treat explicit series_detail as a series entry
-            if mode == 'series_detail' and (query.get('series_id') or query.get('seriesId')):
-                allow_mylist = True
-
-        if allow_mylist and content_id:
-            try:
-                # Use cached API instance instead of creating new ones for every item
-                api_tmp = get_api_instance()
-                in_list = api_tmp.is_in_my_list(content_id)
-            except Exception:
-                in_list = False
-
-            cm_label = 'Remove from My List' if in_list else 'Add to My List'
-            cm_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
-            if content_type:
-                cm_query['type'] = content_type
-            if thumb:
-                cm_query['thumb'] = thumb
-            try:
-                cm_url = build_url(cm_query)
-                li.addContextMenuItems([(cm_label, f"RunPlugin({cm_url})")])
-            except Exception:
-                pass
-        if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
-            try:
-                cm_url = build_url({'mode': 'export_series_library', 'series_id': str(content_id)})
-                li.addContextMenuItems([(get_string('add_to_library'), f"RunPlugin({cm_url})")])
-            except Exception:
-                pass
-    except Exception:
-        pass
-    xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=is_folder)
+    return kodi_ui.add_directory_item(
+        ADDON,
+        HANDLE,
+        build_url,
+        get_api_instance,
+        title,
+        query,
+        is_folder=is_folder,
+        thumb=thumb,
+        info=info,
+        content=content,
+    )
 
 
 def _optimize_image_url(url):
@@ -321,18 +234,7 @@ def _optimize_image_url(url):
     Returns:
         Optimized URL requesting higher-resolution image
     """
-    if not url or not isinstance(url, str):
-        return url
-    
-    # Remove any existing width/crop parameters
-    if '?' in url:
-        url = url.split('?')[0]
-    
-    # Request a much larger width for fanart (3840px = 4K width)
-    # This ensures crisp display even on large screens
-    url = url + '?width=3840'
-    
-    return url
+    return kodi_ui.optimize_image_url(url)
 
 
 def _pick_landscape_thumb(src):
@@ -342,47 +244,7 @@ def _pick_landscape_thumb(src):
     explicit landscape keys, then common wide/hero/poster keys, and finally
     falls back to any url-like string found on the object.
     """
-    if not src:
-        return None
-    if isinstance(src, str):
-        return _optimize_image_url(src)
-    try:
-        # Prefer explicit landscape / wide keys first
-        for k in ('landscapeUrl', 'landscape', 'thumbnailLandscape', 'thumbnail_landscape', 'posterLandscape', 'poster_landscape', 'heroImage', 'heroImageUrl', 'widePosterUrl'):
-            v = src.get(k)
-            if isinstance(v, str) and v:
-                return _optimize_image_url(v)
-
-        # Common poster/thumbnail fields (posterUrl may be portrait but is a useful fallback)
-        for k in ('posterUrl', 'poster', 'thumbnail', 'thumb'):
-            v = src.get(k)
-            if isinstance(v, str) and v:
-                return _optimize_image_url(v)
-
-        # Check nested image dicts for landscape keys
-        for img_key in ('image', 'images'):
-            img = src.get(img_key)
-            if isinstance(img, dict):
-                for k in ('landscapeUrl', 'landscape', 'landscape_url', 'wide', 'wideUrl', 'large', 'largeUrl', 'posterUrl', 'thumbnail', 'thumb'):
-                    v = img.get(k)
-                    if isinstance(v, str) and v:
-                        return _optimize_image_url(v)
-                for kk, vv in img.items():
-                    if isinstance(kk, str) and 'landscape' in kk.lower() and isinstance(vv, str) and vv:
-                        return vv
-
-        # Any key name containing 'landscape' on the top-level
-        for kk, vv in src.items():
-            if isinstance(kk, str) and 'landscape' in kk.lower() and isinstance(vv, str) and vv:
-                return _optimize_image_url(vv)
-
-        # As a final fallback, return any url-like string value
-        for vv in src.values():
-            if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
-                return _optimize_image_url(vv)
-    except Exception:
-        pass
-    return None
+    return kodi_ui.pick_landscape_thumb(src)
 
 
 def _pick_portrait_thumb(src):
@@ -391,31 +253,7 @@ def _pick_portrait_thumb(src):
     Portrait images are typically 2:3 aspect ratio (posters/covers).
     Prefers explicit portrait keys, then falls back to landscape or generic thumbnails.
     """
-    if not src:
-        return None
-    if isinstance(src, str):
-        return _optimize_image_url(src)
-    try:
-        # Prefer explicit portrait / tall keys first
-        for k in ('portraitUrl', 'portrait', 'posterUrl', 'poster', 'thumbnailPortrait', 'thumbnail_portrait', 'coverUrl', 'cover'):
-            v = src.get(k)
-            if isinstance(v, str) and v:
-                return _optimize_image_url(v)
-        # Check nested image dicts for portrait keys
-        for img_key in ('image', 'images'):
-            img = src.get(img_key)
-            if isinstance(img, dict):
-                for k in ('portraitUrl', 'portrait', 'portrait_url', 'posterUrl', 'poster', 'coverUrl', 'cover', 'thumbnail', 'thumb'):
-                    v = img.get(k)
-                    if isinstance(v, str) and v:
-                        return _optimize_image_url(v)
-        # Fallback to any image URL
-        for vv in src.values():
-            if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
-                return _optimize_image_url(vv)
-    except Exception:
-        pass
-    return None
+    return kodi_ui.pick_portrait_thumb(src)
 
 
 def _set_smart_artwork(li, src, thumb=None):
@@ -431,58 +269,7 @@ def _set_smart_artwork(li, src, thumb=None):
         src: Content dict (to extract multiple image URLs)
         thumb: Fallback single image URL if src doesn't provide multiple images
     """
-    if not thumb and not src:
-        return
-    
-    # Extract different image types from content object
-    landscape_img = None
-    portrait_img = None
-    
-    if src and isinstance(src, dict):
-        landscape_img = _pick_landscape_thumb(src)
-        portrait_img = _pick_portrait_thumb(src)
-    
-    # Fallback: use provided thumb for both if we don't have separate images
-    if not landscape_img and not portrait_img:
-        landscape_img = thumb
-        portrait_img = thumb
-    elif not landscape_img:
-        landscape_img = portrait_img
-    elif not portrait_img:
-        portrait_img = landscape_img
-    
-    # Build artwork dict with proper aspect ratio handling
-    art = {}
-    
-    # Landscape images work best for fanart (16:9 aspect ratio)
-    if landscape_img:
-        art['fanart'] = landscape_img
-        art['landscape'] = landscape_img
-    
-    # Portrait images for poster art (2:3 aspect ratio)
-    if portrait_img:
-        art['poster'] = portrait_img
-    
-    # Use landscape for thumb/icon with aspect ratio preservation
-    # Kodi will letterbox/pillarbox to fit rather than stretch
-    if landscape_img:
-        art['thumb'] = landscape_img
-        art['icon'] = landscape_img
-    elif portrait_img:
-        art['thumb'] = portrait_img
-        art['icon'] = portrait_img
-    
-    # Apply artwork with fallback for older Kodi versions
-    if art:
-        try:
-            li.setArt(art)
-        except Exception:
-            # Fallback: try simple thumb/icon only
-            try:
-                if landscape_img:
-                    li.setArt({'thumb': landscape_img, 'icon': landscape_img})
-            except Exception:
-                pass
+    return kodi_ui.set_smart_artwork(li, src, thumb=thumb)
 
 
 def _is_logged_in():
@@ -553,28 +340,11 @@ def main_menu():
 
     # prefer png then svg then fallback to addon's icon.png
     def _pick_icon(name):
-        candidates = [
-            os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png'),
-            os.path.join(addon_path, 'resources', 'media', f'menu_{name}.svg'),
-            os.path.join(addon_path, 'icon.png'),
-        ]
-        for c in candidates:
-            try:
-                if c and os.path.exists(c):
-                    return c
-            except Exception:
-                continue
-        return None
+        return kodi_ui.pick_menu_icon(addon_path, name)
 
     # Explicit PNG-first picker (prefer exact menu_{name}.png when available)
     def _pick_png(name):
-        try:
-            png = os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')
-            if png and os.path.exists(png):
-                return png
-        except Exception:
-            pass
-        return _pick_icon(name)
+        return kodi_ui.pick_menu_png(addon_path, name)
 
     # Start background refresh of account info (silent) on addon launch
     try:
@@ -2977,75 +2747,43 @@ def select_iptv_channels():
     save_enabled_channels(api, enabled_channels)
 
 
+def get_route_handlers():
+    return {
+        'main_menu': main_menu,
+        'do_login': do_login,
+        'do_search': do_search,
+        'manage_profiles': manage_profiles,
+        'browse_my_list': browse_my_list,
+        'browse_my_list_group': browse_my_list_group,
+        'toggle_mylist': toggle_mylist,
+        'select_profile': select_profile,
+        'apply_profile': apply_profile,
+        'browse_series': browse_series,
+        'do_logout': do_logout,
+        'confirm_logout': confirm_logout,
+        'refresh_account_info': refresh_account_info,
+        'search_group': search_group,
+        'show_series_detail': show_series_detail,
+        'show_series_season': show_series_season,
+        'export_series_library': export_series_library,
+        'browse_placement_row': browse_placement_row,
+        'browse_tv_shows': browse_tv_shows,
+        'browse_tv_genre': browse_tv_genre,
+        'browse_series_categories': browse_series_categories,
+        'browse_series_genre': browse_series_genre,
+        'browse_movie_categories': browse_movie_categories,
+        'browse_movie_genre': browse_movie_genre,
+        'browse_category': browse_category,
+        'play_item': play_item,
+        'select_iptv_channels': select_iptv_channels,
+    }
+
+
 def router(paramstring):
-    params = dict(urllib.parse.parse_qsl(paramstring))
-    mode = params.get('mode')
-    if mode and mode not in ('profiles'):
-        xbmcplugin.setContent(HANDLE, 'videos')
-    if not mode:
-        main_menu()
-    elif mode == 'login':
-        do_login()
-    elif mode == 'search':
-        do_search()
-    elif mode == 'profiles':
-        manage_profiles()
-    elif mode == 'my_list':
-        browse_my_list()
-    elif mode == 'my_list_group':
-        browse_my_list_group(params.get('group'))
-    elif mode == 'toggle_mylist':
-        toggle_mylist(params.get('id'), params.get('title'), params.get('type'), params.get('thumb'))
-    elif mode == 'select_profile':
-        select_profile(params.get('profile_id'))
-    elif mode == 'apply_profile':
-        apply_profile()
-    elif mode == 'series':
-        browse_series()
-    elif mode == 'logout':
-        do_logout()
-    elif mode == 'logout_keep_mylist':
-        do_logout(keep_mylist=True)
-    elif mode == 'logout_confirm':
-        confirm_logout()
-    elif mode == 'account_summary':
-        refresh_account_info()
-    elif mode == 'search_group':
-        search_group(params.get('q'), params.get('group'))
-    elif mode == 'series_detail':
-        show_series_detail(params.get('series_id'))
-    elif mode == 'series_season':
-        show_series_season(params.get('series_id'), params.get('season_id'), params.get('episodes_url'))
-    elif mode == 'export_series_library':
-        export_series_library(params.get('series_id'))
-    elif mode == 'placement_row':
-        browse_placement_row(params.get('items_url'), params.get('placement_id'), params.get('comp_index'))
-    elif mode == 'browse_tv_shows':
-        browse_tv_shows()
-    elif mode == 'browse_tv_genre':
-        browse_tv_genre(params.get('genre'))
-    elif mode == 'browse_series_categories':
-        browse_series_categories()
-    elif mode == 'browse_series_genre':
-        browse_series_genre(params.get('genre'))
-    elif mode == 'browse_movie_categories':
-        browse_movie_categories()
-    elif mode == 'browse_movie_genre':
-        browse_movie_genre(params.get('genre'))
-    elif mode == 'browse':
-        browse_category(params.get('type', 'all'))
-    elif mode == 'play':
-        content_id = params.pop('id')
-        play_item(content_id, **params)
-    elif mode == 'iptv-select-channels':
-        select_iptv_channels()
-    elif mode == 'iptv-channels':
-        from resources.lib import iptvmgr
-        iptvmgr.IPTVManager(int(params['port'])).send_channels()
-    elif mode == 'iptv.epg':
-        from resources.lib import iptvmgr
-        iptvmgr.IPTVManager(int(params['port'])).send_epg()
+    context = AddonContext(ADDON, HANDLE, BASE_URL, paramstring)
+    Router(context, get_route_handlers()).dispatch(paramstring)
 
 
 if __name__ == '__main__':
-    router(sys.argv[2][1:] if len(sys.argv) > 2 else '')
+    context = AddonContext.from_kodi()
+    Router(context, get_route_handlers()).dispatch()
