@@ -20,7 +20,7 @@ def _import_default(monkeypatch):
         ('mode=my_list_group&group=Movies', 'browse_my_list_group', ('Movies',), True),
         ('mode=toggle_mylist&id=m1&title=Movie&type=movie&thumb=poster', 'toggle_mylist', ('m1', 'Movie', 'movie', 'poster'), True),
         ('mode=select_profile&profile_id=p1', 'select_profile', ('p1',), True),
-        ('mode=series_season&series_id=s1&season_id=2', 'show_series_season', ('s1', '2'), True),
+        ('mode=series_season&series_id=s1&season_id=2', 'show_series_season', ('s1', '2', None, None, None), True),
         ('mode=placement_row&items_url=https%3A%2F%2Fexample.test%2Fitems&placement_id=pl&comp_index=3', 'browse_placement_row', ('https://example.test/items', 'pl', '3'), True),
         ('mode=browse&type=documentary', 'browse_category', ('documentary',), True),
         ('mode=search_group&q=space+query&group=Movies', 'search_group', ('space query', 'Movies'), True),

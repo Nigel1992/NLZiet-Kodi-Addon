@@ -1,10 +1,28 @@
 # Changelog
 
-> **Latest Version:** v1.0.2 (August 19, 2026)
+> **Latest Version:** v1.0.3 (August 24, 2026)
 
 All notable changes to this project are recorded in this file.
 
 ## [Unreleased]
+
+## [1.0.3] - 2026-08-24
+
+### Added
+- **Official Trakt Scrobbling Compatibility**: On-demand movies and episodes now publish Kodi playback metadata used by `script.trakt`, including media type, title, series title, season/episode numbers, and release year when available.
+- Library-exported episode `.strm` URLs now retain the same Trakt-compatible metadata during playback.
+- Playback-time metadata recovery for cached or legacy Kodi URLs that contain only an NLZiet content ID.
+- Movie title/year resolution and named-episode matching through the installed official Trakt add-on when NLZiet metadata is incomplete or uses a different episode order.
+
+### Fixed
+- Live NLZiet channels are explicitly excluded from Trakt scrobbling so broadcasts cannot be misidentified as on-demand content.
+- NLZiet broadcast and availability dates are no longer treated as movie release years or TV-series production years.
+- Series titles and season numbers now survive season navigation and library export.
+- Missing episode numbers can be inferred from adjacent numbered entries in the same newest-first NLZiet season list.
+
+### Notes
+- The official Kodi `script.trakt` add-on must be installed, authorized, enabled, and configured to allow HTTP/plugin playback scrobbling.
+- Entries whose only episode label is `Afl. N` cannot always be translated when NLZiet and Trakt use different season orders; named episodes are matched against Trakt's canonical order.
 
 ## [1.0.2] - 2026-08-19
 
@@ -234,4 +252,3 @@ See the GitHub Releases page for binary releases and tags: https://github.com/Ni
 - Various UI and parsing improvements: thumbnail selection, expiry formatting, and defensive API parsing.
 
 ----
-

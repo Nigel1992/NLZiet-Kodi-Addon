@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.0.2 — 2026-08-19. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.0.3 — 2026-08-24. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -29,8 +29,21 @@
 - **Placement Rows**: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
 - **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
 - **Search**: Find series, movies, and episodes by title.
+- **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion. The Trakt add-on must be installed and authorized separately.
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Debug Logging**: Easy log collection for troubleshooting.
+
+---
+### New in v1.0.3
+
+- Added verified scrobbling for NLZiet movies and TV episodes through the official Kodi `script.trakt` add-on.
+- Added playback-time Trakt metadata recovery when NLZiet omits a movie release year or a cached Kodi URL lacks episode details.
+- Added canonical Trakt matching for named episodes when NLZiet and Trakt use different season/episode orders.
+- Preserved series, season, episode, and title metadata in exported `.strm` library entries.
+- Prevented broadcast/availability dates from being used as production years.
+- Excluded live channels from Trakt scrobbling.
+
+> **Episode-title limitation:** Some broadcasters provide only a generic label such as `Afl. 61`. If that broadcaster's season order differs from Trakt and no original episode title is supplied, the episode cannot be matched safely.
 
 ---
 ### New in v1.0.0
@@ -120,8 +133,9 @@ Coming soon...
 
 1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 2. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded zip.
-3. Configure your NLZiet credentials in the add-on settings.
-4. (Optional) Install `inputstream.adaptive` for DRM playback. The addon will verify installation automatically via `inputstreamhelper`.
+3. Open the add-on and use **Inloggen** to authenticate with NLZiet.
+4. Install and authorize the official Kodi **Trakt** add-on if you want movie and episode scrobbling.
+5. Install `inputstream.adaptive` for DRM playback. The addon verifies it automatically through `inputstreamhelper`.
 
 ### Local Addon Check (Filtered Source)
 
@@ -143,7 +157,7 @@ scripts/run-addon-check-local.sh --branch omega
 
 - **Kids Profile Support**: Full kids mode and parental controls.
 - **Improved Search**: Filter by genre, year, release date, and more.
-- **Playback History**: Track watched episodes and movies.
+- **Playback History UI**: Show Trakt-backed watched status directly inside NLZiet menus.
 - **Advanced Sorting**: Sort series by newest, oldest, alphabetical, popularity.
 - **UI Polish**: Enhanced skins integration, custom info dialogs, and animations.
 - **Automated Testing**: CI/CD pipeline for code quality and automated releases.
@@ -161,7 +175,7 @@ scripts/run-addon-check-local.sh --branch omega
 - [X] **Settings: allow custom API endpoint for advanced users**
 - [ ] **Add more debug and diagnostic tools**
 - [ ] **Accessibility improvements for screen readers**
-- [ ] **Add more unit/integration tests**
+- [X] **Add unit tests for routing, playback metadata, and Trakt scrobbling**
 
 ---
 

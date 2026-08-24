@@ -1,6 +1,8 @@
 import sys
 import re
+import json
 import urllib.parse
+import urllib.request
 import os
 import xbmc
 import xbmcaddon
@@ -206,7 +208,382 @@ def build_url(query):
     return BASE_URL + '?' + urllib.parse.urlencode(query)
 
 
+def _metadata_sources(content):
+    """Return flat/nested content dictionaries in lookup priority order."""
+    if not isinstance(content, dict):
+        return []
+    sources = [content]
+    for key in ('raw', 'series', 'show', 'program', 'movie', 'episode'):
+        value = content.get(key)
+        if isinstance(value, dict):
+            sources.append(value)
+    raw = content.get('raw')
+    if isinstance(raw, dict):
+        for key in ('series', 'show', 'program', 'movie', 'episode'):
+            value = raw.get(key)
+            if isinstance(value, dict):
+                sources.append(value)
+    return sources
+
+
+def _first_metadata_value(sources, keys):
+    for source in sources:
+        for key in keys:
+            value = source.get(key)
+            if value is not None and str(value).strip():
+                return value
+    return None
+
+
+def _metadata_int(value, minimum=0):
+    try:
+        match = re.search(r'-?\d+', str(value))
+        parsed = int(match.group(0)) if match else None
+        return parsed if parsed is not None and parsed >= minimum else None
+    except Exception:
+        return None
+
+
+def _metadata_year(sources):
+    value = _first_metadata_value(
+        sources,
+        ('year', 'releaseYear', 'release_year', 'productionYear', 'production_year'),
+    )
+    year = _metadata_int(value, 1000)
+    if year:
+        return year
+    date_value = _first_metadata_value(
+        sources,
+        ('releaseDate', 'release_date', 'premiere', 'productionDate'),
+    )
+    match = re.search(r'\b(19|20)\d{2}\b', str(date_value or ''))
+    return int(match.group(0)) if match else None
+
+
+def _clean_episode_title(value):
+    title = str(value or '').strip()
+    title = re.sub(r'^\s*S\d+\s*[:.]\s*A\d+\s*[-:\u2013\u2014]*\s*', '', title, flags=re.I)
+    title = re.sub(r'^\s*S\d+E\d+\s*[-:\u2013\u2014]*\s*', '', title, flags=re.I)
+    title = re.sub(r'^\s*Afl\.?\s*\d+\s*[-:\u2013\u2014]*\s*', '', title, flags=re.I)
+    return title
+
+
+def _build_trakt_metadata(title, info=None, content=None):
+    """Build Kodi labels consumed by the official script.trakt add-on."""
+    sources = _metadata_sources(content)
+    info = info if isinstance(info, dict) else {}
+    content_type = str(_first_metadata_value(
+        sources, ('type', 'contentType', 'content_type', 'mediaType', 'media_type')
+    ) or '').lower()
+
+    season = _metadata_int(_first_metadata_value(
+        sources, ('season_number', 'seasonNumber', 'season', 'seasonIndex')
+    ))
+    episode = _metadata_int(_first_metadata_value(
+        sources, ('episode_number', 'episodeNumber', 'episode', 'episodeIndex', 'number')
+    ), minimum=1)
+    formatted = _first_metadata_value(
+        sources, ('formatted_episode_numbering', 'formattedEpisodeNumbering')
+    )
+    numbering = formatted or _first_metadata_value(sources, ('subtitle', 'subtitleText')) or title
+    if numbering and (season is None or episode is None):
+        match = re.search(r'S(\d+)\s*[:.]?\s*(?:E|A)(\d+)', str(numbering), re.I)
+        if match:
+            season = season if season is not None else int(match.group(1))
+            episode = episode if episode is not None else int(match.group(2))
+
+    is_episode = 'episode' in content_type or (season is not None and episode is not None)
+    is_movie = 'movie' in content_type or 'film' in content_type
+    if is_episode and season is not None and episode is not None:
+        show_title = _first_metadata_value(
+            sources,
+            ('series_title', 'seriesTitle', 'showtitle', 'showTitle', 'tvshowtitle',
+             'tvShowTitle', 'programTitle', 'program_title'),
+        )
+        # NLZiet episode responses commonly use title for the series and
+        # subtitle for the episode name.
+        show_title = str(show_title or _first_metadata_value(sources, ('title', 'name')) or '').strip()
+        episode_title = _first_metadata_value(
+            sources, ('episode_title', 'episodeTitle', 'subtitle', 'subtitleText')
+        )
+        episode_title = _clean_episode_title(episode_title)
+        if not episode_title or episode_title == show_title:
+            episode_title = _clean_episode_title(info.get('title') or title)
+        metadata = {
+            'media_type': 'episode',
+            'title': episode_title or show_title,
+            'showtitle': show_title,
+            'season': str(season),
+            'episode': str(episode),
+        }
+        # Episode release/broadcast dates describe the NLZiet airing, not the
+        # production year of the show.  Only use an explicitly series-scoped
+        # year here; playback can resolve the canonical show year via Trakt.
+        year = _metadata_int(_first_metadata_value(
+            sources, ('series_year', 'seriesYear', 'show_year', 'showYear')
+        ), 1000)
+        if year:
+            metadata['year'] = str(year)
+        return metadata
+
+    if is_movie:
+        movie_title = _first_metadata_value(sources, ('title', 'name')) or info.get('title') or title
+        metadata = {'media_type': 'movie', 'title': str(movie_title or '').strip()}
+        year = _metadata_year(sources)
+        if year:
+            metadata['year'] = str(year)
+        return metadata
+    return {}
+
+
+def _handshake_metadata_content(stream_info):
+    """Extract catalogue metadata retained in the stream handshake."""
+    handshake = stream_info.get('handshake') if isinstance(stream_info, dict) else None
+    if not isinstance(handshake, dict):
+        return {}
+    item = handshake.get('item')
+    content = dict(item) if isinstance(item, dict) else {}
+    analytics = handshake.get('analytics')
+    if not isinstance(analytics, dict):
+        analytics = {}
+    mappings = {
+        'series_title': ('seriesTitle', 'showTitle'),
+        'episode_title': ('episodeTitle',),
+        'season_number': ('seasonNumber', 'season'),
+        'episode_number': ('episodeNumber', 'episode'),
+        'year': ('releaseYear', 'productionYear', 'year'),
+    }
+    for target, keys in mappings.items():
+        if content.get(target) not in (None, ''):
+            continue
+        for key in keys:
+            value = analytics.get(key)
+            if value not in (None, ''):
+                content[target] = value
+                break
+    return content
+
+
+def _official_trakt_client_id():
+    """Read/decode the public API identity bundled with script.trakt."""
+    try:
+        trakt_addon = xbmcaddon.Addon('script.trakt')
+        trakt_path = trakt_addon.getAddonInfo('path') or ''
+        source_path = os.path.join(trakt_path, 'resources', 'lib', 'traktapi.py')
+        with open(source_path, 'r', encoding='utf-8') as source_file:
+            source = source_file.read()
+        match = re.search(r'__client_id:\s*str\s*=\s*\[([^\]]+)\]', source)
+        if not match:
+            return ''
+        encoded = [int(value) for value in re.findall(r'\d+', match.group(1))]
+        return ''.join(chr(value ^ 0x42) for value in encoded)
+    except Exception:
+        return ''
+
+
+def _official_trakt_get(path, params=None):
+    client_id = _official_trakt_client_id()
+    if not client_id:
+        return None
+    url = 'https://api.trakt.tv' + path
+    if params:
+        url += ('&' if '?' in url else '?') + urllib.parse.urlencode(params)
+    request = urllib.request.Request(url, headers={
+        'Accept': 'application/json',
+        'trakt-api-version': '2',
+        'trakt-api-key': client_id,
+        'User-Agent': 'Kodi script.trakt metadata lookup',
+    })
+    with urllib.request.urlopen(request, timeout=8) as response:
+        return json.load(response)
+
+
+def _official_trakt_movie_match(title):
+    """Resolve a movie using the API identity bundled with script.trakt."""
+    title = str(title or '').strip()
+    if not title:
+        return {}
+    try:
+        results = _official_trakt_get('/search/movie', {
+            'query': title,
+            'limit': 1,
+        }) or []
+        movie = (results[0].get('movie') or {}) if results else {}
+        year = _metadata_int(movie.get('year'), 1000)
+        if not movie.get('title') or not year:
+            return {}
+        return {'title': str(movie['title']), 'year': str(year)}
+    except Exception as exc:
+        xbmc.log(f"NLZiet Trakt movie lookup failed: {exc}", xbmc.LOGWARNING)
+        return {}
+
+
+def _normalized_trakt_title(value):
+    return re.sub(r'[^a-z0-9]+', '', str(value or '').casefold())
+
+
+def _official_trakt_episode_match(show_title, episode_title, season, episode):
+    """Resolve NLZiet episode numbering/title to Trakt's production order."""
+    show_title = str(show_title or '').strip()
+    episode_title = _clean_episode_title(episode_title)
+    if not show_title:
+        return {}
+    try:
+        results = _official_trakt_get('/search/show', {
+            'query': show_title,
+            'limit': 1,
+        }) or []
+        show = (results[0].get('show') or {}) if results else {}
+        show_ids = show.get('ids') or {}
+        show_id = show_ids.get('trakt') or show_ids.get('slug')
+        show_year = _metadata_int(show.get('year'), 1000)
+        if not show.get('title') or not show_id:
+            return {}
+
+        seasons = _official_trakt_get(
+            '/shows/{}/seasons'.format(urllib.parse.quote(str(show_id))),
+            {'extended': 'episodes'},
+        ) or []
+        episodes = [
+            item
+            for season_item in seasons
+            for item in (season_item.get('episodes') or [])
+            if isinstance(item, dict)
+        ]
+
+        normalized_title = _normalized_trakt_title(episode_title)
+        generic_title = (
+            not normalized_title or
+            normalized_title == _normalized_trakt_title(show_title) or
+            bool(re.fullmatch(r'(?:afl|aflevering|episode)\d+', normalized_title))
+        )
+        matched = None
+        if not generic_title:
+            matched = next(
+                (item for item in episodes
+                 if _normalized_trakt_title(item.get('title')) == normalized_title),
+                None,
+            )
+        if matched is None:
+            requested_season = _metadata_int(season)
+            requested_episode = _metadata_int(episode, minimum=1)
+            matched = next(
+                (item for item in episodes
+                 if _metadata_int(item.get('season')) == requested_season
+                 and _metadata_int(item.get('number'), minimum=1) == requested_episode),
+                None,
+            )
+        if matched is None:
+            return {}
+
+        metadata = {
+            'showtitle': str(show['title']),
+            'title': str(matched.get('title') or episode_title or show['title']),
+            'season': str(matched['season']),
+            'episode': str(matched['number']),
+        }
+        if show_year:
+            metadata['year'] = str(show_year)
+        return metadata
+    except Exception as exc:
+        xbmc.log(f"NLZiet Trakt episode lookup failed: {exc}", xbmc.LOGWARNING)
+        return {}
+
+
+def _merge_playback_metadata(query_metadata, stream_info, api=None, content_id=None):
+    metadata = dict(query_metadata or {})
+    handshake_content = _handshake_metadata_content(stream_info)
+    discovered = _build_trakt_metadata('', content=handshake_content)
+    for key, value in discovered.items():
+        if value not in (None, ''):
+            metadata.setdefault(key, str(value))
+
+    # Old Kodi directory entries can contain only the content id.  A stream
+    # handshake identifies the series/season but may still omit the episode
+    # number, so resolve that item from the season catalogue as a final
+    # fallback.  get_series_episodes also normalizes/infer missing numbers.
+    content_type = str(handshake_content.get('type') or '').lower()
+    needs_episode = 'episode' in content_type and not metadata.get('episode')
+    series_id = (handshake_content.get('seriesId') or
+                 handshake_content.get('series_id'))
+    season_id = (handshake_content.get('seasonId') or
+                 handshake_content.get('season_id'))
+    if needs_episode and api and content_id and series_id:
+        try:
+            episodes = api.get_series_episodes(series_id, season_id=season_id, limit=400) or []
+            matched = next(
+                (episode for episode in episodes
+                 if str(episode.get('id') or '') == str(content_id)),
+                None,
+            )
+            if matched:
+                catalogue_content = dict(handshake_content)
+                catalogue_content.update(matched)
+                for key, value in _build_trakt_metadata(
+                    '', content=catalogue_content
+                ).items():
+                    if value not in (None, ''):
+                        metadata.setdefault(key, str(value))
+        except Exception as exc:
+            xbmc.log(f"NLZiet Trakt catalogue lookup failed: {exc}", xbmc.LOGWARNING)
+
+    if metadata.get('media_type') == 'movie' and not metadata.get('year'):
+        movie_match = _official_trakt_movie_match(metadata.get('title'))
+        if movie_match:
+            metadata.update(movie_match)
+    elif metadata.get('media_type') == 'episode':
+        # Discard stale/broadcast years already embedded in cached directory
+        # URLs. The canonical series year is supplied by the Trakt match.
+        metadata.pop('year', None)
+        episode_match = _official_trakt_episode_match(
+            metadata.get('showtitle'),
+            handshake_content.get('episode_title') or metadata.get('title'),
+            metadata.get('season'),
+            metadata.get('episode'),
+        )
+        if episode_match:
+            metadata.update(episode_match)
+    return metadata
+
+
+def _add_trakt_metadata_to_query(query, title, info=None, content=None):
+    query_copy = dict(query or {})
+    if query_copy.get('mode') == 'play' and query_copy.get('fmt') != 'live':
+        for key, value in _build_trakt_metadata(title, info, content).items():
+            if value not in (None, ''):
+                query_copy.setdefault(key, str(value))
+    return query_copy
+
+
+def _apply_playback_metadata(list_item, metadata, fmt=None):
+    """Publish metadata as Kodi VideoPlayer labels for script.trakt."""
+    if fmt == 'live':
+        # This is the exclusion property recognized by the official Trakt
+        # add-on for non-library playback.
+        list_item.setProperty('script.trakt.exclude', 'true')
+        return
+    media_type = metadata.get('media_type')
+    if media_type not in ('episode', 'movie'):
+        return
+    video_info = {
+        'mediatype': media_type,
+        'title': metadata.get('title') or '',
+    }
+    if metadata.get('year'):
+        video_info['year'] = _metadata_int(metadata.get('year'), 1000)
+    if media_type == 'episode':
+        video_info.update({
+            'tvshowtitle': metadata.get('showtitle') or '',
+            'season': _metadata_int(metadata.get('season')),
+            'episode': _metadata_int(metadata.get('episode'), minimum=1),
+        })
+    video_info = {key: value for key, value in video_info.items() if value not in (None, '')}
+    list_item.setInfo('video', video_info)
+    xbmc.log(f"NLZiet Trakt metadata: {video_info}", xbmc.LOGDEBUG)
+
+
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
+    query = _add_trakt_metadata_to_query(query, title, info, content)
     url = build_url(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
     
@@ -227,18 +604,30 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     # For live TV (fmt='live'), display EPG without context menu options
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
     
-    if info:
+    trakt_metadata = _build_trakt_metadata(title, info, content) if not is_live else {}
+    item_info = dict(info or {})
+    if trakt_metadata:
+        item_info.setdefault('mediatype', trakt_metadata.get('media_type'))
+        item_info.setdefault('title', trakt_metadata.get('title'))
+        if trakt_metadata.get('year'):
+            item_info.setdefault('year', _metadata_int(trakt_metadata.get('year'), 1000))
+        if trakt_metadata.get('media_type') == 'episode':
+            item_info.setdefault('tvshowtitle', trakt_metadata.get('showtitle'))
+            item_info.setdefault('season', _metadata_int(trakt_metadata.get('season')))
+            item_info.setdefault('episode', _metadata_int(trakt_metadata.get('episode'), minimum=1))
+
+    if item_info:
         if is_live:
             # For live TV, set video info to display EPG, but don't track resume points
             # Clear any bookmark/resume data so context menu doesn't appear
-            info_copy = info.copy()
+            info_copy = item_info.copy()
             info_copy.pop('resume', None)  # Remove any resume position
             li.setInfo('video', info_copy)
         else:
             # For on-demand content, set full video info (allows resume functionality)
-            li.setInfo('video', info)
+            li.setInfo('video', item_info)
             try:
-                short = info.get('plotoutline') or info.get('plot') or ''
+                short = item_info.get('plotoutline') or item_info.get('plot') or ''
                 if short:
                     li.setLabel2(short)
             except Exception:
@@ -764,13 +1153,14 @@ def show_series_detail(series_id):
         xbmcgui.Dialog().notification('NLZiet', get_string('unable_fetch_series'), xbmcgui.NOTIFICATION_ERROR)
         return
     seasons = detail.get('seasons') or []
+    series_title = detail.get('title') or ''
     # If no seasons discovered, offer direct episode listing
     if not seasons:
-        add_directory_item(get_string('all_episodes'), {'mode': 'series_season', 'series_id': series_id, 'season_id': ''}, is_folder=True)
+        add_directory_item(get_string('all_episodes'), {'mode': 'series_season', 'series_id': series_id, 'season_id': '', 'series_title': series_title}, is_folder=True)
     else:
         for s in seasons:
             title = s.get('title') or f"{get_string('season')} {s.get('id')}"
-            add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id'), 'episodes_url': s.get('episodes_url') or ''}, is_folder=True)
+            add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id'), 'episodes_url': s.get('episodes_url') or '', 'series_title': series_title, 'season_number': s.get('season_number') or ''}, is_folder=True)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -797,7 +1187,7 @@ def _get_series_season_episodes(api, series_id, season_id=None, episodes_url=Non
     return episodes or []
 
 
-def show_series_season(series_id, season_id, episodes_url=None):
+def show_series_season(series_id, season_id, episodes_url=None, series_title=None, season_number=None):
     if not series_id:
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
         return
@@ -911,7 +1301,15 @@ def show_series_season(series_id, season_id, episodes_url=None):
             else:
                 label = label or ep.get('id') or 'Episode'
 
-        add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=ep)
+        playback_content = dict(ep)
+        playback_content.setdefault('type', 'Episode')
+        if series_title:
+            playback_content.setdefault('series_title', series_title)
+        if playback_content.get('season_number') is None and season_number not in (None, ''):
+            playback_content['season_number'] = season_number
+        if playback_content.get('season_number') is None and str(season_id or '').isdigit():
+            playback_content['season_number'] = season_id
+        add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=playback_content)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -1013,7 +1411,16 @@ def export_series_library(series_id):
             season_dir = os.path.join(show_dir, f"Season {season}")
             strm_path = os.path.join(season_dir, filename + '.strm')
             nfo_path = os.path.join(season_dir, filename + '.nfo')
-            plugin_url = 'plugin://{}?{}'.format(ADDON.getAddonInfo('id'), urllib.parse.urlencode({'mode': 'play', 'id': ep.get('id')}))
+            playback_query = {
+                'mode': 'play',
+                'id': ep.get('id'),
+                'media_type': 'episode',
+                'title': _clean_episode_title(title),
+                'showtitle': series_title,
+                'season': str(season),
+                'episode': str(episode_no),
+            }
+            plugin_url = 'plugin://{}?{}'.format(ADDON.getAddonInfo('id'), urllib.parse.urlencode(playback_query))
             _write_text(strm_path, plugin_url + '\n')
             _write_text(
                 nfo_path,
@@ -2682,6 +3089,9 @@ def play_item(content_id, fmt=None, **kwargs):
         info = api.get_stream_info(content_id)
         xbmc.log(f"NLZiet REGULAR content: id={content_id} (not live)", xbmc.LOGINFO)
     manifest = info.get('manifest')
+    playback_metadata = _merge_playback_metadata(
+        kwargs, info, api=api, content_id=content_id
+    ) if fmt != 'live' else kwargs
     is_drm = info.get('is_drm')
     subs_in_info = info.get('subtitles')
     xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGINFO)
@@ -2726,6 +3136,7 @@ def play_item(content_id, fmt=None, **kwargs):
         if not is_helper:
             return
         li = xbmcgui.ListItem(path=manifest, offscreen=True)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt)
         # Use the inputstream addon resolved by InputStream Helper.
         try:
             inputstream_addon = is_helper.inputstream_addon
@@ -2894,6 +3305,7 @@ def play_item(content_id, fmt=None, **kwargs):
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
         li = xbmcgui.ListItem(path=manifest)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt)
         
         # Check subtitle setting once
         try:
@@ -3015,7 +3427,7 @@ def router(paramstring):
     elif mode == 'series_detail':
         show_series_detail(params.get('series_id'))
     elif mode == 'series_season':
-        show_series_season(params.get('series_id'), params.get('season_id'), params.get('episodes_url'))
+        show_series_season(params.get('series_id'), params.get('season_id'), params.get('episodes_url'), params.get('series_title'), params.get('season_number'))
     elif mode == 'export_series_library':
         export_series_library(params.get('series_id'))
     elif mode == 'placement_row':

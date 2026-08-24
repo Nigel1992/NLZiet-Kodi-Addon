@@ -1,7 +1,13 @@
 import sys
 import types
+from pathlib import Path
 
 import pytest
+
+
+ADDON_ROOT = str(Path(__file__).resolve().parents[1])
+if ADDON_ROOT not in sys.path:
+    sys.path.insert(0, ADDON_ROOT)
 
 
 class Recorder:
@@ -9,6 +15,8 @@ class Recorder:
         self.set_content = []
         self.ended = []
         self.notifications = []
+        self.directory_items = []
+        self.resolved_items = []
 
     def reset(self):
         self.__init__()
@@ -34,6 +42,39 @@ class FakeAddon:
 class FakeDialog:
     def notification(self, heading, message, icon=None):
         RECORDER.notifications.append((heading, message, icon))
+
+
+class FakeListItem:
+    def __init__(self, label='', path='', offscreen=False):
+        self.label = label
+        self.path = path
+        self.offscreen = offscreen
+        self.info = {}
+        self.properties = {}
+        self.art = {}
+        self.subtitles = []
+        self.context_menu = []
+
+    def setInfo(self, media_type, info):
+        self.info[media_type] = dict(info)
+
+    def setProperty(self, key, value):
+        self.properties[key] = value
+
+    def setArt(self, art):
+        self.art.update(art)
+
+    def setLabel2(self, value):
+        self.label2 = value
+
+    def addContextMenuItems(self, items):
+        self.context_menu.extend(items)
+
+    def setSubtitles(self, subtitles):
+        self.subtitles = list(subtitles)
+
+    def setMimeType(self, mime_type):
+        self.mime_type = mime_type
 
 
 @pytest.fixture(autouse=True)
@@ -63,10 +104,17 @@ def _install_kodi_stubs():
     xbmcgui.NOTIFICATION_INFO = 'info'
     xbmcgui.NOTIFICATION_ERROR = 'error'
     xbmcgui.Dialog = FakeDialog
+    xbmcgui.ListItem = FakeListItem
 
     xbmcplugin = types.ModuleType('xbmcplugin')
     xbmcplugin.setContent = lambda handle, content: RECORDER.set_content.append((handle, content))
     xbmcplugin.endOfDirectory = lambda handle: RECORDER.ended.append(handle)
+    xbmcplugin.addDirectoryItem = lambda handle, url, item, isFolder=False: RECORDER.directory_items.append(
+        (handle, url, item, isFolder)
+    )
+    xbmcplugin.setResolvedUrl = lambda handle, succeeded, item: RECORDER.resolved_items.append(
+        (handle, succeeded, item)
+    )
 
     xbmcaddon = types.ModuleType('xbmcaddon')
     xbmcaddon.Addon = lambda *args, **kwargs: FakeAddon()
