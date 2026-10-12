@@ -1,4 +1,6 @@
 import sys
+import os
+import tempfile
 import types
 from pathlib import Path
 
@@ -141,7 +143,14 @@ def _install_kodi_stubs():
     xbmcaddon.Addon = lambda *args, **kwargs: FakeAddon()
 
     xbmcvfs = types.ModuleType('xbmcvfs')
-    xbmcvfs.translatePath = lambda path: path
+    kodi_tmp = tempfile.mkdtemp(prefix='kodi-test-')
+
+    def _translate_path(path):
+        if isinstance(path, str) and path.startswith('special://'):
+            return os.path.join(kodi_tmp, path[len('special://'):])
+        return path
+
+    xbmcvfs.translatePath = _translate_path
 
     sys.modules.setdefault('xbmc', xbmc)
     sys.modules.setdefault('xbmcgui', xbmcgui)
