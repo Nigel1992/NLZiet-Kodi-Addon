@@ -624,7 +624,7 @@ class NLZietAPI:
                             else:
                                 minutes = max(1, secs // 60)
                                 expires_in = f'Expires in {minutes}m'
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in, 'year': self._extract_year(src), 'raw': src})
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_movies error: {e}", xbmc.LOGERROR)
@@ -781,7 +781,7 @@ class NLZietAPI:
                                 minutes = max(1, secs // 60)
                                 expires_in = f'Expires in {minutes}m'
                 
-                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+                results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in, 'year': self._extract_year(src), 'raw': src})
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_movies_by_genre error: {e}", xbmc.LOGERROR)
@@ -2215,6 +2215,22 @@ class NLZietAPI:
                 return value
         return None
 
+    def _extract_year(self, src):
+        """Return a four-digit release/production year when supplied by NLZiet."""
+        if not isinstance(src, dict):
+            return None
+        for key in ('year', 'releaseYear', 'release_year', 'productionYear', 'production_year'):
+            value = src.get(key)
+            match = re.search(r'\b(19|20)\d{2}\b', str(value or ''))
+            if match:
+                return int(match.group(0))
+        for key in ('releaseDate', 'release_date', 'premiere', 'productionDate'):
+            value = src.get(key)
+            match = re.search(r'\b(19|20)\d{2}\b', str(value or ''))
+            if match:
+                return int(match.group(0))
+        return None
+
     def get_profiles(self):
         """Return list of profiles for the current account (requires an access token)."""
         try:
@@ -3301,7 +3317,11 @@ class NLZietAPI:
                                 title_s = s.get('title') or s.get('name') or s.get('label') or (f"Season {sid}" if sid else '')
                                 ep_count = s.get('episodeCount') or s.get('episode_count') or None
                                 episodes_url = s.get('episodesUrl') or s.get('episodes_url') or s.get('itemsUrl') or s.get('url') or None
-                                seasons.append({'id': sid or title_s, 'title': title_s, 'episodes_url': episodes_url, 'episode_count': ep_count})
+                                season_number = s.get('seasonNumber') or s.get('season_number')
+                                if season_number is None:
+                                    match = re.search(r'\d+', str(title_s or ''))
+                                    season_number = int(match.group(0)) if match else None
+                                seasons.append({'id': sid or title_s, 'title': title_s, 'episodes_url': episodes_url, 'episode_count': ep_count, 'season_number': season_number})
                             except Exception:
                                 continue
                         if seasons:
@@ -3348,7 +3368,8 @@ class NLZietAPI:
                                 if isinstance(params, dict):
                                     sid = params.get('seasonId') or params.get('season')
                             if sid:
-                                seasons.append({'id': sid, 'title': season_title, 'episodes_url': episodes_url})
+                                match = re.search(r'\d+', str(season_title or ''))
+                                seasons.append({'id': sid, 'title': season_title, 'episodes_url': episodes_url, 'season_number': int(match.group(0)) if match else None})
             except Exception:
                 pass
 
@@ -3476,10 +3497,15 @@ class NLZietAPI:
                 season_id = src.get('seasonId') or src.get('season_id') or src.get('season') or None
                 season_number = src.get('seasonNumber') or src.get('season_number') or None
                 episode_number = src.get('episodeNumber') or src.get('episode') or src.get('number') or src.get('episodeIndex') or None
+                series_title = (src.get('seriesTitle') or src.get('series_title') or
+                                src.get('showTitle') or src.get('show_title') or
+                                src.get('parentTitle') or None)
+                analytics_title = ''
                 # fallback to analytics/parameters that sometimes include season/episode
                 try:
                     params = (item.get('analytics') or item.get('parameters') or src.get('parameters') or {})
                     if isinstance(params, dict):
+                        analytics_title = params.get('title') or params.get('assetName') or ''
                         season_id = season_id or params.get('seasonId') or params.get('season') or params.get('season_id')
                         season_number = season_number or params.get('seasonNumber') or params.get('season_number')
                         episode_number = episode_number or params.get('episodeNumber') or params.get('episode') or params.get('number')
@@ -3610,6 +3636,8 @@ class NLZietAPI:
                     'duration': duration,
                     'season_id': season_id,
                     'season_number': season_number,
+                    'series_title': series_title,
+                    'analytics_title': analytics_title,
                     'season_title': locals().get('season_title', None),
                     'episode_number': episode_number,
                     'formatted_episode_numbering': formatted,
@@ -3619,7 +3647,56 @@ class NLZietAPI:
                     'available_to': available_to,
                     'raw': src,
                 })
+            self._infer_episode_numbers(results)
             return results
         except Exception as e:
             xbmc.log(f"NLZiet get_series_episodes error for series={series_id} season={season_id}: {e}", xbmc.LOGERROR)
             return []
+
+    @staticmethod
+    def _infer_episode_numbers(episodes):
+        """Fill gaps such as a named episode followed by an ``Afl. 61`` item.
+
+        NLZiet lists newest episodes first and sometimes omits the number only
+        for episodes that have a descriptive subtitle. Inference is restricted
+        to the same season id and anchored by an explicit neighbouring number.
+        """
+        groups = {}
+        for index, episode in enumerate(episodes or []):
+            groups.setdefault(str(episode.get('season_id') or ''), []).append(index)
+
+        for indexes in groups.values():
+            anchors = {}
+            for index in indexes:
+                episode = episodes[index]
+                number = episode.get('episode_number')
+                if number is None:
+                    text = ' '.join(str(episode.get(key) or '') for key in (
+                        'formatted_episode_numbering', 'subtitle', 'analytics_title'
+                    ))
+                    match = re.search(r'S\d+\s*[:.]?\s*(?:E|A)(\d+)', text, re.I)
+                    if not match:
+                        match = re.search(r'\bAfl\.?\s*(\d+)\b', text, re.I)
+                    number = int(match.group(1)) if match else None
+                try:
+                    number = int(number) if number is not None else None
+                except (TypeError, ValueError):
+                    number = None
+                if number and number > 0:
+                    anchors[index] = number
+                    episode['episode_number'] = number
+
+            for index in indexes:
+                if episodes[index].get('episode_number') is not None or not anchors:
+                    continue
+                following = [(anchor_index, number) for anchor_index, number in anchors.items() if anchor_index > index]
+                preceding = [(anchor_index, number) for anchor_index, number in anchors.items() if anchor_index < index]
+                inferred = None
+                if following:
+                    anchor_index, number = min(following)
+                    inferred = number + (anchor_index - index)
+                elif preceding:
+                    anchor_index, number = max(preceding)
+                    inferred = number - (index - anchor_index)
+                if inferred and inferred > 0:
+                    episodes[index]['episode_number'] = inferred
