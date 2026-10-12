@@ -140,7 +140,7 @@ TRANSLATIONS = {
     'not_logged_in': {'nl': 'Niet ingelogd. Klik op [B]Inloggen[/B] om in te loggen.', 'en': 'Not logged in. Press [B]Login[/B] to authenticate.'},
     'login_notification': {'nl': 'Klik op [B]Inloggen[/B] in het hoofdmenu om in te loggen via een dialoogvenster.', 'en': 'Press [B]Login[/B] on the main menu to authenticate via a dialog.'},
     'logout_and_clear': {'nl': 'Afmelden en lokale gegevens wissen', 'en': 'Logout and clear local data'},
-    'only_series_movies': {'nl': 'Alleen Series en Films kunnen aan Mijn lijst worden toegevoegd', 'en': 'Only Series and Movies can be added to My List'},
+    'only_series_movies': {'nl': 'Alleen Series en Films kunnen in een lijst worden opgeslagen', 'en': 'Only Series and Movies can be saved to a list'},
     'searching': {'nl': 'Zoeken naar "{}"', 'en': 'Searching for "{}"'},
     'no_results': {'nl': 'Geen resultaten gevonden voor "{}"', 'en': 'No results found for "{}"'},
     'now_watching': {'nl': 'Nu aan het kijken', 'en': 'Now watching'},
@@ -175,6 +175,157 @@ TRANSLATIONS = {
     'library_export_failed': {'nl': 'Bibliotheek export mislukt', 'en': 'Library export failed'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
+    'watch_later': {'nl': 'Kijk Later', 'en': 'Watch Later'},
+    'add_to_mylist': {'nl': 'Toevoegen aan Mijn lijst', 'en': 'Add to My List'},
+    'remove_from_mylist': {'nl': 'Verwijderen uit Mijn lijst', 'en': 'Remove from My List'},
+    'add_to_watch_later': {'nl': 'Toevoegen aan Kijk Later', 'en': 'Add to Watch Later'},
+    'remove_from_watch_later': {'nl': 'Verwijderen uit Kijk Later', 'en': 'Remove from Watch Later'},
+    'added_to_watch_later': {'nl': 'Toegevoegd aan Kijk Later', 'en': 'Added to Watch Later'},
+    'removed_from_watch_later': {'nl': 'Verwijderd uit Kijk Later', 'en': 'Removed from Watch Later'},
+    'watch_later_empty': {'nl': 'Kijk Later is leeg', 'en': 'Watch Later is empty'},
+    'missing_id_watchlater': {'nl': 'ID ontbreekt voor Kijk Later-actie', 'en': 'Missing id for Watch Later action'},
+    'mylist_action_failed': {'nl': 'Mijn lijst-actie mislukt', 'en': 'My List action failed'},
+    'watchlater_action_failed': {'nl': 'Kijk Later-actie mislukt', 'en': 'Watch Later action failed'},
+    'list_action_failed': {'nl': 'Lijstactie mislukt', 'en': 'List action failed'},
+    'search_heading': {'nl': 'Zoeken in NLZiet', 'en': 'Search NLZiet'},
+    'login_failed_max_attempts': {'nl': 'Inloggen mislukt - maximaal aantal pogingen bereikt', 'en': 'Login failed - max attempts reached'},
+    'login_error': {'nl': 'Inlogfout: {}', 'en': 'Login error: {}'},
+    'missing_profile_id': {'nl': 'Profiel-ID ontbreekt', 'en': 'Missing profile id'},
+    'profile_switched': {'nl': 'Profiel gewijzigd naar {}', 'en': 'Profile switched to {}'},
+    'profile_switch_failed': {'nl': 'Profiel wijzigen mislukt', 'en': 'Profile switch failed'},
+    'no_profile_set': {'nl': 'Geen profiel-ID ingesteld in de instellingen', 'en': 'No Profile ID set in Settings'},
+    'profile_applied': {'nl': 'Profiel toegepast: {}', 'en': 'Profile applied: {}'},
+    'profile_apply_failed': {'nl': 'Profiel toepassen mislukt. Probeer Profielen beheren.', 'en': 'Failed to apply profile. Try Manage profiles.'},
+    'missing_search_query': {'nl': 'Zoekopdracht ontbreekt', 'en': 'Missing search query'},
+    'no_manifest': {'nl': 'Geen manifest beschikbaar', 'en': 'No manifest available'},
+    'required_drm': {'nl': 'Vereiste DRM: {}', 'en': 'Required DRM: {}'},
+    'dependency_missing_title': {'nl': 'Afhankelijkheid ontbreekt', 'en': 'Dependency missing'},
+    'dependency_missing_msg': {'nl': 'Installeer script.module.inputstreamhelper om DRM-streams af te spelen.', 'en': 'Please install script.module.inputstreamhelper to play DRM streams.'},
+    'result_label': {'nl': 'Resultaat', 'en': 'Result'},
+    'item_label': {'nl': 'Item', 'en': 'Item'},
+    'group_series': {'nl': 'Series', 'en': 'Series'},
+    'group_tv_shows': {'nl': 'TV Shows', 'en': 'TV Shows'},
+    'group_documentaries': {'nl': 'Documentaires', 'en': 'Documentaries'},
+    'group_movies': {'nl': 'Films', 'en': 'Movies'},
+    'group_channels': {'nl': 'Kanalen', 'en': 'Channels'},
+    'group_episodes': {'nl': 'Afleveringen', 'en': 'Episodes'},
+    'group_other': {'nl': 'Overig', 'en': 'Other'},
+    'group_count': {'nl': '{} ({})', 'en': '{} ({})'},
+    'group_result_title': {'nl': '{}: {}', 'en': '{}: {}'},
+    'not_allowed': {'nl': 'Niet toegestaan', 'en': 'Not allowed'},
+}
+
+# Numeric string ids (see resources/language/*/strings.po). These let Kodi
+# resolve every runtime string through its translation system, so any language
+# with a translation file works automatically.
+STRING_IDS = {
+    'login': 33002,
+    'sign_out': 33003,
+    'login_via_dialog': 33004,
+    'login_dialog_title': 33005,
+    'login_dialog_email': 33006,
+    'login_dialog_password': 33007,
+    'login_dialog_ok': 33008,
+    'login_dialog_cancel': 33009,
+    'login_invalid_credentials': 33010,
+    'login_try_again': 33011,
+    'token_expired': 33012,
+    'login_again': 33013,
+    'save_options_title': 33014,
+    'save_option_tokens_only': 33015,
+    'save_option_with_credentials': 33016,
+    'tokens_only_info': 33017,
+    'credentials_saved_warning': 33018,
+    'session_token_obtained': 33019,
+    'manage_profiles': 33020,
+    'search': 33021,
+    'my_list': 33022,
+    'series': 33023,
+    'tv_shows': 33024,
+    'documentary': 33025,
+    'movies': 33026,
+    'channels': 33027,
+    'all_episodes': 33028,
+    'missing_series_id': 33029,
+    'missing_season_id': 33030,
+    'unable_fetch_series': 33031,
+    'no_items_found': 33032,
+    'not_logged_in': 33033,
+    'login_notification': 33034,
+    'logout_and_clear': 33035,
+    'only_series_movies': 33036,
+    'searching': 33037,
+    'no_results': 33038,
+    'now_watching': 33039,
+    'added_to_list': 33040,
+    'removed_from_list': 33041,
+    'all': 33042,
+    'no_episodes_found': 33043,
+    'account_updated': 33044,
+    'account_parse_error': 33045,
+    'logged_out': 33046,
+    'logout_cancelled': 33047,
+    'login_successful_tokens': 33048,
+    'login_successful_no_tokens': 33049,
+    'login_failed_demo': 33050,
+    'no_profiles': 33051,
+    'my_list_empty': 33052,
+    'no_items_for_group': 33053,
+    'missing_id_mylist': 33054,
+    'logout_confirm_msg': 33055,
+    'keep_mylist': 33056,
+    'keep_mylist_btn': 33057,
+    'clear_mylist_btn': 33058,
+    'logout_btn': 33059,
+    'cancel_btn': 33060,
+    'season': 33061,
+    'subscription_label': 33062,
+    'subscription_type_label': 33063,
+    'max_devices_label': 33064,
+    'expires_label': 33065,
+    'add_to_library': 33066,
+    'library_exported': 33067,
+    'library_export_failed': 33068,
+    'diagnostics_exported': 33069,
+    'diagnostics_failed': 33070,
+    'watch_later': 33073,
+    'add_to_mylist': 33074,
+    'remove_from_mylist': 33075,
+    'add_to_watch_later': 33076,
+    'remove_from_watch_later': 33077,
+    'added_to_watch_later': 33078,
+    'removed_from_watch_later': 33079,
+    'watch_later_empty': 33080,
+    'missing_id_watchlater': 33081,
+    'mylist_action_failed': 33084,
+    'watchlater_action_failed': 33085,
+    'list_action_failed': 33086,
+    'search_heading': 33087,
+    'login_failed_max_attempts': 33088,
+    'login_error': 33089,
+    'missing_profile_id': 33090,
+    'profile_switched': 33091,
+    'profile_switch_failed': 33092,
+    'no_profile_set': 33093,
+    'profile_applied': 33094,
+    'profile_apply_failed': 33095,
+    'missing_search_query': 33096,
+    'no_manifest': 33097,
+    'required_drm': 33098,
+    'dependency_missing_title': 33099,
+    'dependency_missing_msg': 33100,
+    'result_label': 33101,
+    'item_label': 33102,
+    'group_series': 33103,
+    'group_tv_shows': 33104,
+    'group_documentaries': 33105,
+    'group_movies': 33106,
+    'group_channels': 33107,
+    'group_episodes': 33108,
+    'group_other': 33109,
+    'group_count': 33110,
+    'group_result_title': 33111,
+    'not_allowed': 33112,
 }
 
 
@@ -186,17 +337,31 @@ def get_string(key, *args):
         *args: Optional format arguments
         
     Returns:
-        Translated string, falling back to Dutch
+        Translated string, falling back to English
     """
-    language = 'nl'
-    try:
-        kodi_language = xbmc.getLanguage(xbmc.ISO_639_1) or ''
-        if str(kodi_language).lower().startswith('en'):
-            language = 'en'
-    except Exception:
-        pass
-    translations = TRANSLATIONS.get(key, {})
-    text = translations.get(language) or translations.get('nl') or key
+    text = None
+    # Prefer Kodi's own translation system so any language that ships a
+    # strings.po works without code changes.
+    sid = STRING_IDS.get(key)
+    if sid:
+        try:
+            localized = ADDON.getLocalizedString(sid)
+            if localized:
+                text = localized
+        except Exception:
+            text = None
+    if text is None:
+        # Fallback: use the built-in dictionary. English is the universal
+        # fallback for languages we do not ship explicitly.
+        language = 'en'
+        try:
+            kodi_language = xbmc.getLanguage(xbmc.ISO_639_1) or ''
+            if str(kodi_language).lower().startswith('nl'):
+                language = 'nl'
+        except Exception:
+            pass
+        translations = TRANSLATIONS.get(key, {})
+        text = translations.get(language) or translations.get('en') or translations.get('nl') or key
     if not isinstance(text, str):
         text = str(key)
     if args:
@@ -636,7 +801,7 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
     xbmc.log(f"NLZiet Trakt metadata: {video_info}", xbmc.LOGDEBUG)
 
 
-def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None):
+def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None):
     query = _add_trakt_metadata_to_query(query, title, info, content)
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
 
@@ -669,7 +834,12 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         content=content,
         playback_state=playback_state,
         is_live=is_live,
+        group=group,
         add_to_library_label=get_string('add_to_library'),
+        mylist_add_label=get_string('add_to_mylist'),
+        mylist_remove_label=get_string('remove_from_mylist'),
+        watch_later_add_label=get_string('add_to_watch_later'),
+        watch_later_remove_label=get_string('remove_from_watch_later'),
     )
 
 
@@ -809,6 +979,7 @@ def main_menu():
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
+        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
@@ -873,7 +1044,7 @@ def browse_series_genre(genre=None):
         
         # Series items should open as folders showing seasons/episodes
         if item_type == 'Series':
-            add_directory_item(item.get('title') or item.get('id') or 'Series', {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item)
+            add_directory_item(item.get('title') or item.get('id') or get_string('group_series'), {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item, group='series')
         else:
             # Episodes would be playable - but shouldn't appear at top level in genre view
             pass
@@ -948,7 +1119,7 @@ def browse_series():
                 }
         except Exception:
             info = None
-        add_directory_item(item.get('title') or item.get('id') or 'Series', {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        add_directory_item(item.get('title') or item.get('id') or get_string('group_series'), {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item, group='series')
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -1345,7 +1516,7 @@ def browse_tv_genre(genre=None):
             query = {'mode': 'series_detail', 'series_id': item.get('id')}
             is_folder = True
         
-        add_directory_item(display_title, query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        add_directory_item(display_title, query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group='tvshows')
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -1393,7 +1564,7 @@ def browse_movie_genre(genre=None):
             info = None
         
         # Movies are playable items
-        add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item, group='movies')
     
     xbmcplugin.endOfDirectory(HANDLE)
 
@@ -2038,12 +2209,12 @@ def do_login():
                         return
                 else:
                     # Max attempts reached
-                    xbmcgui.Dialog().notification('NLZiet', 'Login failed - max attempts reached', xbmcgui.NOTIFICATION_ERROR)
+                    xbmcgui.Dialog().notification('NLZiet', get_string('login_failed_max_attempts'), xbmcgui.NOTIFICATION_ERROR)
                     return
         
         except Exception as e:
             xbmc.log(f"NLZiet: login exception (attempt {attempt}/{max_attempts}): {e}", xbmc.LOGWARNING)
-            xbmcgui.Dialog().notification('NLZiet', f'Login error: {str(e)[:50]}', xbmcgui.NOTIFICATION_ERROR)
+            xbmcgui.Dialog().notification('NLZiet', get_string('login_error', str(e)[:50]), xbmcgui.NOTIFICATION_ERROR)
             return
 
 
@@ -2132,14 +2303,118 @@ def manage_profiles():
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def browse_my_list():
+def _get_list_api():
+    """Return the shared cached API instance, falling back to a fresh one."""
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
-    # Use cached API instance for faster list loading
     try:
-        api = get_api_instance()
+        return get_api_instance()
     except Exception:
-        api = NLZietAPI(username=username, password=password)
+        return NLZietAPI(username=username, password=password)
+
+
+# Canonical list groups used by My List and grouped search results. The keys
+# are stable internal identifiers; their labels are resolved through
+# get_string so every folder follows Kodi's configured language.
+GROUP_ORDER = ['series', 'tvshows', 'documentary', 'movies', 'channels', 'episodes', 'other']
+
+GROUP_STRING_KEYS = {
+    'series': 'group_series',
+    'tvshows': 'group_tv_shows',
+    'documentary': 'group_documentaries',
+    'movies': 'group_movies',
+    'channels': 'group_channels',
+    'episodes': 'group_episodes',
+    'other': 'group_other',
+}
+
+
+def _group_label(group):
+    """Return the localized label for a canonical group key."""
+    key = GROUP_STRING_KEYS.get(group)
+    return get_string(key) if key else (group or '')
+
+
+def _group_folder_label(group, count):
+    """Return a localized folder label such as 'Series (3)'."""
+    return get_string('group_count', _group_label(group), count)
+
+
+def _content_group(item):
+    """Classify a stored list item into a canonical group key."""
+    if not isinstance(item, dict):
+        return 'other'
+    explicit = str(item.get('group') or '').strip().lower()
+    if explicit in GROUP_ORDER:
+        return explicit
+    typ = str(item.get('type') or '').lower()
+    if 'channel' in typ or 'live' in typ:
+        return 'channels'
+    if 'episode' in typ:
+        return 'episodes'
+    if 'series' in typ or 'tvshow' in typ:
+        return 'series'
+    if 'movie' in typ or 'film' in typ:
+        return 'movies'
+    return 'other'
+
+
+def _search_group_key(itype_l, item):
+    """Map a search result's detected type to a canonical group key."""
+    itype_l = str(itype_l or '').lower()
+    if 'series' in itype_l or 'tvshow' in itype_l:
+        return 'series'
+    if 'episode' in itype_l:
+        return 'episodes'
+    if 'movie' in itype_l or 'film' in itype_l:
+        return 'movies'
+    if 'channel' in itype_l or 'live' in itype_l:
+        return 'channels'
+    raw = item.get('raw') if isinstance(item, dict) else None
+    sid = item.get('seriesId') if isinstance(item, dict) else None
+    if not sid and isinstance(raw, dict):
+        sid = raw.get('seriesId')
+    if sid:
+        return 'series'
+    return 'other'
+
+
+def _render_list_items(items):
+    """Render stored list items, linking series to their detail page."""
+    for itm in items:
+        try:
+            title = itm.get('title') or itm.get('name') or itm.get('id') or get_string('item_label')
+            source = itm.get('raw') if isinstance(itm.get('raw'), dict) else itm
+            thumb = _pick_landscape_thumb(source) or itm.get('thumb') or itm.get('posterUrl') or None
+            description = itm.get('description') or ''
+            if not description and isinstance(source, dict):
+                description = source.get('description') or source.get('plot') or ''
+            info = {'plot': description, 'plotoutline': description} if description else None
+            content = dict(source) if isinstance(source, dict) else {}
+            content.setdefault('id', itm.get('id'))
+            content.setdefault('title', title)
+            if itm.get('type'):
+                content.setdefault('type', itm.get('type'))
+            if itm.get('group'):
+                content.setdefault('group', itm.get('group'))
+            group = _content_group(itm)
+            if group in ('series', 'tvshows', 'documentary'):
+                add_directory_item(title, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content)
+            else:
+                play_query = {'mode': 'play', 'id': itm.get('id')}
+                if group == 'channels':
+                    play_query['fmt'] = 'live'
+                add_directory_item(title, play_query, is_folder=False, thumb=thumb, info=info, content=content)
+        except Exception:
+            continue
+
+
+def browse_my_list():
+    api = _get_list_api()
+    try:
+        api.backfill_my_list()
+    except Exception:
+        pass
     try:
         items = api.get_my_list() or []
     except Exception:
@@ -2149,32 +2424,21 @@ def browse_my_list():
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
-    # Group My List items into Series/Movies/Other so the My List top-level
-    # shows folders the user can open to view each category.
-    groups = {'Series': [], 'Movies': [], 'Other': []}
+    # Group My List items by category so the My List top-level shows one folder
+    # per category (Series, TV Shows, Documentaires, Films, Kanalen, ...).
+    groups = {}
     for itm in items:
-        try:
-            typ = (itm.get('type') or '').lower()
-            if 'series' in typ or 'tvshow' in typ:
-                groups['Series'].append(itm)
-            elif 'movie' in typ or 'film' in typ:
-                groups['Movies'].append(itm)
-            else:
-                groups['Other'].append(itm)
-        except Exception:
-            groups['Other'].append(itm)
+        groups.setdefault(_content_group(itm), []).append(itm)
 
-    # Present folders for each non-empty group (Series and Movies prioritized)
-    folder_order = ['Series', 'Movies', 'Other']
+    # Present a localized folder for each non-empty group, in a stable order.
     any_folder = False
-    for g in folder_order:
+    for g in GROUP_ORDER:
         lst = groups.get(g) or []
         if not lst:
             continue
         first = lst[0] if lst else None
         thumb = _pick_landscape_thumb(first) if first else None
-        label = f"{g}: {len(lst)} found"
-        add_directory_item(label, {'mode': 'my_list_group', 'group': g}, is_folder=True, thumb=thumb)
+        add_directory_item(_group_folder_label(g, len(lst)), {'mode': 'my_list_group', 'group': g}, is_folder=True, thumb=thumb)
         any_folder = True
 
     if not any_folder:
@@ -2182,106 +2446,172 @@ def browse_my_list():
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def browse_my_list_group(group):
+def _browse_saved_group(group):
     """Show items from the user's My List filtered to a single group."""
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    # Use cached API instance for faster group loading
+    api = _get_list_api()
     try:
-        api = get_api_instance()
+        api.backfill_my_list()
     except Exception:
-        api = NLZietAPI(username=username, password=password)
+        pass
     try:
         items = api.get_my_list() or []
     except Exception:
         items = []
 
-    if not items:
-        xbmcgui.Dialog().notification('NLZiet', 'My List is empty', xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
-        return
-
-    filtered = []
-    for itm in items:
-        try:
-            typ = (itm.get('type') or '').lower()
-            if group == 'Series' and ('series' in typ or 'tvshow' in typ):
-                filtered.append(itm)
-            elif group == 'Movies' and ('movie' in typ or 'film' in typ):
-                filtered.append(itm)
-            elif group == 'Other' and not ('series' in typ or 'tvshow' in typ or 'movie' in typ or 'film' in typ):
-                filtered.append(itm)
-        except Exception:
-            continue
+    filtered = [itm for itm in items if _content_group(itm) == group]
 
     if not filtered:
-        no_items_text = get_string('no_items_for_group') or 'No items found for {}'
-        xbmcgui.Dialog().notification('NLZiet', no_items_text.format(group), xbmcgui.NOTIFICATION_INFO)
+        message = get_string('no_items_for_group', _group_label(group))
+        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
-    for itm in filtered:
-        try:
-            title = itm.get('title') or itm.get('name') or itm.get('id') or 'Item'
-            thumb = itm.get('thumb') or itm.get('posterUrl') or None
-            typ = (itm.get('type') or '').lower()
-            if 'series' in typ or 'tvshow' in typ:
-                add_directory_item(title, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, content=itm)
-            elif 'episode' in typ:
-                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
-            elif 'movie' in typ or 'film' in typ:
-                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
-            else:
-                add_directory_item(title, {'mode': 'play', 'id': itm.get('id')}, is_folder=False, thumb=thumb, content=itm)
-        except Exception:
-            continue
+    _render_list_items(filtered)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    # Use cached API instance to respond instantly to My List actions
+def browse_my_list_group(group):
+    """Show items from the user's My List filtered to a single group."""
+    _browse_saved_group(group)
+
+
+def browse_watch_later():
+    """Show the local Watch Later queue."""
+    api = _get_list_api()
     try:
-        api = get_api_instance()
+        api.backfill_watch_later()
     except Exception:
-        # Fallback to creating a new instance if cache fails
-        api = NLZietAPI(username=username, password=password)
-    if not item_id:
-        xbmcgui.Dialog().notification('NLZiet', get_string('missing_id_mylist'), xbmcgui.NOTIFICATION_ERROR)
+        pass
+    try:
+        items = api.get_watch_later() or []
+    except Exception:
+        items = []
+
+    if not items:
+        xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
+        xbmcplugin.endOfDirectory(HANDLE)
         return
-    # Defensive: only allow Series or Movies to be toggled
-    if type and isinstance(type, str):
-        tl = type.lower()
-        if not any(x in tl for x in ('series', 'tvshow', 'movie', 'film')):
-            xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
-            return
+
+    _render_list_items(items)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def _fetch_list_detail(api, item_id, group):
+    """Fetch the richest available metadata for a saved list item.
+
+    The generic content endpoint does not return data for series ids, so series
+    are resolved through the series detail endpoint. Each source falls back to
+    the other so we always persist as much detail as possible.
+    """
+    if group in ('series', 'tvshows', 'documentary'):
+        order = ('get_series_detail', 'get_content_detail')
     else:
-        # try to detect content type from detail
+        order = ('get_content_detail', 'get_series_detail')
+    for name in order:
+        fn = getattr(api, name, None)
+        if not callable(fn):
+            continue
         try:
-            det = api.get_content_detail(item_id) or {}
-            raw_type = (det.get('raw') or {}).get('type') or det.get('type') or ''
-            if raw_type and not any(x in str(raw_type).lower() for x in ('series', 'tvshow', 'movie', 'film')):
-                xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
-                return
+            detail = fn(item_id) or {}
         except Exception:
-            pass
+            detail = {}
+        if isinstance(detail, dict) and (detail.get('description') or detail.get('raw') or detail.get('title')):
+            return detail
+    return {}
+
+
+def _resolve_list_type(api, item_id, type, allow_any=False):
+    """Return (allowed, content_type) for a list toggle.
+
+    Both My List and Watch Later accept any content. When the caller does not
+    provide a type we try to resolve it from the content detail so the stored
+    entry can later be rendered correctly.
+    """
+    def _is_series_or_movie(value):
+        return any(x in value for x in ('series', 'tvshow', 'movie', 'film'))
+
+    if type and isinstance(type, str):
+        return (allow_any or _is_series_or_movie(type.lower()), type)
     try:
-        itm = {'id': item_id, 'title': title, 'type': type, 'posterUrl': thumb}
-        if api.is_in_my_list(item_id):
-            removed = api.remove_from_my_list(item_id)
-            if removed:
-                xbmcgui.Dialog().notification('NLZiet', 'Removed from My List', xbmcgui.NOTIFICATION_INFO)
-            else:
-                xbmcgui.Dialog().notification('NLZiet', 'Failed to remove from My List', xbmcgui.NOTIFICATION_ERROR)
-        else:
-            added = api.add_to_my_list(itm)
-            if added:
-                xbmcgui.Dialog().notification('NLZiet', 'Added to My List', xbmcgui.NOTIFICATION_INFO)
-            else:
-                xbmcgui.Dialog().notification('NLZiet', 'Failed to add to My List', xbmcgui.NOTIFICATION_ERROR)
+        det = api.get_content_detail(item_id) or {}
+        raw_type = (det.get('raw') or {}).get('type') or det.get('type') or ''
+        if raw_type:
+            return (allow_any or _is_series_or_movie(str(raw_type).lower()), str(raw_type))
     except Exception:
-        xbmcgui.Dialog().notification('NLZiet', 'My List action failed', xbmcgui.NOTIFICATION_ERROR)
+        pass
+    # The generic endpoint returns nothing for series ids, so try series detail.
+    try:
+        sd = api.get_series_detail(item_id) or {}
+        if isinstance(sd, dict) and (sd.get('title') or sd.get('description') or sd.get('seasons')):
+            return (True, 'Series')
+    except Exception:
+        pass
+    return (allow_any, type)
+
+
+def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None):
+    """Add or remove an item from a local list ('mylist' or 'watch_later')."""
+    api = _get_list_api()
+    if not item_id:
+        missing_key = 'missing_id_watchlater' if kind == 'watch_later' else 'missing_id_mylist'
+        xbmcgui.Dialog().notification('NLZiet', get_string(missing_key), xbmcgui.NOTIFICATION_ERROR)
+        return
+
+    allowed, resolved_type = _resolve_list_type(api, item_id, type, allow_any=True)
+    if not allowed:
+        xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
+        return
+
+    fail_key = 'watchlater_action_failed' if kind == 'watch_later' else 'mylist_action_failed'
+    try:
+        if kind == 'watch_later':
+            in_list = api.is_in_watch_later(item_id)
+        else:
+            in_list = api.is_in_my_list(item_id)
+
+        if in_list:
+            if kind == 'watch_later':
+                ok = api.remove_from_watch_later(item_id)
+                ok_key = 'removed_from_watch_later'
+            else:
+                ok = api.remove_from_my_list(item_id)
+                ok_key = 'removed_from_list'
+        else:
+            # Fetch the full content detail so we persist the metadata (title,
+            # description, artwork, ...) instead of only a bare id/title pair.
+            stored_group = group or _content_group({'type': resolved_type})
+            detail = _fetch_list_detail(api, item_id, stored_group)
+            raw = detail.get('raw') if isinstance(detail.get('raw'), dict) else {}
+            stored_type = resolved_type or detail.get('type') or ''
+            if not stored_type and isinstance(detail.get('seasons'), (list, tuple)):
+                stored_type = 'Series'
+            itm = {
+                'id': item_id,
+                'title': title or detail.get('title') or '',
+                'type': stored_type,
+                'group': stored_group,
+                'posterUrl': thumb or detail.get('thumb') or None,
+                'thumb': thumb or detail.get('thumb') or None,
+                'description': detail.get('description') or '',
+                'expires_at': detail.get('expires_at'),
+            }
+            if raw:
+                itm['raw'] = raw
+            if kind == 'watch_later':
+                ok = api.add_to_watch_later(itm)
+                ok_key = 'added_to_watch_later'
+            else:
+                ok = api.add_to_my_list(itm)
+                ok_key = 'added_to_list'
+
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string(ok_key if ok else fail_key),
+            xbmcgui.NOTIFICATION_INFO if ok else xbmcgui.NOTIFICATION_ERROR,
+        )
+    except Exception:
+        xbmcgui.Dialog().notification('NLZiet', get_string('list_action_failed'), xbmcgui.NOTIFICATION_ERROR)
+
     # Refresh the current container so context menu changes reflect immediately
     try:
         xbmc.executebuiltin('Container.Refresh')
@@ -2289,10 +2619,18 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None):
         pass
 
 
+def toggle_mylist(item_id=None, title=None, type=None, thumb=None, group=None):
+    _toggle_local_list('mylist', item_id, title, type, thumb, group)
+
+
+def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None):
+    _toggle_local_list('watch_later', item_id, title, type, thumb, group)
+
+
 def select_profile(profile_id):
     """Activate the given profile id and re-render the profiles list."""
     if not profile_id:
-        xbmcgui.Dialog().notification('NLZiet', 'Missing profile id', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_profile_id'), xbmcgui.NOTIFICATION_ERROR)
         return
 
     username = ADDON.getSetting('username')
@@ -2322,9 +2660,9 @@ def select_profile(profile_id):
             ADDON.setSetting('profile_name', profile_name or str(profile_id))
         except Exception:
             pass
-        xbmcgui.Dialog().notification('NLZiet', f'Profile switched to {ADDON.getSetting("profile_name") or profile_id}', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('profile_switched', ADDON.getSetting('profile_name') or profile_id), xbmcgui.NOTIFICATION_INFO)
     else:
-        xbmcgui.Dialog().notification('NLZiet', 'Profile switch failed', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('profile_switch_failed'), xbmcgui.NOTIFICATION_ERROR)
 
     # Replace the current container with the profiles listing so we don't
     # push an extra history entry. This prevents Back from cycling
@@ -2343,7 +2681,7 @@ def apply_profile():
     """
     pid = ADDON.getSetting('profile_id') or ''
     if not pid:
-        xbmcgui.Dialog().notification('NLZiet', 'No Profile ID set in Settings', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_profile_set'), xbmcgui.NOTIFICATION_INFO)
         return
 
     username = ADDON.getSetting('username')
@@ -2389,13 +2727,13 @@ def apply_profile():
         except Exception:
             pass
 
-        xbmcgui.Dialog().notification('NLZiet', f'Profile applied: {profile_name or pid}', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('profile_applied', profile_name or pid), xbmcgui.NOTIFICATION_INFO)
     else:
-        xbmcgui.Dialog().notification('NLZiet', 'Failed to apply profile. Try Manage profiles.', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('profile_apply_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
 def do_search():
-    kb = xbmc.Keyboard('', 'Search NLZiet')
+    kb = xbmc.Keyboard('', get_string('search_heading'))
     kb.doModal()
     if not kb.isConfirmed():
         return
@@ -2448,7 +2786,7 @@ def do_search():
         if fb:
             results = fb
         else:
-            xbmcgui.Dialog().notification('NLZiet', f'No results for "{query}"', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('no_results', query), xbmcgui.NOTIFICATION_INFO)
             xbmcplugin.endOfDirectory(HANDLE)
             return
     # Group search results by their detected type so we can present grouped
@@ -2473,25 +2811,11 @@ def do_search():
             except Exception:
                 itype_l = itype_l
 
-        group = None
-        if 'series' in itype_l or 'tvshow' in itype_l:
-            group = 'Series'
-        elif 'episode' in itype_l:
-            group = 'Episodes'
-        elif 'movie' in itype_l or 'film' in itype_l:
-            group = 'Movies'
-        elif 'channel' in itype_l or 'live' in itype_l:
-            group = 'Channels'
-        else:
-            sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
-            if sid:
-                group = 'Series'
-            else:
-                group = 'Other'
+        group = _search_group_key(itype_l, item)
 
         group_map.setdefault(group, []).append(item)
 
-    non_empty = [g for g, v in group_map.items() if v]
+    non_empty = [g for g in GROUP_ORDER if group_map.get(g)]
     # If results span multiple groups, present top-level folders for each group
     # so the user can open e.g. "Series" or "Movies" individually.
     if len(non_empty) > 1:
@@ -2503,8 +2827,7 @@ def do_search():
                 thumb = _pick_landscape_thumb(first) if first else None
             except Exception:
                 thumb = None
-            label = f"{g}: {len(items_for_group)} found"
-            add_directory_item(label, {'mode': 'search_group', 'q': query, 'group': g}, is_folder=True, thumb=thumb)
+            add_directory_item(_group_folder_label(g, len(items_for_group)), {'mode': 'search_group', 'q': query, 'group': g}, is_folder=True, thumb=thumb)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
@@ -2570,25 +2893,16 @@ def do_search():
             except Exception:
                 itype_l = itype_l
 
-        title = item.get('title') or item.get('name') or content_id or 'Result'
+        title = item.get('title') or item.get('name') or content_id or get_string('result_label')
         thumb = _pick_landscape_thumb(item)
 
-        # Determine a simple group label so search results indicate their type
-        group = None
-        if 'series' in itype_l or 'tvshow' in itype_l:
-            group = 'Series'
-        elif 'episode' in itype_l:
-            group = 'Episodes'
-        elif 'movie' in itype_l or 'film' in itype_l:
-            group = 'Movies'
-        elif 'channel' in itype_l or 'live' in itype_l:
-            group = 'Channels'
+        # Prefix the title with a localized type label so search results
+        # indicate their type.
+        group = _search_group_key(itype_l, item)
+        if group and group != 'other':
+            display_title = get_string('group_result_title', _group_label(group), title)
         else:
-            sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
-            if sid:
-                group = 'Series'
-
-        display_title = f"{group}: {title}" if group else title
+            display_title = title
 
         # Series / TV show -> open series detail (folder)
         if 'series' in itype_l or 'tvshow' in itype_l:
@@ -2718,15 +3032,27 @@ def browse_category(content_type):
         item_type = (item.get('type') or '').lower()
         query = {'mode': 'play', 'id': item.get('id')}
         is_folder = False
-        
-        if item_type == 'series' or content_type.lower() == 'documentary':
+
+        ctype = content_type.lower()
+        if ctype == 'documentary':
+            add_group = 'documentary'
+        elif ctype == 'channels':
+            add_group = 'channels'
+        elif ctype == 'movies':
+            add_group = 'movies'
+        else:
+            add_group = None
+
+        if item_type == 'series' or ctype == 'documentary':
             # Series and documentaries open as folders with series detail
             query = {'mode': 'series_detail', 'series_id': item.get('id')}
             is_folder = True
-        elif content_type.lower() == 'channels':
+        elif ctype == 'channels':
             query['fmt'] = 'live'
+            if not item.get('type'):
+                item['type'] = 'channel'
         
-        add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item)
+        add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group=add_group)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -2737,7 +3063,7 @@ def search_group(q, group):
     the requested group name.
     """
     if not q:
-        xbmcgui.Dialog().notification('NLZiet', 'Missing search query', xbmcgui.NOTIFICATION_INFO)
+        xbmcgui.Dialog().notification('NLZiet', get_string('missing_search_query'), xbmcgui.NOTIFICATION_INFO)
         return
 
     username = ADDON.getSetting('username')
@@ -2787,7 +3113,7 @@ def search_group(q, group):
         if fb:
             results = fb
         else:
-            xbmcgui.Dialog().notification('NLZiet', f'No results for "{q}"', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('no_results', q), xbmcgui.NOTIFICATION_INFO)
             xbmcplugin.endOfDirectory(HANDLE)
             return
 
@@ -2842,26 +3168,12 @@ def search_group(q, group):
                 itype_l = itype_l
 
         # compute group and skip items that don't match
-        group_name = None
-        if 'series' in itype_l or 'tvshow' in itype_l:
-            group_name = 'Series'
-        elif 'episode' in itype_l:
-            group_name = 'Episodes'
-        elif 'movie' in itype_l or 'film' in itype_l:
-            group_name = 'Movies'
-        elif 'channel' in itype_l or 'live' in itype_l:
-            group_name = 'Channels'
-        else:
-            sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
-            if sid:
-                group_name = 'Series'
-            else:
-                group_name = 'Other'
+        group_name = _search_group_key(itype_l, item)
 
-        if not group_name or str(group_name).lower() != (str(group or '').lower()):
+        if str(group_name).lower() != str(group or '').lower():
             continue
 
-        title = item.get('title') or item.get('name') or content_id or 'Result'
+        title = item.get('title') or item.get('name') or content_id or get_string('result_label')
         thumb = _pick_landscape_thumb(item)
 
         # Inside a search-group listing we show plain titles; the group
@@ -2944,8 +3256,8 @@ def ensure_inputstream_for_drm():
         import inputstreamhelper
     except Exception:
         xbmcgui.Dialog().ok(
-            'Dependency missing',
-            'Please install script.module.inputstreamhelper to play DRM streams.'
+            get_string('dependency_missing_title'),
+            get_string('dependency_missing_msg')
         )
         return None
 
@@ -2989,7 +3301,7 @@ def play_item(content_id, fmt=None, **kwargs):
     xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGINFO)
     xbmc.log(f"NLZiet info subtitles value: {repr(subs_in_info)} (type: {type(subs_in_info).__name__})", xbmc.LOGINFO)
     if not manifest:
-        xbmcgui.Dialog().notification('NLZiet', 'No manifest available', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('no_manifest'), xbmcgui.NOTIFICATION_ERROR)
         return
 
     # Check subtitle setting once for all processing
@@ -3050,7 +3362,7 @@ def play_item(content_id, fmt=None, **kwargs):
         except Exception:
             pass
         if drm_security:
-            xbmcgui.Dialog().notification('NLZiet', f'Required DRM: {drm_security}', xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().notification('NLZiet', get_string('required_drm', drm_security), xbmcgui.NOTIFICATION_INFO)
 
         # make a safe copy of headers and ensure User-Agent matches the API session
         try:
@@ -3289,7 +3601,9 @@ def get_route_handlers():
         'manage_profiles': manage_profiles,
         'browse_my_list': browse_my_list,
         'browse_my_list_group': browse_my_list_group,
+        'browse_watch_later': browse_watch_later,
         'toggle_mylist': toggle_mylist,
+        'toggle_watch_later': toggle_watch_later,
         'select_profile': select_profile,
         'apply_profile': apply_profile,
         'browse_series': browse_series,

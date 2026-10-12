@@ -18,7 +18,7 @@ def _import_default(monkeypatch):
         ('mode=profiles', 'manage_profiles', (), False),
         ('mode=my_list', 'browse_my_list', (), True),
         ('mode=my_list_group&group=Movies', 'browse_my_list_group', ('Movies',), True),
-        ('mode=toggle_mylist&id=m1&title=Movie&type=movie&thumb=poster', 'toggle_mylist', ('m1', 'Movie', 'movie', 'poster'), True),
+        ('mode=toggle_mylist&id=m1&title=Movie&type=movie&thumb=poster', 'toggle_mylist', ('m1', 'Movie', 'movie', 'poster', None), True),
         ('mode=select_profile&profile_id=p1', 'select_profile', ('p1',), True),
         ('mode=series_season&series_id=s1&season_id=2', 'show_series_season', ('s1', '2', None, None, None), True),
         ('mode=placement_row&items_url=https%3A%2F%2Fexample.test%2Fitems&placement_id=pl&comp_index=3', 'browse_placement_row', ('https://example.test/items', 'pl', '3'), True),
@@ -65,6 +65,35 @@ def test_get_string_uses_kodi_language(monkeypatch):
 
     monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'nl')
     assert default.get_string('login') == 'Inloggen'
+
+
+def test_get_string_prefers_kodi_translation(monkeypatch):
+    default = _import_default(monkeypatch)
+
+    sid = default.STRING_IDS['login']
+    default.ADDON.localized[sid] = 'Aanmelden'
+
+    monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'nl')
+    assert default.get_string('login') == 'Aanmelden'
+
+
+def test_get_string_falls_back_to_english_for_other_languages(monkeypatch):
+    default = _import_default(monkeypatch)
+
+    # Languages we do not ship explicitly should get English, not Dutch.
+    monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'de')
+    assert default.get_string('login') == 'Login'
+
+    monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'fr')
+    assert default.get_string('login') == 'Login'
+
+
+def test_string_ids_cover_all_translation_keys(monkeypatch):
+    default = _import_default(monkeypatch)
+
+    assert set(default.STRING_IDS) == set(default.TRANSLATIONS)
+    ids = list(default.STRING_IDS.values())
+    assert len(ids) == len(set(ids))
 
 
 def test_login_dialog_masks_password(monkeypatch):
@@ -179,9 +208,43 @@ def test_browse_my_list_groups_existing_items_by_content_type(monkeypatch, kodi_
     default.browse_my_list()
 
     assert [(title, query) for title, query, _ in entries] == [
-        ('Series: 1 found', {'mode': 'my_list_group', 'group': 'Series'}),
-        ('Movies: 1 found', {'mode': 'my_list_group', 'group': 'Movies'}),
-        ('Other: 1 found', {'mode': 'my_list_group', 'group': 'Other'}),
+        ('Series (1)', {'mode': 'my_list_group', 'group': 'series'}),
+        ('Films (1)', {'mode': 'my_list_group', 'group': 'movies'}),
+        ('Overig (1)', {'mode': 'my_list_group', 'group': 'other'}),
+    ]
+    assert kodi_recorder.ended == [42]
+
+
+def test_browse_my_list_creates_subsection_for_each_category(monkeypatch, kodi_recorder):
+    default = _import_default(monkeypatch)
+    entries = []
+
+    class FakeApi:
+        def get_my_list(self):
+            return [
+                {'id': 's1', 'type': 'Series', 'group': 'series'},
+                {'id': 'tv1', 'type': 'Series', 'group': 'tvshows'},
+                {'id': 'doc1', 'type': 'Series', 'group': 'documentary'},
+                {'id': 'm1', 'type': 'Movie', 'group': 'movies'},
+                {'id': 'c1', 'type': 'channel', 'group': 'channels'},
+            ]
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+    monkeypatch.setattr(default, '_pick_landscape_thumb', lambda item: 'thumb:' + item['id'])
+    monkeypatch.setattr(
+        default,
+        'add_directory_item',
+        lambda title, query, **kwargs: entries.append((title, query, kwargs)),
+    )
+
+    default.browse_my_list()
+
+    assert [(title, query) for title, query, _ in entries] == [
+        ('Series (1)', {'mode': 'my_list_group', 'group': 'series'}),
+        ('TV Shows (1)', {'mode': 'my_list_group', 'group': 'tvshows'}),
+        ('Documentaires (1)', {'mode': 'my_list_group', 'group': 'documentary'}),
+        ('Films (1)', {'mode': 'my_list_group', 'group': 'movies'}),
+        ('Kanalen (1)', {'mode': 'my_list_group', 'group': 'channels'}),
     ]
     assert kodi_recorder.ended == [42]
 

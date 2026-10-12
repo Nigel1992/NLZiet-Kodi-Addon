@@ -1,10 +1,32 @@
 # Changelog
 
-> **Latest Version:** v1.1.0 (September 2, 2026)
+> **Latest Version:** v1.3.0 (October 13, 2026)
 
 All notable changes to this project are recorded in this file.
 
-## [Unreleased]
+## [1.3.0] - 2026-10-13
+
+### Added
+- My List now has its own subsection per category (Series, TV Shows, Documentaires, Films, Kanalen) instead of a single generic list.
+- My List accepts every content type (TV Shows, Documentaires, Kanalen and episodes too), matching Kijk Later.
+
+### Changed
+- Every user-facing string (notifications, dialogs, keyboard prompt, grouped search/My List folder labels and count labels) now resolves through Kodi's translation system, so a Dutch Kodi shows the whole add-on in Dutch.
+
+### Fixed
+- Live channels saved to My List / Kijk Later now play correctly (they are opened with the live stream context).
+
+## [1.2.0] - 2026-10-12
+
+### Added
+- **Kijk Later** (Watch Later): a local queue with its own main-menu entry and an "Add to Kijk Later" / "Remove from Kijk Later" context-menu action available on any content.
+- New menu icon for the Kijk Later queue.
+- Saved list entries now persist the full content metadata (title, description/plot and artwork) so My List / Watch Later show rich items instead of bare titles.
+- Runtime UI strings now resolve through Kodi's translation system (`strings.po`), so any language with a translation file works; English is the universal fallback.
+
+### Fixed
+- Series detail now shows both the My List and "Add to library" context-menu actions (previously the second overwrote the first).
+- Saved series now reopen their detail page from My List / Watch Later even when the content type was not supplied.
 
 ## [1.1.0] - 2026-09-02
 

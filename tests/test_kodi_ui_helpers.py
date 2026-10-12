@@ -97,3 +97,118 @@ def test_artwork_helpers_prefer_landscape_for_fanart_and_portrait_for_poster():
         'thumb': 'https://image.test/landscape.jpg?width=3840',
         'icon': 'https://image.test/landscape.jpg?width=3840',
     }]
+
+
+class FakeListAPI:
+    def __init__(self, in_mylist=False, in_watchlater=False):
+        self._in_mylist = in_mylist
+        self._in_watchlater = in_watchlater
+
+    def is_in_my_list(self, content_id):
+        return self._in_mylist
+
+    def is_in_watch_later(self, content_id):
+        return self._in_watchlater
+
+
+def test_context_menu_combines_mylist_watch_later_and_library(monkeypatch):
+    items = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(ui.xbmcplugin, 'addDirectoryItem', lambda *a, **k: None)
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: FakeListAPI(in_mylist=True, in_watchlater=False),
+        'Show',
+        {'mode': 'series_detail', 'series_id': 's1'},
+        thumb='https://image.test/poster.jpg',
+        content={'id': 's1', 'type': 'series'},
+    )
+
+    labels = [label for label, _ in items[0].context_menu]
+    assert labels == ['Remove from My List', 'Add to Watch Later', 'Add to library']
+
+
+def test_context_menu_reflects_watch_later_membership(monkeypatch):
+    items = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(ui.xbmcplugin, 'addDirectoryItem', lambda *a, **k: None)
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: FakeListAPI(in_mylist=False, in_watchlater=True),
+        'Film',
+        {'mode': 'play', 'id': 'm1'},
+        is_folder=False,
+        thumb='https://image.test/poster.jpg',
+        content={'id': 'm1', 'type': 'movie'},
+    )
+
+    labels = [label for label, _ in items[0].context_menu]
+    assert labels == ['Add to My List', 'Remove from Watch Later']
+
+
+def test_context_menu_allows_my_list_and_watch_later_for_any_content(monkeypatch):
+    items = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(ui.xbmcplugin, 'addDirectoryItem', lambda *a, **k: None)
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: FakeListAPI(in_mylist=False, in_watchlater=False),
+        'Kanaal 1',
+        {'mode': 'play', 'id': 'c1', 'fmt': 'live'},
+        is_folder=False,
+        content={'id': 'c1', 'type': 'channel'},
+    )
+
+    labels = [label for label, _ in items[0].context_menu]
+    assert labels == ['Add to My List', 'Add to Watch Later']
+
+
+def test_context_menu_includes_group_in_toggle_queries(monkeypatch):
+    items = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(ui.xbmcplugin, 'addDirectoryItem', lambda *a, **k: None)
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: FakeListAPI(in_mylist=False, in_watchlater=False),
+        'Show',
+        {'mode': 'series_detail', 'series_id': 's1'},
+        thumb='https://image.test/poster.jpg',
+        content={'id': 's1', 'type': 'Series'},
+        group='tvshows',
+    )
+
+    actions = [action for _, action in items[0].context_menu]
+    assert any('mode=toggle_mylist' in a and 'group=tvshows' in a for a in actions)
+    assert any('mode=toggle_watch_later' in a and 'group=tvshows' in a for a in actions)

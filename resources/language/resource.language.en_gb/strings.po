@@ -113,3 +113,435 @@ msgstr "NLZiet library path"
 msgctxt "#33001"
 msgid "This program is not yet available."
 msgstr "This program is not yet available."
+
+# -------------
+# Runtime UI strings
+# -------------
+
+msgctxt "#33002"
+msgid "Login"
+msgstr "Login"
+
+msgctxt "#33003"
+msgid "Sign Out"
+msgstr "Sign Out"
+
+msgctxt "#33004"
+msgid "Login (via dialog)"
+msgstr "Login (via dialog)"
+
+msgctxt "#33005"
+msgid "NLZiet Login"
+msgstr "NLZiet Login"
+
+msgctxt "#33006"
+msgid "Email address"
+msgstr "Email address"
+
+msgctxt "#33007"
+msgid "Password"
+msgstr "Password"
+
+msgctxt "#33008"
+msgid "Login"
+msgstr "Login"
+
+msgctxt "#33009"
+msgid "Cancel"
+msgstr "Cancel"
+
+msgctxt "#33010"
+msgid "Invalid email or password"
+msgstr "Invalid email or password"
+
+msgctxt "#33011"
+msgid "Try again?"
+msgstr "Try again?"
+
+msgctxt "#33012"
+msgid "Session expired - re-authentication required"
+msgstr "Session expired - re-authentication required"
+
+msgctxt "#33013"
+msgid "Your session has expired. Please click Login to re-authenticate."
+msgstr "Your session has expired. Please click Login to re-authenticate."
+
+msgctxt "#33014"
+msgid "How do you want to stay logged in?"
+msgstr "How do you want to stay logged in?"
+
+msgctxt "#33015"
+msgid "Save only tokens (recommended)"
+msgstr "Save only tokens (recommended)"
+
+msgctxt "#33016"
+msgid "Save email and password (not recommended)"
+msgstr "Save email and password (not recommended)"
+
+msgctxt "#33017"
+msgid "Only session tokens are saved. This is safer. You only need to login again when your session expires."
+msgstr "Only session tokens are saved. This is safer. You only need to login again when your session expires."
+
+msgctxt "#33018"
+msgid "Email and password saved. These will be used to automatically refresh your session."
+msgstr "Email and password saved. These will be used to automatically refresh your session."
+
+msgctxt "#33019"
+msgid "Session token obtained. You are logged in."
+msgstr "Session token obtained. You are logged in."
+
+msgctxt "#33020"
+msgid "Manage profiles"
+msgstr "Manage profiles"
+
+msgctxt "#33021"
+msgid "Search"
+msgstr "Search"
+
+msgctxt "#33022"
+msgid "My List"
+msgstr "My List"
+
+msgctxt "#33023"
+msgid "Series"
+msgstr "Series"
+
+msgctxt "#33024"
+msgid "TV Shows"
+msgstr "TV Shows"
+
+msgctxt "#33025"
+msgid "Documentary"
+msgstr "Documentary"
+
+msgctxt "#33026"
+msgid "Movies"
+msgstr "Movies"
+
+msgctxt "#33027"
+msgid "Channels"
+msgstr "Channels"
+
+msgctxt "#33028"
+msgid "All episodes"
+msgstr "All episodes"
+
+msgctxt "#33029"
+msgid "Missing series id"
+msgstr "Missing series id"
+
+msgctxt "#33030"
+msgid "Missing season id"
+msgstr "Missing season id"
+
+msgctxt "#33031"
+msgid "Unable to fetch series details"
+msgstr "Unable to fetch series details"
+
+msgctxt "#33032"
+msgid "No items found"
+msgstr "No items found"
+
+msgctxt "#33033"
+msgid "Not logged in. Press [B]Login[/B] to authenticate."
+msgstr "Not logged in. Press [B]Login[/B] to authenticate."
+
+msgctxt "#33034"
+msgid "Press [B]Login[/B] on the main menu to authenticate via a dialog."
+msgstr "Press [B]Login[/B] on the main menu to authenticate via a dialog."
+
+msgctxt "#33035"
+msgid "Logout and clear local data"
+msgstr "Logout and clear local data"
+
+msgctxt "#33036"
+msgid "Only Series and Movies can be saved to a list"
+msgstr "Only Series and Movies can be saved to a list"
+
+msgctxt "#33037"
+msgid "Searching for \"{}\""
+msgstr "Searching for \"{}\""
+
+msgctxt "#33038"
+msgid "No results found for \"{}\""
+msgstr "No results found for \"{}\""
+
+msgctxt "#33039"
+msgid "Now watching"
+msgstr "Now watching"
+
+msgctxt "#33040"
+msgid "Added to My List"
+msgstr "Added to My List"
+
+msgctxt "#33041"
+msgid "Removed from My List"
+msgstr "Removed from My List"
+
+msgctxt "#33042"
+msgid "All"
+msgstr "All"
+
+msgctxt "#33043"
+msgid "No episodes found"
+msgstr "No episodes found"
+
+msgctxt "#33044"
+msgid "Account info updated:"
+msgstr "Account info updated:"
+
+msgctxt "#33045"
+msgid "Account info could not be parsed"
+msgstr "Account info could not be parsed"
+
+msgctxt "#33046"
+msgid "Logged out — local data cleared"
+msgstr "Logged out — local data cleared"
+
+msgctxt "#33047"
+msgid "Logout cancelled"
+msgstr "Logout cancelled"
+
+msgctxt "#33048"
+msgid "Login successful (tokens acquired)"
+msgstr "Login successful (tokens acquired)"
+
+msgctxt "#33049"
+msgid "Login successful (no tokens)"
+msgstr "Login successful (no tokens)"
+
+msgctxt "#33050"
+msgid "Login failed — running in demo mode"
+msgstr "Login failed — running in demo mode"
+
+msgctxt "#33051"
+msgid "No profiles available. Please login first."
+msgstr "No profiles available. Please login first."
+
+msgctxt "#33052"
+msgid "My List is empty"
+msgstr "My List is empty"
+
+msgctxt "#33053"
+msgid "No items found for {}"
+msgstr "No items found for {}"
+
+msgctxt "#33054"
+msgid "Missing id for My List action"
+msgstr "Missing id for My List action"
+
+msgctxt "#33055"
+msgid "This will clear cookies and tokens. Continue?"
+msgstr "This will clear cookies and tokens. Continue?"
+
+msgctxt "#33056"
+msgid "Do you want to keep your My List?"
+msgstr "Do you want to keep your My List?"
+
+msgctxt "#33057"
+msgid "Keep"
+msgstr "Keep"
+
+msgctxt "#33058"
+msgid "Clear"
+msgstr "Clear"
+
+msgctxt "#33059"
+msgid "Logout"
+msgstr "Logout"
+
+msgctxt "#33060"
+msgid "Cancel"
+msgstr "Cancel"
+
+msgctxt "#33061"
+msgid "Season"
+msgstr "Season"
+
+msgctxt "#33062"
+msgid "Subscription"
+msgstr "Subscription"
+
+msgctxt "#33063"
+msgid "Type"
+msgstr "Type"
+
+msgctxt "#33064"
+msgid "Max devices"
+msgstr "Max devices"
+
+msgctxt "#33065"
+msgid "Expires"
+msgstr "Expires"
+
+msgctxt "#33066"
+msgid "Add to library"
+msgstr "Add to library"
+
+msgctxt "#33067"
+msgid "{} episodes exported to library"
+msgstr "{} episodes exported to library"
+
+msgctxt "#33068"
+msgid "Library export failed"
+msgstr "Library export failed"
+
+msgctxt "#33069"
+msgid "Diagnostic report saved:\n{}"
+msgstr "Diagnostic report saved:\n{}"
+
+msgctxt "#33070"
+msgid "Could not save diagnostic report"
+msgstr "Could not save diagnostic report"
+
+msgctxt "#33073"
+msgid "Watch Later"
+msgstr "Watch Later"
+
+msgctxt "#33074"
+msgid "Add to My List"
+msgstr "Add to My List"
+
+msgctxt "#33075"
+msgid "Remove from My List"
+msgstr "Remove from My List"
+
+msgctxt "#33076"
+msgid "Add to Watch Later"
+msgstr "Add to Watch Later"
+
+msgctxt "#33077"
+msgid "Remove from Watch Later"
+msgstr "Remove from Watch Later"
+
+msgctxt "#33078"
+msgid "Added to Watch Later"
+msgstr "Added to Watch Later"
+
+msgctxt "#33079"
+msgid "Removed from Watch Later"
+msgstr "Removed from Watch Later"
+
+msgctxt "#33080"
+msgid "Watch Later is empty"
+msgstr "Watch Later is empty"
+
+msgctxt "#33081"
+msgid "Missing id for Watch Later action"
+msgstr "Missing id for Watch Later action"
+
+msgctxt "#33084"
+msgid "My List action failed"
+msgstr "My List action failed"
+
+msgctxt "#33085"
+msgid "Watch Later action failed"
+msgstr "Watch Later action failed"
+
+msgctxt "#33086"
+msgid "List action failed"
+msgstr "List action failed"
+
+msgctxt "#33087"
+msgid "Search NLZiet"
+msgstr "Search NLZiet"
+
+msgctxt "#33088"
+msgid "Login failed - max attempts reached"
+msgstr "Login failed - max attempts reached"
+
+msgctxt "#33089"
+msgid "Login error: {}"
+msgstr "Login error: {}"
+
+msgctxt "#33090"
+msgid "Missing profile id"
+msgstr "Missing profile id"
+
+msgctxt "#33091"
+msgid "Profile switched to {}"
+msgstr "Profile switched to {}"
+
+msgctxt "#33092"
+msgid "Profile switch failed"
+msgstr "Profile switch failed"
+
+msgctxt "#33093"
+msgid "No Profile ID set in Settings"
+msgstr "No Profile ID set in Settings"
+
+msgctxt "#33094"
+msgid "Profile applied: {}"
+msgstr "Profile applied: {}"
+
+msgctxt "#33095"
+msgid "Failed to apply profile. Try Manage profiles."
+msgstr "Failed to apply profile. Try Manage profiles."
+
+msgctxt "#33096"
+msgid "Missing search query"
+msgstr "Missing search query"
+
+msgctxt "#33097"
+msgid "No manifest available"
+msgstr "No manifest available"
+
+msgctxt "#33098"
+msgid "Required DRM: {}"
+msgstr "Required DRM: {}"
+
+msgctxt "#33099"
+msgid "Dependency missing"
+msgstr "Dependency missing"
+
+msgctxt "#33100"
+msgid "Please install script.module.inputstreamhelper to play DRM streams."
+msgstr "Please install script.module.inputstreamhelper to play DRM streams."
+
+msgctxt "#33101"
+msgid "Result"
+msgstr "Result"
+
+msgctxt "#33102"
+msgid "Item"
+msgstr "Item"
+
+msgctxt "#33103"
+msgid "Series"
+msgstr "Series"
+
+msgctxt "#33104"
+msgid "TV Shows"
+msgstr "TV Shows"
+
+msgctxt "#33105"
+msgid "Documentaries"
+msgstr "Documentaries"
+
+msgctxt "#33106"
+msgid "Movies"
+msgstr "Movies"
+
+msgctxt "#33107"
+msgid "Channels"
+msgstr "Channels"
+
+msgctxt "#33108"
+msgid "Episodes"
+msgstr "Episodes"
+
+msgctxt "#33109"
+msgid "Other"
+msgstr "Other"
+
+msgctxt "#33110"
+msgid "{} ({})"
+msgstr "{} ({})"
+
+msgctxt "#33111"
+msgid "{}: {}"
+msgstr "{}: {}"
+
+msgctxt "#33112"
+msgid "Not allowed"
+msgstr "Not allowed"

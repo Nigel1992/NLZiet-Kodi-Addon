@@ -7,7 +7,9 @@ from resources.lib.router import Router
 
 EXPECTED_HANDLER_NAMES = {
     'main_menu', 'do_login', 'do_search', 'manage_profiles',
-    'browse_my_list', 'browse_my_list_group', 'toggle_mylist',
+    'browse_my_list', 'browse_my_list_group',
+    'browse_watch_later', 'toggle_mylist',
+    'toggle_watch_later',
     'select_profile', 'apply_profile', 'browse_series', 'do_logout',
     'confirm_logout', 'refresh_account_info', 'export_diagnostics',
     'search_group', 'show_series_detail', 'show_series_season',
@@ -82,7 +84,20 @@ def test_my_list_routes_preserve_parameters():
 
     assert calls == [
         ('browse_my_list_group', ('Movies',), {}),
-        ('toggle_mylist', ('1', 'T', 'movie', 'img'), {}),
+        ('toggle_mylist', ('1', 'T', 'movie', 'img', None), {}),
+    ]
+
+
+def test_watch_later_route_dispatches():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch('mode=watch_later')
+    router.dispatch('mode=toggle_watch_later&id=s1&type=series&title=Show&thumb=img')
+
+    assert calls == [
+        ('browse_watch_later', (), {}),
+        ('toggle_watch_later', ('s1', 'Show', 'series', 'img', None), {}),
     ]
 
 

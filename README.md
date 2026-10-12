@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.1.0 — 2026-09-02. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.3.0 — 2026-10-13. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -24,7 +24,9 @@
 - **Live TV**: Stream all supported NLZiet channels with EPG info.
 - **Series**: Browse, search, and play series with full season/episode navigation.
 - **Movies**: Discover and watch movies from the NLZiet catalog.
+- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List**, plus a local **Kijk Later** (Watch Later) queue — all via the item context menu. My List groups items into a subsection per category.
 - **Profile Management**: Switch between user profiles from the Kodi UI.
+- **Localization**: All user-facing text resolves through Kodi's language system (Dutch and English included); English is the fallback for languages without a translation file.
 - **DRM Support**: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
 - **Placement Rows**: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
 - **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
@@ -32,8 +34,23 @@
 - **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion. The Trakt add-on must be installed and authorized separately.
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Debug Logging**: Easy log collection for troubleshooting.
-
 ---
+
+### New in v1.3.0
+
+- **My List subsections**: My List now groups entries into a subsection per category (Series, TV Shows, Documentaires, Films, Kanalen) instead of a single generic list.
+- **Any content type in My List**: TV Shows, Documentaires, Kanalen and individual episodes can now be saved to My List too, matching Kijk Later.
+- **Full localization**: every user-facing string — notifications, dialogs, the search prompt, grouped My List / search folder labels and count labels — now resolves through Kodi's translation system, so a Dutch Kodi shows the whole add-on in Dutch (English is the fallback).
+- **Fixed**: live channels saved to My List / Kijk Later now play correctly by opening them with the live stream context.
+
+### New in v1.2.0
+
+- Added a local **Kijk Later** (Watch Later) queue with its own main-menu entry; any content can be added via the context menu.
+- Added a dedicated menu icon for the Kijk Later queue.
+- Saved list entries now keep the full content metadata (title, description/plot and artwork) so My List / Watch Later render rich items.
+- Runtime UI strings now use Kodi's translation system (`strings.po`); any language with a translation file works and English is the fallback for languages without one.
+- Fixed the series-detail context menu so My List and "Add to library" both appear (previously the library action overwrote the My List action).
+
 ### New in v1.1.0
 
 - Added privacy-safe diagnostics export under Settings → Debugging.
@@ -118,7 +135,7 @@
 - **Account integration**: Settings > Account shows **Subscription**, **Subscription expires**, and **Max devices** (read-only) populated from the customer summary API when authenticated.
 - **Logout & reset**: Settings > Account includes a `Logout` action that clears cookies, tokens, profile selection and the local My List (confirmation required).
 - **Silent account refresh**: Account info is refreshed silently on addon launch and after login/profile changes.
-- **Protected menu items**: Manage profiles, Search, My List, Series, Movies and Channels are shown only when authenticated to avoid errors for anonymous users.
+- **Protected menu items**: Manage profiles, Search, My List, Kijk Later, Series, Movies and Channels are shown only when authenticated to avoid errors for anonymous users.
 - **Profiles UI**: Profiles were moved to a dedicated Settings > Profiles section and are non-editable from Settings (use Manage profiles in the addon's main menu).
 - **PKCE token fallback**: Improved token/cookie handling with a PKCE authorize+exchange fallback to obtain tokens from an existing cookie session.
 

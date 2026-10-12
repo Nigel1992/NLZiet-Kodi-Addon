@@ -47,7 +47,12 @@ def pick_menu_png(addon_path, name):
 def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        title, query, is_folder=True, thumb=None, info=None,
                        content=None, playback_state=None, is_live=False,
-                       add_to_library_label='Add to library'):
+                       group=None,
+                       add_to_library_label='Add to library',
+                       mylist_add_label='Add to My List',
+                       mylist_remove_label='Remove from My List',
+                       watch_later_add_label='Add to Watch Later',
+                       watch_later_remove_label='Remove from Watch Later'):
     url = build_url_func(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
 
@@ -97,7 +102,10 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
         li.setProperty('ResumeTime', '0')
         li.setProperty('TotalTime', '3600')
         li.setProperty('IsLive', 'true')  # Mark as live for skin awareness
-    # Add context-menu entry for My List when we can determine a content id
+    # Add context-menu entries for My List / Watch Later / library when we can
+    # determine a content id. All entries are collected and applied in a single
+    # call: Kodi's addContextMenuItems replaces the list on each call, so
+    # calling it repeatedly would discard earlier items.
     try:
         content_id = None
         content_type = None
@@ -111,44 +119,78 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 if k in query and query.get(k):
                     content_id = query.get(k)
                     break
-        # Only allow My List for top-level Series or Movies (no Seasons/Episodes)
-        allow_mylist = False
-        if content and isinstance(content, dict):
-            ctype = (content_type or '')
-            ctype_l = (str(ctype).lower() if ctype else '')
-            if any(x in ctype_l for x in ('series', 'tvshow', 'movie', 'film')):
-                allow_mylist = True
-        elif isinstance(query, dict):
-            mode = (query.get('mode') or '').lower()
-            # treat explicit series_detail as a series entry
-            if mode == 'series_detail' and (query.get('series_id') or query.get('seriesId')):
-                allow_mylist = True
+        # My List and Watch Later accept any content we can identify (by id).
+        allow_mylist = bool(content_id)
+        # Treat an explicit series_detail entry as a series when no type was supplied.
+        if (not content_type and isinstance(query, dict)
+                and (query.get('mode') or '').lower() == 'series_detail'):
+            content_type = 'series'
+        # Infer the canonical category when the caller did not pass one. This
+        # keeps stored items grouped correctly even when only the type is known
+        # (TV Shows and Documentaries cannot be told apart from Series here, so
+        # their browse screens pass an explicit group).
+        if not group and content_type:
+            ctype = str(content_type).lower()
+            if 'channel' in ctype or 'live' in ctype:
+                group = 'channels'
+            elif 'movie' in ctype or 'film' in ctype:
+                group = 'movies'
+            elif 'series' in ctype or 'tvshow' in ctype:
+                group = 'series'
 
-        if allow_mylist and content_id:
+        context_items = []
+        if content_id:
             try:
                 # Use cached API instance instead of creating new ones for every item
                 api_tmp = api_instance_getter()
-                in_list = api_tmp.is_in_my_list(content_id)
             except Exception:
-                in_list = False
+                api_tmp = None
 
-            cm_label = 'Remove from My List' if in_list else 'Add to My List'
-            cm_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
+            def _check(method_name):
+                try:
+                    return bool(api_tmp and getattr(api_tmp, method_name)(content_id))
+                except Exception:
+                    return False
+
+            # My List accepts any content; Watch Later accepts anything too.
+            if allow_mylist:
+                mylist_label = mylist_remove_label if _check('is_in_my_list') else mylist_add_label
+
+                mylist_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
+                if content_type:
+                    mylist_query['type'] = content_type
+                if group:
+                    mylist_query['group'] = group
+                if thumb:
+                    mylist_query['thumb'] = thumb
+                try:
+                    context_items.append((mylist_label, f"RunPlugin({build_url_func(mylist_query)})"))
+                except Exception:
+                    pass
+
+            watch_later_label = watch_later_remove_label if _check('is_in_watch_later') else watch_later_add_label
+
+            watch_query = {'mode': 'toggle_watch_later', 'id': str(content_id), 'title': title}
             if content_type:
-                cm_query['type'] = content_type
+                watch_query['type'] = content_type
+            if group:
+                watch_query['group'] = group
             if thumb:
-                cm_query['thumb'] = thumb
+                watch_query['thumb'] = thumb
             try:
-                cm_url = build_url_func(cm_query)
-                li.addContextMenuItems([(cm_label, f"RunPlugin({cm_url})")])
+                context_items.append((watch_later_label, f"RunPlugin({build_url_func(watch_query)})"))
             except Exception:
                 pass
+
         if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
             try:
                 cm_url = build_url_func({'mode': 'export_series_library', 'series_id': str(content_id)})
-                li.addContextMenuItems([(add_to_library_label, f"RunPlugin({cm_url})")])
+                context_items.append((add_to_library_label, f"RunPlugin({cm_url})"))
             except Exception:
                 pass
+
+        if context_items:
+            li.addContextMenuItems(context_items)
     except Exception:
         pass
     xbmcplugin.addDirectoryItem(handle, url, li, isFolder=is_folder)

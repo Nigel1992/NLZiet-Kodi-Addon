@@ -30,6 +30,7 @@ RECORDER = Recorder()
 class FakeAddon:
     def __init__(self):
         self.settings = {}
+        self.localized = {}
 
     def getAddonInfo(self, key):
         return {
@@ -44,6 +45,9 @@ class FakeAddon:
 
     def setSetting(self, key, value):
         self.settings[key] = value
+
+    def getLocalizedString(self, string_id):
+        return self.localized.get(string_id, '')
 
 
 class FakeDialog:

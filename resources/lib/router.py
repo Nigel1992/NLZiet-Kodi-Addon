@@ -29,12 +29,23 @@ class Router:
             self.handlers['browse_my_list']()
         elif mode == 'my_list_group':
             self.handlers['browse_my_list_group'](params.get('group'))
+        elif mode == 'watch_later':
+            self.handlers['browse_watch_later']()
         elif mode == 'toggle_mylist':
             self.handlers['toggle_mylist'](
                 params.get('id'),
                 params.get('title'),
                 params.get('type'),
-                params.get('thumb')
+                params.get('thumb'),
+                params.get('group')
+            )
+        elif mode == 'toggle_watch_later':
+            self.handlers['toggle_watch_later'](
+                params.get('id'),
+                params.get('title'),
+                params.get('type'),
+                params.get('thumb'),
+                params.get('group')
             )
         elif mode == 'select_profile':
             self.handlers['select_profile'](params.get('profile_id'))
