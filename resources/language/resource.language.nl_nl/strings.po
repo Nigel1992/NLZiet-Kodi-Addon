@@ -15,60 +15,68 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#30003"
-msgid "Accountgegevens"
+msgid "Account details"
 msgstr "Accountgegevens"
 
 msgctxt "#30004"
-msgid "Profielen"
+msgid "Profiles"
 msgstr "Profielen"
 
 msgctxt "#30005"
-msgid "Geavanceerd"
+msgid "Advanced"
 msgstr "Geavanceerd"
 
 msgctxt "#30006"
-msgid "Afspelen"
+msgid "Playback"
 msgstr "Afspelen"
 
 msgctxt "#30007"
-msgid "Foutopsporing"
+msgid "Debugging"
 msgstr "Foutopsporing"
 
 msgctxt "#30103"
-msgid "Abonnement"
+msgid "Subscription"
 msgstr "Abonnement"
 
 msgctxt "#30104"
-msgid "Abonnement verloopt"
+msgid "Subscription expires"
 msgstr "Abonnement verloopt"
 
 msgctxt "#30105"
-msgid "Maximaal aantal apparaten"
+msgid "Maximum devices"
 msgstr "Maximaal aantal apparaten"
 
 msgctxt "#30106"
-msgid "Afmelden en lokale gegevens wissen"
+msgid "Sign out and clear local data"
 msgstr "Afmelden en lokale gegevens wissen"
 
 msgctxt "#30107"
-msgid "Actieve profiel-ID"
+msgid "Active profile ID"
 msgstr "Actieve profiel-ID"
 
 msgctxt "#30108"
-msgid "Actieve profielnaam"
+msgid "Active profile name"
 msgstr "Actieve profielnaam"
 
 msgctxt "#30109"
-msgid "API-basis-URL (optioneel)"
+msgid "API base URL (optional)"
 msgstr "API-basis-URL (optioneel)"
 
 msgctxt "#30110"
-msgid "Ondertitels standaard inschakelen"
+msgid "Enable subtitles by default"
 msgstr "Ondertitels standaard inschakelen"
 
 msgctxt "#30111"
-msgid "HTTP-verzoeken foutopsporing"
+msgid "Debug HTTP requests"
 msgstr "HTTP-verzoeken foutopsporing"
+
+msgctxt "#30112"
+msgid "Export privacy-safe diagnostics"
+msgstr "Privacyveilig diagnostisch rapport exporteren"
+
+msgctxt "#30113"
+msgid "Save a support report with secrets and personal data removed."
+msgstr "Sla een supportrapport op waaruit geheimen en persoonsgegevens zijn verwijderd."
 
 msgctxt "#30130"
 msgid "TV Integration"

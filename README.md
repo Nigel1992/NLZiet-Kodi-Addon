@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.0.3 — 2026-08-24. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.1.0 — 2026-09-02. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -34,6 +34,14 @@
 - **Debug Logging**: Easy log collection for troubleshooting.
 
 ---
+### New in v1.1.0
+
+- Added privacy-safe diagnostics export under Settings → Debugging.
+- Added Kodi watched/resume indicators when viewing-progress data is available.
+- Added Dutch/English runtime localization based on Kodi's configured language.
+- Masked password input and added network timeouts.
+- Removed the unused background service.
+
 ### New in v1.0.3
 
 - Added verified scrobbling for NLZiet movies and TV episodes through the official Kodi `script.trakt` add-on.

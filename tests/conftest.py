@@ -30,7 +30,12 @@ class FakeAddon:
         self.settings = {}
 
     def getAddonInfo(self, key):
-        return {'id': 'plugin.video.nlziet', 'path': 'C:/addon'}.get(key, '')
+        return {
+            'id': 'plugin.video.nlziet',
+            'path': 'C:/addon',
+            'profile': '/tmp/plugin.video.nlziet',
+            'version': '1.1.0',
+        }.get(key, '')
 
     def getSetting(self, key):
         return self.settings.get(key, '')
@@ -42,6 +47,12 @@ class FakeAddon:
 class FakeDialog:
     def notification(self, heading, message, icon=None):
         RECORDER.notifications.append((heading, message, icon))
+
+    def input(self, heading, default='', type=0, option=0):
+        return default
+
+    def ok(self, heading, message):
+        return True
 
 
 class FakeListItem:
@@ -89,12 +100,20 @@ def kodi_recorder():
     return RECORDER
 
 
+@pytest.fixture
+def fake_addon():
+    return FakeAddon()
+
+
 def _install_kodi_stubs():
     xbmc = types.ModuleType('xbmc')
     xbmc.LOGDEBUG = 0
     xbmc.LOGINFO = 1
     xbmc.LOGWARNING = 2
     xbmc.LOGERROR = 3
+    xbmc.ISO_639_1 = 0
+    xbmc.getLanguage = lambda *args, **kwargs: 'nl'
+    xbmc.getInfoLabel = lambda *args, **kwargs: 'test-kodi'
     xbmc.translatePath = lambda path: path
     xbmc.log = lambda *args, **kwargs: None
     xbmc.executebuiltin = lambda *args, **kwargs: None
@@ -103,6 +122,8 @@ def _install_kodi_stubs():
     xbmcgui = types.ModuleType('xbmcgui')
     xbmcgui.NOTIFICATION_INFO = 'info'
     xbmcgui.NOTIFICATION_ERROR = 'error'
+    xbmcgui.INPUT_ALPHANUM = 0
+    xbmcgui.ALPHANUM_HIDE_INPUT = 2
     xbmcgui.Dialog = FakeDialog
     xbmcgui.ListItem = FakeListItem
 

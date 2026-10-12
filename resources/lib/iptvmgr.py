@@ -27,6 +27,7 @@ class IPTVManager:
         def send(self):
             """Decorator to send over a socket"""
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(10)
             sock.connect(('127.0.0.1', self.port))
             try:
                 sock.sendall(json.dumps(func(self)).encode())

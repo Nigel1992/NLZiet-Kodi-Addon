@@ -3000,7 +3000,8 @@ class NLZietAPI:
 
             resp = requests.get(url,
                                 headers=headers,
-                                params=params)
+                                params=params,
+                                timeout=(5, 20))
             resp.raise_for_status()
             data = json.loads(resp.content)
 

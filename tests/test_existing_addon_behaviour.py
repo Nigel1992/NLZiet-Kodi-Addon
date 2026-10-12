@@ -24,6 +24,7 @@ def _import_default(monkeypatch):
         ('mode=placement_row&items_url=https%3A%2F%2Fexample.test%2Fitems&placement_id=pl&comp_index=3', 'browse_placement_row', ('https://example.test/items', 'pl', '3'), True),
         ('mode=browse&type=documentary', 'browse_category', ('documentary',), True),
         ('mode=search_group&q=space+query&group=Movies', 'search_group', ('space query', 'Movies'), True),
+        ('mode=export_diagnostics', 'export_diagnostics', (), True),
     ],
 )
 def test_router_dispatches_existing_handlers_with_parsed_arguments(
@@ -56,20 +57,92 @@ def test_build_url_uses_plugin_base_and_standard_query_encoding(monkeypatch):
     )
 
 
+def test_get_string_uses_kodi_language(monkeypatch):
+    default = _import_default(monkeypatch)
+
+    monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'en')
+    assert default.get_string('login') == 'Login'
+
+    monkeypatch.setattr(default.xbmc, 'getLanguage', lambda *args: 'nl')
+    assert default.get_string('login') == 'Inloggen'
+
+
+def test_login_dialog_masks_password(monkeypatch):
+    default = _import_default(monkeypatch)
+    calls = []
+
+    class Dialog:
+        def input(self, heading, default='', type=0, option=0):
+            calls.append((heading, type, option))
+            return 'user@example.test' if len(calls) == 1 else 'secret'
+
+    monkeypatch.setattr(default.xbmcgui, 'Dialog', Dialog)
+
+    assert default.show_login_dialog() == ('user@example.test', 'secret')
+    assert calls[1][1:] == (
+        default.xbmcgui.INPUT_ALPHANUM,
+        default.xbmcgui.ALPHANUM_HIDE_INPUT,
+    )
+
+
+def test_resume_state_is_published_to_kodi(monkeypatch, kodi_recorder):
+    default = _import_default(monkeypatch)
+    monkeypatch.setattr(default.os.path, 'exists', lambda path: False)
+
+    default.add_directory_item(
+        'Episode',
+        {'mode': 'play', 'id': 'episode-1'},
+        is_folder=False,
+        content={
+            'type': 'Episode',
+            'durationInSeconds': 1800,
+            'resumePosition': 600,
+        },
+    )
+
+    item = kodi_recorder.directory_items[-1][2]
+    assert item.info['video']['resume'] == {'position': 600.0, 'total': 1800.0}
+    assert item.properties['ResumeTime'] == '600.0'
+    assert item.properties['TotalTime'] == '1800.0'
+
+
+def test_watched_state_sets_playcount(monkeypatch, kodi_recorder):
+    default = _import_default(monkeypatch)
+    monkeypatch.setattr(default.os.path, 'exists', lambda path: False)
+
+    default.add_directory_item(
+        'Movie',
+        {'mode': 'play', 'id': 'movie-1'},
+        is_folder=False,
+        content={'type': 'Movie', 'isWatched': True},
+    )
+
+    assert kodi_recorder.directory_items[-1][2].info['video']['playcount'] == 1
+
+
+def test_diagnostic_redaction_removes_private_values(monkeypatch):
+    default = _import_default(monkeypatch)
+    source = (
+        'Authorization: Bearer secret-token\n'
+        'password=secret-password\n'
+        'email=user@example.test\n'
+        'https://example.test/video?signature=signed-value&quality=high'
+    )
+
+    redacted = default._redact_diagnostic_text(source)
+
+    assert 'secret-token' not in redacted
+    assert 'secret-password' not in redacted
+    assert 'user@example.test' not in redacted
+    assert 'signed-value' not in redacted
+
+
 def test_main_menu_logged_out_adds_login_entry_and_ends_directory(monkeypatch, kodi_recorder):
     default = _import_default(monkeypatch)
     entries = []
 
-    class FakeThread:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def start(self):
-            pass
-
     monkeypatch.setattr(default, '_check_and_handle_token_expiry', lambda: True)
     monkeypatch.setattr(default, '_is_logged_in', lambda: False)
-    monkeypatch.setattr(default.threading, 'Thread', FakeThread)
     monkeypatch.setattr(default.os.path, 'exists', lambda path: False)
     monkeypatch.setattr(
         default,

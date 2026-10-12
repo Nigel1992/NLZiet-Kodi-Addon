@@ -1,10 +1,24 @@
 # Changelog
 
-> **Latest Version:** v1.0.3 (August 24, 2026)
+> **Latest Version:** v1.1.0 (September 2, 2026)
 
 All notable changes to this project are recorded in this file.
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-09-02
+
+### Added
+- Privacy-safe diagnostic report export from the Debugging settings category.
+- Kodi watched and resume indicators when NLZiet supplies viewing-progress metadata.
+
+### Changed
+- Runtime menu text now follows Kodi's Dutch or English language setting.
+- Password entry is masked during login.
+- EPG HTTP and IPTV Manager socket calls now have bounded timeouts.
+
+### Removed
+- Unused background service and unsafe daemon account-refresh thread.
 
 ## [1.0.3] - 2026-08-24
 
