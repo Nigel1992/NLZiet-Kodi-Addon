@@ -5,6 +5,9 @@ on:
     types: [opened, closed, reopened]
   release:
     types: [published]
+  push:
+    branches: ['**']
+    tags-ignore: ['**']
   workflow_dispatch:
 
 permissions:
@@ -19,6 +22,7 @@ jobs:
       DISCORD_WEBHOOK_ISSUES: ${{ secrets.DISCORD_WEBHOOK_ISSUES }}
       DISCORD_WEBHOOK_SUGGESTIONS: ${{ secrets.DISCORD_WEBHOOK_SUGGESTIONS }}
       DISCORD_WEBHOOK_ANNOUNCEMENTS: ${{ secrets.DISCORD_WEBHOOK_ANNOUNCEMENTS }}
+      DISCORD_WEBHOOK_UPDATES: ${{ secrets.DISCORD_WEBHOOK_UPDATES }}
     steps:
       - name: Post event to Discord
         shell: python
@@ -29,7 +33,10 @@ jobs:
               req = urllib.request.Request(
                   url,
                   data=json.dumps(payload).encode(),
-                  headers={"Content-Type": "application/json"},
+                  headers={
+                      "Content-Type": "application/json",
+                      "User-Agent": "NigelDiscordNotify/1.0 (+https://github.com/Nigel1992)",
+                  },
                   method="POST",
               )
               with urllib.request.urlopen(req, timeout=30) as r:
@@ -39,6 +46,7 @@ jobs:
               return {"name": name, "value": (value or "-")[:1000], "inline": inline}
 
           event = os.environ.get("GITHUB_EVENT_NAME")
+          repo = os.environ["GITHUB_REPOSITORY"]
           with open(os.environ["GITHUB_EVENT_PATH"]) as f:
               data = json.load(f)
 
@@ -59,8 +67,9 @@ jobs:
                       field("Author", issue["user"]["login"], True),
                       field("Labels", ", ".join(labels) or "none", True),
                   ],
-                  "footer": {"text": os.environ["GITHUB_REPOSITORY"]},
+                  "footer": {"text": repo},
               }]}
+
           elif event == "release":
               rel = data["release"]
               url = os.environ["DISCORD_WEBHOOK_ANNOUNCEMENTS"]
@@ -69,8 +78,29 @@ jobs:
                   "url": rel["html_url"],
                   "color": 0x9B59B6,
                   "description": (rel.get("body") or "")[:1500],
-                  "footer": {"text": os.environ["GITHUB_REPOSITORY"]},
+                  "footer": {"text": repo},
               }]}
+
+          elif event == "push":
+              commits = data.get("commits", [])
+              branch = data.get("ref", "").replace("refs/heads/", "")
+              pusher = data.get("pusher", {}).get("name", "unknown")
+              lines = []
+              for c in commits[:10]:
+                  msg = c.get("message", "").splitlines()[0][:100]
+                  lines.append(f"`{c['id'][:7]}` {msg} — {c.get('author', {}).get('name', '?')}")
+              if len(commits) > 10:
+                  lines.append(f"…and {len(commits) - 10} more")
+              url = os.environ["DISCORD_WEBHOOK_UPDATES"]
+              payload = {"embeds": [{
+                  "title": f"{len(commits)} new commit(s) to {branch}",
+                  "url": data.get("compare", ""),
+                  "color": 0x2ECC71,
+                  "description": "\n".join(lines)[:1500] or "(no commit details)",
+                  "fields": [field("Pushed by", pusher, True)],
+                  "footer": {"text": repo},
+              }]}
+
           else:
               print("No Discord mapping for event:", event)
               raise SystemExit(0)
