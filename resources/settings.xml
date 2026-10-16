@@ -99,6 +99,30 @@
       </group>
     </category>
 
+    <category id="category_sync" label="30008" help="">
+      <group id="1" label="">
+        <setting id="watch_later_sync" type="boolean" label="30114" help="30116">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="sync_watch_later_now" type="action" label="30115" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=sync_watch_later)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="sync_my_series_now" type="action" label="30117" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=sync_my_series)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+      </group>
+    </category>
+
     <category id="category_debug" label="30007" help="">
       <group id="1" label="">
         <setting id="debug_http" type="boolean" label="30111" help="">

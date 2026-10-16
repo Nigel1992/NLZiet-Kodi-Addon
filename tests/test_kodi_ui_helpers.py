@@ -100,15 +100,19 @@ def test_artwork_helpers_prefer_landscape_for_fanart_and_portrait_for_poster():
 
 
 class FakeListAPI:
-    def __init__(self, in_mylist=False, in_watchlater=False):
+    def __init__(self, in_mylist=False, in_watchlater=False, in_myseries=False):
         self._in_mylist = in_mylist
         self._in_watchlater = in_watchlater
+        self._in_myseries = in_myseries
 
     def is_in_my_list(self, content_id):
         return self._in_mylist
 
     def is_in_watch_later(self, content_id):
         return self._in_watchlater
+
+    def is_in_my_series(self, content_id):
+        return self._in_myseries
 
 
 def test_context_menu_combines_mylist_watch_later_and_library(monkeypatch):
@@ -133,7 +137,7 @@ def test_context_menu_combines_mylist_watch_later_and_library(monkeypatch):
     )
 
     labels = [label for label, _ in items[0].context_menu]
-    assert labels == ['Remove from My List', 'Add to Watch Later', 'Add to library']
+    assert labels == ['Remove from My List', 'Add to My Series', 'Add to library']
 
 
 def test_context_menu_reflects_watch_later_membership(monkeypatch):
@@ -162,7 +166,32 @@ def test_context_menu_reflects_watch_later_membership(monkeypatch):
     assert labels == ['Add to My List', 'Remove from Watch Later']
 
 
-def test_context_menu_allows_my_list_and_watch_later_for_any_content(monkeypatch):
+def test_context_menu_offers_my_series_for_series(monkeypatch):
+    items = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(ui.xbmcplugin, 'addDirectoryItem', lambda *a, **k: None)
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: FakeListAPI(in_mylist=False, in_myseries=True),
+        'Show',
+        {'mode': 'series_detail', 'series_id': 's1'},
+        thumb='https://image.test/poster.jpg',
+        content={'id': 's1', 'type': 'series'},
+    )
+
+    labels = [label for label, _ in items[0].context_menu]
+    assert labels == ['Add to My List', 'Remove from My Series', 'Add to library']
+
+
+def test_context_menu_hides_watch_later_for_channels(monkeypatch):
     items = []
     monkeypatch.setattr(
         ui.xbmcgui,
@@ -177,14 +206,15 @@ def test_context_menu_allows_my_list_and_watch_later_for_any_content(monkeypatch
         42,
         lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
         lambda: FakeListAPI(in_mylist=False, in_watchlater=False),
-        'Kanaal 1',
+        'NPO 1',
         {'mode': 'play', 'id': 'c1', 'fmt': 'live'},
         is_folder=False,
+        thumb='https://image.test/poster.jpg',
         content={'id': 'c1', 'type': 'channel'},
     )
 
     labels = [label for label, _ in items[0].context_menu]
-    assert labels == ['Add to My List', 'Add to Watch Later']
+    assert labels == ['Add to My List']
 
 
 def test_context_menu_includes_group_in_toggle_queries(monkeypatch):
@@ -211,4 +241,4 @@ def test_context_menu_includes_group_in_toggle_queries(monkeypatch):
 
     actions = [action for _, action in items[0].context_menu]
     assert any('mode=toggle_mylist' in a and 'group=tvshows' in a for a in actions)
-    assert any('mode=toggle_watch_later' in a and 'group=tvshows' in a for a in actions)
+    assert any('mode=toggle_my_series' in a and 'group=tvshows' in a for a in actions)

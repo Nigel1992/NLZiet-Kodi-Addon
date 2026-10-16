@@ -1,8 +1,24 @@
 # Changelog
 
-> **Latest Version:** v1.3.0 (October 13, 2026)
+> **Latest Version:** v1.4.0 (October 16, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.0] - 2026-10-16
+
+### Added
+- **Two-way list sync**: **Kijk Later** and the new **Mijn Series** list can each be kept in sync both ways (local + cloud) with your NLZiet account. Episodes and movies sync through the cloud watchlist, while followed series sync through the tracked-series list, so a series you add in Kodi shows up under *Mijn Series* in the NLZiet app and vice versa. Enable **Settings → Synchronization → Sync Watch Later and My Series with NLZiet**; the **Sync Watch Later now** and **Sync My Series now** buttons perform a manual sync, and a three-way merge (with an "additions win" rule) prevents concurrent changes from being lost.
+- **Mijn Series (My Series)**: a dedicated main-menu entry and local list that follows whole series, backed by the cloud tracked-series list. Series saved here reopen their detail page.
+- **Per-type context menu**: each item now shows the action that fits its content type — **Add to Watch Later** for episodes and movies, **Add to My Series** for series, and **Add to My List** for everything.
+- New strings for the My Series set and the manual sync action.
+
+### Changed
+- **My List is now clearly labelled as local (Kodi only)** in both Dutch and English — main menu, add/remove context-menu actions, add/remove notifications, the empty-list message and the logout prompt all state that My List is stored on this device only. Kijk Later and Mijn Series are the cloud-synced lists.
+- The Login/Logout items on the main menu are now plain action commands instead of being marked as playable media.
+- **Settings → Synchronization** now reads "Sync Watch Later and My Series with NLZiet" and includes a separate **Sync My Series now** button alongside **Sync Watch Later now**.
+
+### Fixed
+- Followed series are no longer silently dropped during cloud sync: because the NLZiet watchlist API accepts but discards series ids, series are now routed to `/v9/trackedseries`, so adding a series in Kodi is correctly reflected in the NLZiet app.
 
 ## [1.3.0] - 2026-10-13
 

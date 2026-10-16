@@ -126,7 +126,7 @@ TRANSLATIONS = {
     'session_token_obtained': {'nl': 'Sessietoken verkregen. U bent aangemeld.', 'en': 'Session token obtained. You are logged in.'},
     'manage_profiles': {'nl': 'Profielen beheren', 'en': 'Manage profiles'},
     'search': {'nl': 'Zoeken', 'en': 'Search'},
-    'my_list': {'nl': 'Mijn lijst', 'en': 'My List'},
+    'my_list': {'nl': 'Mijn lijst (alleen Kodi)', 'en': 'My List (Kodi only)'},
     'series': {'nl': 'Series', 'en': 'Series'},
     'tv_shows': {'nl': 'TV Shows', 'en': 'TV Shows'},
     'documentary': {'nl': 'Documentaire', 'en': 'Documentary'},
@@ -144,8 +144,8 @@ TRANSLATIONS = {
     'searching': {'nl': 'Zoeken naar "{}"', 'en': 'Searching for "{}"'},
     'no_results': {'nl': 'Geen resultaten gevonden voor "{}"', 'en': 'No results found for "{}"'},
     'now_watching': {'nl': 'Nu aan het kijken', 'en': 'Now watching'},
-    'added_to_list': {'nl': 'Toegevoegd aan Mijn lijst', 'en': 'Added to My List'},
-    'removed_from_list': {'nl': 'Verwijderd uit Mijn lijst', 'en': 'Removed from My List'},
+    'added_to_list': {'nl': 'Toegevoegd aan Mijn lijst (alleen Kodi)', 'en': 'Added to My List (Kodi only)'},
+    'removed_from_list': {'nl': 'Verwijderd uit Mijn lijst (alleen Kodi)', 'en': 'Removed from My List (Kodi only)'},
     'all': {'nl': 'Alles', 'en': 'All'},
     'no_episodes_found': {'nl': 'Geen afleveringen gevonden', 'en': 'No episodes found'},
     'account_updated': {'nl': 'Accountinformatie bijgewerkt:', 'en': 'Account info updated:'},
@@ -156,11 +156,11 @@ TRANSLATIONS = {
     'login_successful_no_tokens': {'nl': 'Inloggen geslaagd (geen tokens)', 'en': 'Login successful (no tokens)'},
     'login_failed_demo': {'nl': 'Inloggen mislukt — in demomodus gedraaid', 'en': 'Login failed — running in demo mode'},
     'no_profiles': {'nl': 'Geen profielen beschikbaar. Meld u eerst aan.', 'en': 'No profiles available. Please login first.'},
-    'my_list_empty': {'nl': 'Mijn lijst is leeg', 'en': 'My List is empty'},
+    'my_list_empty': {'nl': 'Mijn lijst (alleen Kodi) is leeg', 'en': 'My List (Kodi only) is empty'},
     'no_items_for_group': {'nl': 'Geen items gevonden voor {}', 'en': 'No items found for {}'},
     'missing_id_mylist': {'nl': 'ID ontbreekt voor Mijn lijst-actie', 'en': 'Missing id for My List action'},
     'logout_confirm_msg': {'nl': 'Hiermee worden cookies en tokens gewist. Doorgaan?', 'en': 'This will clear cookies and tokens. Continue?'},
-    'keep_mylist': {'nl': 'Wilt u uw Mijn Lijst / My List bewaren?', 'en': 'Do you want to keep your My List?'},
+    'keep_mylist': {'nl': 'Wilt u uw Mijn lijst (alleen Kodi) bewaren?', 'en': 'Do you want to keep your My List (Kodi only)?'},
     'keep_mylist_btn': {'nl': 'Bewaren', 'en': 'Keep'},
     'clear_mylist_btn': {'nl': 'Wissen', 'en': 'Clear'},
     'logout_btn': {'nl': 'Afmelden', 'en': 'Logout'},
@@ -176,13 +176,30 @@ TRANSLATIONS = {
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
     'watch_later': {'nl': 'Kijk Later', 'en': 'Watch Later'},
-    'add_to_mylist': {'nl': 'Toevoegen aan Mijn lijst', 'en': 'Add to My List'},
-    'remove_from_mylist': {'nl': 'Verwijderen uit Mijn lijst', 'en': 'Remove from My List'},
+    'add_to_mylist': {'nl': 'Toevoegen aan Mijn lijst (alleen Kodi)', 'en': 'Add to My List (Kodi only)'},
+    'remove_from_mylist': {'nl': 'Verwijderen uit Mijn lijst (alleen Kodi)', 'en': 'Remove from My List (Kodi only)'},
     'add_to_watch_later': {'nl': 'Toevoegen aan Kijk Later', 'en': 'Add to Watch Later'},
     'remove_from_watch_later': {'nl': 'Verwijderen uit Kijk Later', 'en': 'Remove from Watch Later'},
     'added_to_watch_later': {'nl': 'Toegevoegd aan Kijk Later', 'en': 'Added to Watch Later'},
     'removed_from_watch_later': {'nl': 'Verwijderd uit Kijk Later', 'en': 'Removed from Watch Later'},
     'watch_later_empty': {'nl': 'Kijk Later is leeg', 'en': 'Watch Later is empty'},
+    'watchlater_sync_done': {'nl': 'Kijk Later gesynchroniseerd ({} wijzigingen)', 'en': 'Watch Later synced ({} changes)'},
+    'watchlater_sync_failed': {'nl': 'Synchroniseren van Kijk Later mislukt', 'en': 'Watch Later sync failed'},
+    'watchlater_sync_not_logged_in': {'nl': 'Log in om Kijk Later te synchroniseren', 'en': 'Log in to sync Watch Later'},
+    'watchlater_sync_summary': {'nl': '+{} cloud, -{} cloud, +{} lokaal, -{} lokaal', 'en': '+{} cloud, -{} cloud, +{} local, -{} local'},
+    'my_series': {'nl': 'Mijn Series', 'en': 'My Series'},
+    'add_to_my_series': {'nl': 'Toevoegen aan Mijn Series', 'en': 'Add to My Series'},
+    'remove_from_my_series': {'nl': 'Verwijderen uit Mijn Series', 'en': 'Remove from My Series'},
+    'added_to_my_series': {'nl': 'Toegevoegd aan Mijn Series', 'en': 'Added to My Series'},
+    'removed_from_my_series': {'nl': 'Verwijderd uit Mijn Series', 'en': 'Removed from My Series'},
+    'my_series_empty': {'nl': 'Mijn Series is leeg', 'en': 'My Series is empty'},
+    'missing_id_my_series': {'nl': 'ID ontbreekt voor Mijn Series-actie', 'en': 'Missing id for My Series action'},
+    'myseries_action_failed': {'nl': 'Mijn Series-actie mislukt', 'en': 'My Series action failed'},
+    'myseries_sync_done': {'nl': 'Mijn Series gesynchroniseerd ({} wijzigingen)', 'en': 'My Series synced ({} changes)'},
+    'myseries_sync_failed': {'nl': 'Synchroniseren van Mijn Series mislukt', 'en': 'My Series sync failed'},
+    'myseries_sync_summary': {'nl': '+{} cloud, -{} cloud, +{} lokaal, -{} lokaal', 'en': '+{} cloud, -{} cloud, +{} local, -{} local'},
+    'only_series': {'nl': 'Alleen series kunnen aan Mijn Series worden toegevoegd', 'en': 'Only series can be added to My Series'},
+    'only_episodes_movies': {'nl': 'Alleen afleveringen en films kunnen in Kijk Later worden opgeslagen', 'en': 'Only episodes and movies can be saved to Watch Later'},
     'missing_id_watchlater': {'nl': 'ID ontbreekt voor Kijk Later-actie', 'en': 'Missing id for Watch Later action'},
     'mylist_action_failed': {'nl': 'Mijn lijst-actie mislukt', 'en': 'My List action failed'},
     'watchlater_action_failed': {'nl': 'Kijk Later-actie mislukt', 'en': 'Watch Later action failed'},
@@ -326,6 +343,23 @@ STRING_IDS = {
     'group_count': 33110,
     'group_result_title': 33111,
     'not_allowed': 33112,
+    'watchlater_sync_done': 33113,
+    'watchlater_sync_failed': 33114,
+    'watchlater_sync_not_logged_in': 33115,
+    'watchlater_sync_summary': 33116,
+    'my_series': 33117,
+    'add_to_my_series': 33118,
+    'remove_from_my_series': 33119,
+    'added_to_my_series': 33120,
+    'removed_from_my_series': 33121,
+    'my_series_empty': 33122,
+    'missing_id_my_series': 33123,
+    'myseries_action_failed': 33124,
+    'myseries_sync_done': 33125,
+    'myseries_sync_failed': 33126,
+    'myseries_sync_summary': 33127,
+    'only_series': 33128,
+    'only_episodes_movies': 33129,
 }
 
 
@@ -801,7 +835,7 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
     xbmc.log(f"NLZiet Trakt metadata: {video_info}", xbmc.LOGDEBUG)
 
 
-def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None):
+def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None):
     query = _add_trakt_metadata_to_query(query, title, info, content)
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
 
@@ -829,6 +863,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         title,
         query,
         is_folder=is_folder,
+        is_playable=is_playable,
         thumb=thumb,
         info=item_info,
         content=content,
@@ -840,6 +875,8 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         mylist_remove_label=get_string('remove_from_mylist'),
         watch_later_add_label=get_string('add_to_watch_later'),
         watch_later_remove_label=get_string('remove_from_watch_later'),
+        my_series_add_label=get_string('add_to_my_series'),
+        my_series_remove_label=get_string('remove_from_my_series'),
     )
 
 
@@ -971,15 +1008,16 @@ def main_menu():
     if logged_in:
         explicit_logout_icon = os.path.join(addon_path, 'resources', 'media', 'menu_logout.png')
         logout_icon = explicit_logout_icon if explicit_logout_icon and os.path.exists(explicit_logout_icon) else _pick_png('logout')
-        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=logout_icon)
+        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=logout_icon, is_folder=False, is_playable=False)
     else:
-        add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'))
+        add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'), is_folder=False, is_playable=False)
     
     if logged_in:
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
         add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
+        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('series'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
@@ -2476,8 +2514,17 @@ def browse_my_list_group(group):
 
 
 def browse_watch_later():
-    """Show the local Watch Later queue."""
+    """Show the Watch Later queue, syncing with the cloud when enabled."""
     api = _get_list_api()
+    try:
+        api.migrate_series_from_watch_later()
+    except Exception:
+        pass
+    if _watch_later_sync_enabled():
+        try:
+            sync_watch_later(notify=False)
+        except Exception:
+            pass
     try:
         api.backfill_watch_later()
     except Exception:
@@ -2489,6 +2536,32 @@ def browse_watch_later():
 
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+
+    _render_list_items(items)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def browse_my_series():
+    """Show the followed-series list, syncing with the cloud when enabled."""
+    api = _get_list_api()
+    if _my_series_sync_enabled():
+        try:
+            sync_my_series(notify=False)
+        except Exception:
+            pass
+    try:
+        api.backfill_my_series()
+    except Exception:
+        pass
+    try:
+        items = api.get_my_series() or []
+    except Exception:
+        items = []
+
+    if not items:
+        xbmcgui.Dialog().notification('NLZiet', get_string('my_series_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
@@ -2549,11 +2622,32 @@ def _resolve_list_type(api, item_id, type, allow_any=False):
     return (allow_any, type)
 
 
+def _watch_later_sync_enabled():
+    """Return True when the user enabled two-way Watch Later cloud sync."""
+    try:
+        return ADDON.getSetting('watch_later_sync') in ('true', '1', 'yes', True)
+    except Exception:
+        return False
+
+
+def _my_series_sync_enabled():
+    """Return True when the user enabled two-way My Series cloud sync."""
+    return _watch_later_sync_enabled()
+
+
 def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None):
-    """Add or remove an item from a local list ('mylist' or 'watch_later')."""
+    """Add or remove an item from a local list.
+
+    ``kind`` is one of 'mylist' (any content), 'watch_later' (episodes and
+    movies) or 'my_series' (followed series).
+    """
     api = _get_list_api()
     if not item_id:
-        missing_key = 'missing_id_watchlater' if kind == 'watch_later' else 'missing_id_mylist'
+        missing_keys = {
+            'watch_later': 'missing_id_watchlater',
+            'my_series': 'missing_id_my_series',
+        }
+        missing_key = missing_keys.get(kind, 'missing_id_mylist')
         xbmcgui.Dialog().notification('NLZiet', get_string(missing_key), xbmcgui.NOTIFICATION_ERROR)
         return
 
@@ -2562,20 +2656,40 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
         xbmcgui.Dialog().notification('NLZiet', get_string('only_series_movies'), xbmcgui.NOTIFICATION_INFO)
         return
 
-    fail_key = 'watchlater_action_failed' if kind == 'watch_later' else 'mylist_action_failed'
+    resolved_l = str(resolved_type or '').lower()
+    is_series = 'series' in resolved_l or 'tvshow' in resolved_l or str(group or '').lower() == 'series'
+    # Keep the two cloud lists distinct: series follow via My Series, while
+    # Watch Later only holds episodes and movies.
+    if kind == 'my_series' and not is_series:
+        xbmcgui.Dialog().notification('NLZiet', get_string('only_series'), xbmcgui.NOTIFICATION_INFO)
+        return
+    if kind == 'watch_later' and is_series:
+        xbmcgui.Dialog().notification('NLZiet', get_string('only_episodes_movies'), xbmcgui.NOTIFICATION_INFO)
+        return
+
+    fail_keys = {'watch_later': 'watchlater_action_failed', 'my_series': 'myseries_action_failed'}
+    fail_key = fail_keys.get(kind, 'mylist_action_failed')
+    ok = False
+    in_list = False
+    stored_group = group
     try:
         if kind == 'watch_later':
             in_list = api.is_in_watch_later(item_id)
+            ok_key = 'removed_from_watch_later'
+        elif kind == 'my_series':
+            in_list = api.is_in_my_series(item_id)
+            ok_key = 'removed_from_my_series'
         else:
             in_list = api.is_in_my_list(item_id)
+            ok_key = 'removed_from_list'
 
         if in_list:
             if kind == 'watch_later':
                 ok = api.remove_from_watch_later(item_id)
-                ok_key = 'removed_from_watch_later'
+            elif kind == 'my_series':
+                ok = api.remove_from_my_series(item_id)
             else:
                 ok = api.remove_from_my_list(item_id)
-                ok_key = 'removed_from_list'
         else:
             # Fetch the full content detail so we persist the metadata (title,
             # description, artwork, ...) instead of only a bare id/title pair.
@@ -2600,6 +2714,9 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
             if kind == 'watch_later':
                 ok = api.add_to_watch_later(itm)
                 ok_key = 'added_to_watch_later'
+            elif kind == 'my_series':
+                ok = api.add_to_my_series(itm)
+                ok_key = 'added_to_my_series'
             else:
                 ok = api.add_to_my_list(itm)
                 ok_key = 'added_to_list'
@@ -2612,9 +2729,70 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
     except Exception:
         xbmcgui.Dialog().notification('NLZiet', get_string('list_action_failed'), xbmcgui.NOTIFICATION_ERROR)
 
+    if ok:
+        if kind == 'watch_later' and _watch_later_sync_enabled():
+            _propagate_watch_later_change(api, item_id, not in_list)
+        elif kind == 'my_series' and _my_series_sync_enabled():
+            _propagate_my_series_change(api, item_id, not in_list)
+
     # Refresh the current container so context menu changes reflect immediately
     try:
         xbmc.executebuiltin('Container.Refresh')
+    except Exception:
+        pass
+
+
+def _propagate_watch_later_change(api, item_id, present, is_series=False):
+    """Push a single local Watch Later change to /v9/watchlist.
+
+    Uses the API's verified single-change helper when available so items the
+    cloud silently rejects are not recorded as synced (which would later look
+    like a cloud removal and delete them locally).
+    """
+    if not item_id:
+        return
+    single = getattr(api, 'sync_single_watch_later_change', None)
+    if callable(single):
+        try:
+            single(item_id, present, is_series)
+        except TypeError:
+            try:
+                single(item_id, present)
+            except Exception:
+                pass
+        except Exception:
+            pass
+        return
+    # Fallback for older API objects / test doubles without the helper.
+    try:
+        if present:
+            if api.add_to_cloud_watch_later(item_id):
+                api.update_sync_snapshot(item_id, True)
+        else:
+            if api.remove_from_cloud_watch_later(item_id):
+                api.update_sync_snapshot(item_id, False)
+    except Exception:
+        pass
+
+
+def _propagate_my_series_change(api, item_id, present):
+    """Push a single local My Series change to /v9/trackedseries."""
+    if not item_id:
+        return
+    single = getattr(api, 'sync_single_my_series_change', None)
+    if callable(single):
+        try:
+            single(item_id, present)
+        except Exception:
+            pass
+        return
+    try:
+        if present:
+            if api.add_to_cloud_my_series(item_id):
+                api.update_sync_snapshot(item_id, True, getattr(api, 'myseries_sync_file', None))
+        else:
+            if api.remove_from_cloud_my_series(item_id):
+                api.update_sync_snapshot(item_id, False, getattr(api, 'myseries_sync_file', None))
     except Exception:
         pass
 
@@ -2625,6 +2803,94 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None, group=None):
 
 def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None):
     _toggle_local_list('watch_later', item_id, title, type, thumb, group)
+
+
+def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None):
+    _toggle_local_list('my_series', item_id, title, type, thumb, group)
+
+
+def sync_watch_later(notify=True):
+    """Synchronise the local Watch Later queue with /v9/watchlist.
+
+    Adds and removals performed in the Kodi addon or in the NLZiet app are
+    propagated in both directions. Safe to call on menu load (best effort).
+    """
+    api = _get_list_api()
+    fn = getattr(api, 'sync_watch_later', None)
+    if not callable(fn):
+        if notify:
+            xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+        return False
+    try:
+        result = fn() or {}
+    except Exception:
+        result = {}
+
+    if not result.get('ok'):
+        if result.get('reason') == 'not_logged_in':
+            if notify:
+                xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO)
+        elif notify:
+            xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+        return False
+
+    if notify:
+        changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
+                   + result.get('removed_local', 0) + result.get('removed_cloud', 0))
+        message = get_string('watchlater_sync_done', changes)
+        try:
+            detail = get_string(
+                'watchlater_sync_summary',
+                result.get('added_cloud', 0),
+                result.get('removed_cloud', 0),
+                result.get('added_local', 0),
+                result.get('removed_local', 0),
+            )
+            message = message + '\n' + detail
+        except Exception:
+            pass
+        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
+    return True
+
+
+def sync_my_series(notify=True):
+    """Synchronise the local My Series list with /v9/trackedseries."""
+    api = _get_list_api()
+    fn = getattr(api, 'sync_my_series', None)
+    if not callable(fn):
+        if notify:
+            xbmcgui.Dialog().notification('NLZiet', get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+        return False
+    try:
+        result = fn() or {}
+    except Exception:
+        result = {}
+
+    if not result.get('ok'):
+        if result.get('reason') == 'not_logged_in':
+            if notify:
+                xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO)
+        elif notify:
+            xbmcgui.Dialog().notification('NLZiet', get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+        return False
+
+    if notify:
+        changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
+                   + result.get('removed_local', 0) + result.get('removed_cloud', 0))
+        message = get_string('myseries_sync_done', changes)
+        try:
+            detail = get_string(
+                'myseries_sync_summary',
+                result.get('added_cloud', 0),
+                result.get('removed_cloud', 0),
+                result.get('added_local', 0),
+                result.get('removed_local', 0),
+            )
+            message = message + '\n' + detail
+        except Exception:
+            pass
+        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
+    return True
 
 
 def select_profile(profile_id):
@@ -3602,8 +3868,12 @@ def get_route_handlers():
         'browse_my_list': browse_my_list,
         'browse_my_list_group': browse_my_list_group,
         'browse_watch_later': browse_watch_later,
+        'browse_my_series': browse_my_series,
         'toggle_mylist': toggle_mylist,
         'toggle_watch_later': toggle_watch_later,
+        'toggle_my_series': toggle_my_series,
+        'sync_watch_later': sync_watch_later,
+        'sync_my_series': sync_my_series,
         'select_profile': select_profile,
         'apply_profile': apply_profile,
         'browse_series': browse_series,

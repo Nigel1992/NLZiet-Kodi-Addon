@@ -87,6 +87,37 @@ def test_browse_watch_later_empty_notifies(monkeypatch, kodi_recorder):
     assert kodi_recorder.ended == [42]
 
 
+def test_toggle_my_series_adds_then_removes(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def is_in_my_series(self, item_id):
+            return any(item['id'] == item_id for item in state['items'])
+
+        def add_to_my_series(self, item):
+            state['items'].append(item)
+            return True
+
+        def remove_from_my_series(self, item_id):
+            before = len(state['items'])
+            state['items'] = [i for i in state['items'] if i['id'] != item_id]
+            return len(state['items']) < before
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_my_series('s1', 'Show', 'series', 'img')
+    assert [item['id'] for item in state['items']] == ['s1']
+    assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Mijn Series', 'info')
+
+    default.toggle_my_series('s1', 'Show', 'series', 'img')
+    assert state['items'] == []
+    assert kodi_recorder.notifications[-1] == ('NLZiet', 'Verwijderd uit Mijn Series', 'info')
+
+
 def test_toggle_watch_later_adds_then_removes(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     state = {'items': []}
@@ -109,13 +140,38 @@ def test_toggle_watch_later_adds_then_removes(monkeypatch, kodi_recorder):
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.toggle_watch_later('s1', 'Show', 'series', 'img')
-    assert [item['id'] for item in state['items']] == ['s1']
+    default.toggle_watch_later('m1', 'Film', 'movie', 'img')
+    assert [item['id'] for item in state['items']] == ['m1']
     assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Kijk Later', 'info')
 
-    default.toggle_watch_later('s1', 'Show', 'series', 'img')
+    default.toggle_watch_later('m1', 'Film', 'movie', 'img')
     assert state['items'] == []
     assert kodi_recorder.notifications[-1] == ('NLZiet', 'Verwijderd uit Kijk Later', 'info')
+
+
+def test_toggle_watch_later_rejects_series(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('s1', 'Show', 'series', 'img')
+
+    assert state['items'] == []
+    assert kodi_recorder.notifications[-1] == (
+        'NLZiet', 'Alleen afleveringen en films kunnen in Kijk Later worden opgeslagen', 'info'
+    )
 
 
 def test_toggle_watch_later_accepts_non_series_movies(monkeypatch, kodi_recorder):
@@ -143,7 +199,7 @@ def test_toggle_watch_later_accepts_non_series_movies(monkeypatch, kodi_recorder
     assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Kijk Later', 'info')
 
 
-def test_toggle_watch_later_resolves_type_from_detail(monkeypatch, kodi_recorder):
+def test_toggle_my_series_resolves_type_from_detail(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     state = {'items': []}
 
@@ -151,23 +207,23 @@ def test_toggle_watch_later_resolves_type_from_detail(monkeypatch, kodi_recorder
         def get_content_detail(self, item_id):
             return {'raw': {'type': 'Series'}}
 
-        def is_in_watch_later(self, item_id):
+        def is_in_my_series(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
 
-        def add_to_watch_later(self, item):
+        def add_to_my_series(self, item):
             state['items'].append(item)
             return True
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
     # No type supplied: it must be resolved from the content detail.
-    default.toggle_watch_later('s1', 'Show', None, 'img')
+    default.toggle_my_series('s1', 'Show', None, 'img')
 
     assert state['items'][0]['type'] == 'Series'
     assert default._content_group(state['items'][0]) == 'series'
 
 
-def test_toggle_watch_later_uses_series_detail_for_series(monkeypatch, kodi_recorder):
+def test_toggle_my_series_uses_series_detail_for_series(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     state = {'items': []}
     calls = []
@@ -187,16 +243,16 @@ def test_toggle_watch_later_uses_series_detail_for_series(monkeypatch, kodi_reco
                 'raw': {'content': {'description': 'Een berooid jong stel'}},
             }
 
-        def is_in_watch_later(self, item_id):
+        def is_in_my_series(self, item_id):
             return False
 
-        def add_to_watch_later(self, item):
+        def add_to_my_series(self, item):
             state['items'].append(item)
             return True
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.toggle_watch_later('s1', 'Ghosts', 'series', None)
+    default.toggle_my_series('s1', 'Ghosts', 'series', None)
 
     assert 'series' in calls
     saved = state['items'][0]
@@ -205,7 +261,7 @@ def test_toggle_watch_later_uses_series_detail_for_series(monkeypatch, kodi_reco
     assert saved['raw'] == {'content': {'description': 'Een berooid jong stel'}}
 
 
-def test_toggle_watch_later_resolves_series_without_type(monkeypatch, kodi_recorder):
+def test_toggle_my_series_resolves_series_without_type(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     state = {'items': []}
 
@@ -216,16 +272,16 @@ def test_toggle_watch_later_resolves_series_without_type(monkeypatch, kodi_recor
         def get_series_detail(self, item_id):
             return {'title': 'Ghosts', 'description': 'Een serie', 'seasons': [{'id': '1'}]}
 
-        def is_in_watch_later(self, item_id):
+        def is_in_my_series(self, item_id):
             return False
 
-        def add_to_watch_later(self, item):
+        def add_to_my_series(self, item):
             state['items'].append(item)
             return True
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.toggle_watch_later('s1', 'Ghosts', None, None)
+    default.toggle_my_series('s1', 'Ghosts', None, None)
 
     assert default._content_group(state['items'][0]) == 'series'
     assert state['items'][0]['group'] == 'series'
@@ -270,7 +326,7 @@ def test_add_to_local_list_preserves_metadata(tmp_path):
     assert item['raw']['description'] == 'Een mooie serie'
 
 
-def test_toggle_watch_later_saves_full_detail(monkeypatch, kodi_recorder):
+def test_toggle_my_series_saves_full_detail(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     state = {'items': []}
 
@@ -283,16 +339,16 @@ def test_toggle_watch_later_saves_full_detail(monkeypatch, kodi_recorder):
                 'raw': {'description': 'Een mooie serie', 'type': 'series'},
             }
 
-        def is_in_watch_later(self, item_id):
+        def is_in_my_series(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
 
-        def add_to_watch_later(self, item):
+        def add_to_my_series(self, item):
             state['items'].append(item)
             return True
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.toggle_watch_later('s1', 'Show', 'series', None)
+    default.toggle_my_series('s1', 'Show', 'series', None)
 
     saved = state['items'][0]
     assert saved['description'] == 'Een mooie serie'
@@ -338,7 +394,7 @@ def test_toggle_mylist_accepts_any_content(monkeypatch, kodi_recorder):
 
     assert [item['id'] for item in state['items']] == ['c1']
     assert state['items'][0]['type'] == 'channel'
-    assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Mijn lijst', 'info')
+    assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Mijn lijst (alleen Kodi)', 'info')
 
 
 def test_render_list_items_marks_channels_live(monkeypatch, kodi_recorder):
@@ -374,5 +430,5 @@ def test_main_menu_lists_my_list_and_watch_later_when_logged_in(monkeypatch, kod
     modes = [query.get('mode') for _, query in entries]
     assert 'my_list' in modes
     assert 'watch_later' in modes
-    assert 'my_series' not in modes
+    assert 'my_series' in modes
     assert 'my_movies' not in modes

@@ -260,5 +260,5 @@ def test_browse_my_list_empty_result_notifies_and_ends_directory(monkeypatch, ko
 
     default.browse_my_list()
 
-    assert kodi_recorder.notifications == [('NLZiet', 'Mijn lijst is leeg', 'info')]
+    assert kodi_recorder.notifications == [('NLZiet', 'Mijn lijst (alleen Kodi) is leeg', 'info')]
     assert kodi_recorder.ended == [42]

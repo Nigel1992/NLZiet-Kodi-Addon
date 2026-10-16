@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.3.0 — 2026-10-13. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.4.0 — 2026-10-16. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -24,7 +24,7 @@
 - **Live TV**: Stream all supported NLZiet channels with EPG info.
 - **Series**: Browse, search, and play series with full season/episode navigation.
 - **Movies**: Discover and watch movies from the NLZiet catalog.
-- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List**, plus a local **Kijk Later** (Watch Later) queue — all via the item context menu. My List groups items into a subsection per category.
+- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**. **Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu. Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions.
 - **Profile Management**: Switch between user profiles from the Kodi UI.
 - **Localization**: All user-facing text resolves through Kodi's language system (Dutch and English included); English is the fallback for languages without a translation file.
 - **DRM Support**: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
@@ -35,6 +35,14 @@
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.4.0
+
+- **Two-way list sync**: **Kijk Later** and the new **Mijn Series** list now sync both ways with your NLZiet account. Episodes and movies sync through the cloud watchlist, followed series sync through the tracked-series list. Enable it under **Settings → Synchronization → Sync Watch Later and My Series with NLZiet**; manual buttons **Sync Watch Later now** and **Sync My Series now** are available too. A three-way merge ("additions win") prevents concurrent changes from being lost.
+- **Mijn Series (My Series)**: a new main-menu entry and local list that follows whole series; a series saved here reopens its detail page.
+- **Per-type context menu**: each item shows the action that fits its type — **Add to Watch Later** for episodes and movies, **Add to My Series** for series, **Add to My List** for everything.
+- **My List is local (Kodi only)**: all My List labels (menu, add/remove actions, notifications, empty message, logout prompt) now state in both Dutch and English that My List is stored on this device only. Kijk Later and Mijn Series are the cloud-synced lists.
+- **Fixed**: followed series are no longer silently dropped during cloud sync — because the NLZiet watchlist API accepts but discards series ids, series are now routed to `/v9/trackedseries` so they appear in the NLZiet app.
 
 ### New in v1.3.0
 

@@ -9,7 +9,8 @@ EXPECTED_HANDLER_NAMES = {
     'main_menu', 'do_login', 'do_search', 'manage_profiles',
     'browse_my_list', 'browse_my_list_group',
     'browse_watch_later', 'toggle_mylist',
-    'toggle_watch_later',
+    'toggle_watch_later', 'sync_watch_later',
+    'browse_my_series', 'toggle_my_series', 'sync_my_series',
     'select_profile', 'apply_profile', 'browse_series', 'do_logout',
     'confirm_logout', 'refresh_account_info', 'export_diagnostics',
     'search_group', 'show_series_detail', 'show_series_season',
@@ -94,10 +95,27 @@ def test_watch_later_route_dispatches():
 
     router.dispatch('mode=watch_later')
     router.dispatch('mode=toggle_watch_later&id=s1&type=series&title=Show&thumb=img')
+    router.dispatch('mode=sync_watch_later')
 
     assert calls == [
         ('browse_watch_later', (), {}),
         ('toggle_watch_later', ('s1', 'Show', 'series', 'img', None), {}),
+        ('sync_watch_later', (), {}),
+    ]
+
+
+def test_my_series_route_dispatches():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch('mode=my_series')
+    router.dispatch('mode=toggle_my_series&id=s1&type=series&title=Show&thumb=img')
+    router.dispatch('mode=sync_my_series')
+
+    assert calls == [
+        ('browse_my_series', (), {}),
+        ('toggle_my_series', ('s1', 'Show', 'series', 'img', None), {}),
+        ('sync_my_series', (), {}),
     ]
 
 

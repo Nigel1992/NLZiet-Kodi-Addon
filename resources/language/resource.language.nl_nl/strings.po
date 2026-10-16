@@ -106,6 +106,26 @@ msgctxt "#30136"
 msgid "NLZiet library path"
 msgstr "NLZiet bibliotheekpad"
 
+msgctxt "#30008"
+msgid "Synchronization"
+msgstr "Synchronisatie"
+
+msgctxt "#30114"
+msgid "Sync Watch Later and My Series with NLZiet"
+msgstr "Kijk Later en Mijn Series synchroniseren met NLZiet"
+
+msgctxt "#30115"
+msgid "Sync Watch Later now"
+msgstr "Kijk Later nu synchroniseren"
+
+msgctxt "#30116"
+msgid "When enabled, Watch Later and My Series are synchronised both ways with your NLZiet account. Items you add or remove in Kodi appear in the NLZiet app and vice versa."
+msgstr "Indien ingeschakeld worden Kijk Later en Mijn Series in beide richtingen gesynchroniseerd met je NLZiet-account. Items die je in Kodi toevoegt of verwijdert verschijnen in de NLZiet-app en andersom."
+
+msgctxt "#30117"
+msgid "Sync My Series now"
+msgstr "Mijn Series nu synchroniseren"
+
 # -------------
 # Comon strings
 # -------------
@@ -199,8 +219,8 @@ msgid "Search"
 msgstr "Zoeken"
 
 msgctxt "#33022"
-msgid "My List"
-msgstr "Mijn lijst"
+msgid "My List (Kodi only)"
+msgstr "Mijn lijst (alleen Kodi)"
 
 msgctxt "#33023"
 msgid "Series"
@@ -271,12 +291,12 @@ msgid "Now watching"
 msgstr "Nu aan het kijken"
 
 msgctxt "#33040"
-msgid "Added to My List"
-msgstr "Toegevoegd aan Mijn lijst"
+msgid "Added to My List (Kodi only)"
+msgstr "Toegevoegd aan Mijn lijst (alleen Kodi)"
 
 msgctxt "#33041"
-msgid "Removed from My List"
-msgstr "Verwijderd uit Mijn lijst"
+msgid "Removed from My List (Kodi only)"
+msgstr "Verwijderd uit Mijn lijst (alleen Kodi)"
 
 msgctxt "#33042"
 msgid "All"
@@ -319,8 +339,8 @@ msgid "No profiles available. Please login first."
 msgstr "Geen profielen beschikbaar. Meld u eerst aan."
 
 msgctxt "#33052"
-msgid "My List is empty"
-msgstr "Mijn lijst is leeg"
+msgid "My List (Kodi only) is empty"
+msgstr "Mijn lijst (alleen Kodi) is leeg"
 
 msgctxt "#33053"
 msgid "No items found for {}"
@@ -335,8 +355,8 @@ msgid "This will clear cookies and tokens. Continue?"
 msgstr "Hiermee worden cookies en tokens gewist. Doorgaan?"
 
 msgctxt "#33056"
-msgid "Do you want to keep your My List?"
-msgstr "Wilt u uw Mijn Lijst / My List bewaren?"
+msgid "Do you want to keep your My List (Kodi only)?"
+msgstr "Wilt u uw Mijn lijst (alleen Kodi) bewaren?"
 
 msgctxt "#33057"
 msgid "Keep"
@@ -399,12 +419,12 @@ msgid "Watch Later"
 msgstr "Kijk Later"
 
 msgctxt "#33074"
-msgid "Add to My List"
-msgstr "Toevoegen aan Mijn lijst"
+msgid "Add to My List (Kodi only)"
+msgstr "Toevoegen aan Mijn lijst (alleen Kodi)"
 
 msgctxt "#33075"
-msgid "Remove from My List"
-msgstr "Verwijderen uit Mijn lijst"
+msgid "Remove from My List (Kodi only)"
+msgstr "Verwijderen uit Mijn lijst (alleen Kodi)"
 
 msgctxt "#33076"
 msgid "Add to Watch Later"
@@ -545,3 +565,71 @@ msgstr "{}: {}"
 msgctxt "#33112"
 msgid "Not allowed"
 msgstr "Niet toegestaan"
+
+msgctxt "#33113"
+msgid "Watch Later synced ({} changes)"
+msgstr "Kijk Later gesynchroniseerd ({} wijzigingen)"
+
+msgctxt "#33114"
+msgid "Watch Later sync failed"
+msgstr "Synchroniseren van Kijk Later mislukt"
+
+msgctxt "#33115"
+msgid "Log in to sync Watch Later"
+msgstr "Log in om Kijk Later te synchroniseren"
+
+msgctxt "#33116"
+msgid "+{} cloud, -{} cloud, +{} local, -{} local"
+msgstr "+{} cloud, -{} cloud, +{} lokaal, -{} lokaal"
+
+msgctxt "#33117"
+msgid "My Series"
+msgstr "Mijn Series"
+
+msgctxt "#33118"
+msgid "Add to My Series"
+msgstr "Toevoegen aan Mijn Series"
+
+msgctxt "#33119"
+msgid "Remove from My Series"
+msgstr "Verwijderen uit Mijn Series"
+
+msgctxt "#33120"
+msgid "Added to My Series"
+msgstr "Toegevoegd aan Mijn Series"
+
+msgctxt "#33121"
+msgid "Removed from My Series"
+msgstr "Verwijderd uit Mijn Series"
+
+msgctxt "#33122"
+msgid "My Series is empty"
+msgstr "Mijn Series is leeg"
+
+msgctxt "#33123"
+msgid "Missing id for My Series action"
+msgstr "ID ontbreekt voor Mijn Series-actie"
+
+msgctxt "#33124"
+msgid "My Series action failed"
+msgstr "Mijn Series-actie mislukt"
+
+msgctxt "#33125"
+msgid "My Series synced ({} changes)"
+msgstr "Mijn Series gesynchroniseerd ({} wijzigingen)"
+
+msgctxt "#33126"
+msgid "My Series sync failed"
+msgstr "Synchroniseren van Mijn Series mislukt"
+
+msgctxt "#33127"
+msgid "+{} cloud, -{} cloud, +{} local, -{} local"
+msgstr "+{} cloud, -{} cloud, +{} lokaal, -{} lokaal"
+
+msgctxt "#33128"
+msgid "Only series can be added to My Series"
+msgstr "Alleen series kunnen aan Mijn Series worden toegevoegd"
+
+msgctxt "#33129"
+msgid "Only episodes and movies can be saved to Watch Later"
+msgstr "Alleen afleveringen en films kunnen in Kijk Later worden opgeslagen"

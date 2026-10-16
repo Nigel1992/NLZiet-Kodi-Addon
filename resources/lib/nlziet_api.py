@@ -72,6 +72,11 @@ class NLZietAPI:
         # Local list storage (fallback when server-side lists are unavailable)
         self.mylist_file = os.path.join(cookie_dir, 'mylist.json')
         self.watchlater_file = os.path.join(cookie_dir, 'watchlater.json')
+        self.myseries_file = os.path.join(cookie_dir, 'myseries.json')
+        # Snapshot of the last agreed Watch Later state (used for two-way sync)
+        self.watchlater_sync_file = os.path.join(cookie_dir, 'watchlater_sync.json')
+        # Snapshot of the last agreed My Series state (used for two-way sync)
+        self.myseries_sync_file = os.path.join(cookie_dir, 'myseries_sync.json')
 
         self.cookie_jar = http.cookiejar.LWPCookieJar()
         try:
@@ -1622,6 +1627,54 @@ class NLZietAPI:
         """Remove an item from the local Watch Later queue by id. Returns True if removed."""
         return self._remove_from_local_list(self.watchlater_file, content_id)
 
+    # --- My Series ----------------------------------------------------------
+    def get_my_series(self):
+        """Return the locally-stored My Series list (list of item dicts)."""
+        return self._load_local_list(self.myseries_file)
+
+    def is_in_my_series(self, content_id):
+        return self._is_in_local_list(self.myseries_file, content_id)
+
+    def add_to_my_series(self, item):
+        """Add a normalized series item to the local My Series list."""
+        return self._add_to_local_list(self.myseries_file, item)
+
+    def remove_from_my_series(self, content_id):
+        """Remove a series from the local My Series list by id."""
+        return self._remove_from_local_list(self.myseries_file, content_id)
+
+    def backfill_my_series(self):
+        """Enrich My Series entries that were stored without metadata."""
+        self._backfill_local_list(self.myseries_file)
+
+    def migrate_series_from_watch_later(self):
+        """Move any series entries out of Watch Later into My Series.
+
+        Older builds stored whole series in the Watch Later queue; the cloud
+        keeps series in a dedicated list, so relocate them to keep the two lists
+        separated.
+        """
+        try:
+            wl = self._load_local_list(self.watchlater_file) or []
+        except Exception:
+            return
+        series = [it for it in wl if isinstance(it, dict) and self._item_is_series(it)]
+        if not series:
+            return
+        moved_ids = {str(it.get('id')) for it in series if it.get('id')}
+        remaining = [it for it in wl
+                     if not (isinstance(it, dict) and str(it.get('id')) in moved_ids)]
+        try:
+            existing = self._load_local_list(self.myseries_file) or []
+            have = {str(it.get('id')) for it in existing if isinstance(it, dict) and it.get('id')}
+            for it in series:
+                if str(it.get('id')) not in have:
+                    existing.append(it)
+            self._save_local_list(self.myseries_file, existing)
+            self._save_local_list(self.watchlater_file, remaining)
+        except Exception:
+            pass
+
     def _fetch_list_detail(self, content_id, is_series):
         """Return the richest metadata available for a stored list item."""
         if is_series:
@@ -1687,6 +1740,410 @@ class NLZietAPI:
     def backfill_watch_later(self):
         """Enrich Watch Later entries that were stored without metadata."""
         self._backfill_local_list(self.watchlater_file)
+
+    # --- Cloud Watch Later (watchlist) sync ---------------------------------
+    def _watchlist_headers(self):
+        """Build the standard headers for NLZiet watchlist API calls."""
+        headers = {
+            'User-Agent': self.user_agent,
+            'Accept': 'application/json, text/plain, */*',
+            'Referer': 'https://app.nlziet.nl/',
+            'Origin': 'https://app.nlziet.nl',
+            'nlziet-appname': 'WebApp',
+            'nlziet-appversion': '6.0.3',
+            'nlziet-devicecapabilities': 'LowLatency,FutureItems,favoriteChannels,MyList,placementTile',
+        }
+        try:
+            token = self.get_access_token()
+        except Exception:
+            token = None
+        if token and token != 'cookie-session':
+            headers['Authorization'] = 'Bearer ' + token
+        try:
+            if os.path.exists(self.profile_file):
+                with open(self.profile_file, 'r', encoding='utf-8') as pf:
+                    pfj = json.load(pf)
+                profile_id = pfj.get('profile_id') or pfj.get('profile') or pfj.get('id')
+                if profile_id:
+                    headers['X-Profile-Id'] = str(profile_id)
+        except Exception:
+            pass
+        return headers
+
+    def _watchlist_request(self, method, content_id=None, path='/v9/watchlist'):
+        """Perform a cloud list request. Returns the decoded JSON (dict) or None.
+
+        GET lists the list. POST adds `content_id`. DELETE removes it. The
+        `path` selects the endpoint: `/v9/watchlist` stores playable items
+        (episodes/movies) while `/v9/trackedseries` stores followed series.
+        """
+        try:
+            params = {}
+            if content_id:
+                params['id'] = str(content_id)
+            url = urllib.parse.urljoin(self.base_url, path)
+            if params:
+                url = url + '?' + urllib.parse.urlencode(params)
+            headers = self._watchlist_headers()
+            data = b'' if method.upper() in ('POST', 'DELETE') else None
+            req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
+            with self._open_with_opener(self.opener, req, timeout=20) as r:
+                raw = r.read()
+            if not raw:
+                return {'data': []}
+            try:
+                return json.loads(raw.decode('utf-8'))
+            except Exception:
+                return {}
+        except Exception:
+            try:
+                self._append_debug(f"watchlist {method} {path} failed: {traceback.format_exc()}")
+            except Exception:
+                pass
+            return None
+
+    def _normalize_cloud_item(self, entry):
+        """Convert a cloud watchlist entry into the local list item format."""
+        if not isinstance(entry, dict):
+            return None
+        content = entry.get('content') if isinstance(entry.get('content'), dict) else {}
+        analytics = entry.get('analytics') if isinstance(entry.get('analytics'), dict) else {}
+        content_id = content.get('id') or analytics.get('content_id')
+        if not content_id:
+            return None
+        image = content.get('image') if isinstance(content.get('image'), dict) else {}
+        portrait = image.get('portraitUrl')
+        landscape = image.get('landscapeUrl')
+        thumb = landscape or portrait
+        ctype = content.get('type') or ''
+        group = ''
+        low = str(ctype).lower()
+        if 'channel' in low or 'live' in low:
+            group = 'channels'
+        elif 'episode' in low:
+            group = 'episodes'
+        elif 'movie' in low or 'film' in low:
+            group = 'movies'
+        elif 'series' in low or 'tvshow' in low:
+            group = 'series'
+        item = {
+            'id': content_id,
+            'title': content.get('title') or analytics.get('title') or '',
+            'type': ctype,
+            'group': group,
+            'posterUrl': portrait or landscape,
+            'thumb': thumb,
+            'description': content.get('description') or '',
+            'seriesId': content.get('seriesId') or analytics.get('series_id'),
+            'expires_at': content.get('availableUntil'),
+            'raw': content,
+        }
+        return item
+
+    def _cloud_list(self, path):
+        """Return a normalized cloud list from `path`, or None when unavailable."""
+        payload = self._watchlist_request('GET', path=path)
+        if payload is None:
+            return None
+        entries = payload.get('data') if isinstance(payload, dict) else payload
+        if not isinstance(entries, list):
+            return []
+        items = []
+        for entry in entries:
+            normalized = self._normalize_cloud_item(entry)
+            if normalized:
+                items.append(normalized)
+        return items
+
+    def get_cloud_watchlist_items(self):
+        """Return playable cloud items (episodes/movies) from /v9/watchlist."""
+        return self._cloud_list('/v9/watchlist')
+
+    def get_cloud_tracked_series(self):
+        """Return followed series from /v9/trackedseries."""
+        return self._cloud_list('/v9/trackedseries')
+
+    def get_cloud_watch_later(self):
+        """Return the cloud Watch Later list (episodes and movies only)."""
+        return self.get_cloud_watchlist_items()
+
+    def get_cloud_my_series(self):
+        """Return the cloud followed-series list (/v9/trackedseries)."""
+        return self.get_cloud_tracked_series()
+
+    def _cloud_watchlist_ids(self):
+        """Return the set of ids in /v9/watchlist, or None when unavailable."""
+        items = self.get_cloud_watchlist_items()
+        if items is None:
+            return None
+        return {str(i.get('id')) for i in items if i.get('id')}
+
+    def _cloud_tracked_series_ids(self):
+        """Return the set of ids in /v9/trackedseries, or None when unavailable."""
+        items = self.get_cloud_tracked_series()
+        if items is None:
+            return None
+        return {str(i.get('id')) for i in items if i.get('id')}
+
+    def add_to_cloud_watch_later(self, content_id):
+        """Add a playable item to the cloud watchlist. Returns True on success."""
+        if not content_id:
+            return False
+        return self._watchlist_request('POST', content_id, path='/v9/watchlist') is not None
+
+    def remove_from_cloud_watch_later(self, content_id):
+        """Remove a playable item from the cloud watchlist."""
+        if not content_id:
+            return False
+        return self._watchlist_request('DELETE', content_id, path='/v9/watchlist') is not None
+
+    def add_to_cloud_my_series(self, content_id):
+        """Follow a series in the cloud list. Returns True on success."""
+        if not content_id:
+            return False
+        return self._watchlist_request('POST', content_id, path='/v9/trackedseries') is not None
+
+    def remove_from_cloud_my_series(self, content_id):
+        """Unfollow a series in the cloud list."""
+        if not content_id:
+            return False
+        return self._watchlist_request('DELETE', content_id, path='/v9/trackedseries') is not None
+
+    def _load_sync_snapshot(self, snapshot_file=None):
+        """Return the set of ids that were in sync after the last sync."""
+        path = snapshot_file or self.watchlater_sync_file
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    ids = data.get('ids') or []
+                else:
+                    ids = data or []
+                return {str(i) for i in ids if i}
+        except Exception:
+            pass
+        return set()
+
+    def _save_sync_snapshot(self, ids, snapshot_file=None):
+        path = snapshot_file or self.watchlater_sync_file
+        try:
+            d = os.path.dirname(path)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump({'ids': sorted(str(i) for i in ids if i)}, f)
+            return True
+        except Exception:
+            return False
+
+    def update_sync_snapshot(self, content_id, present, snapshot_file=None):
+        """Track a locally-applied change so the next sync does not undo it."""
+        if not content_id:
+            return
+        ids = self._load_sync_snapshot(snapshot_file)
+        if present:
+            ids.add(str(content_id))
+        else:
+            ids.discard(str(content_id))
+        self._save_sync_snapshot(ids, snapshot_file)
+
+    def _is_watch_later_syncable(self, item):
+        """Return True when /v9/watchlist can store this item.
+
+        The watchlist only holds episodes and movies; series live in
+        /v9/trackedseries and channels cannot be stored at all.
+        """
+        if not isinstance(item, dict):
+            return False
+        ctype = str(item.get('type') or '').lower()
+        group = str(item.get('group') or '').lower()
+        if 'episode' in ctype or 'movie' in ctype or 'film' in ctype:
+            return True
+        return group in ('episodes', 'movies')
+
+    def _is_my_series_syncable(self, item):
+        """Return True when /v9/trackedseries can store this item."""
+        return self._item_is_series(item)
+
+    def _item_is_series(self, item):
+        """Return True when the stored item should sync as a followed series."""
+        if not isinstance(item, dict):
+            return False
+        ctype = str(item.get('type') or '').lower()
+        group = str(item.get('group') or '').lower()
+        return 'series' in ctype or 'tvshow' in ctype or group == 'series'
+
+    def _sync_single_change(self, snapshot_file, get_cloud_ids, add_to_cloud,
+                            remove_from_cloud, content_id, present):
+        """Propagate one local add/remove to the cloud, verifying it stuck.
+
+        The cloud silently ignores ids it cannot store. We only update the sync
+        snapshot when the cloud confirms the change, so a rejected item never
+        gets recorded as synced (which would later look like a cloud removal and
+        delete it locally).
+        """
+        if not content_id:
+            return False
+        cid = str(content_id)
+        if present:
+            if not add_to_cloud(cid):
+                return False
+        else:
+            if not remove_from_cloud(cid):
+                return False
+
+        verified = get_cloud_ids()
+        if verified is None:
+            self.update_sync_snapshot(cid, present, snapshot_file)
+            return True
+        if present and cid not in verified:
+            return False
+        if not present and cid in verified:
+            return False
+        self.update_sync_snapshot(cid, present, snapshot_file)
+        return True
+
+    def sync_single_watch_later_change(self, content_id, present, is_series=False):
+        """Propagate one local Watch Later change; series route to My Series."""
+        if is_series:
+            return self.sync_single_my_series_change(content_id, present)
+        return self._sync_single_change(
+            self.watchlater_sync_file, self._cloud_watchlist_ids,
+            self.add_to_cloud_watch_later, self.remove_from_cloud_watch_later,
+            content_id, present)
+
+    def sync_single_my_series_change(self, content_id, present):
+        """Propagate one local My Series change to /v9/trackedseries."""
+        return self._sync_single_change(
+            self.myseries_sync_file, self._cloud_tracked_series_ids,
+            self.add_to_cloud_my_series, self.remove_from_cloud_my_series,
+            content_id, present)
+
+    def _sync_list_with_cloud(self, local_file, snapshot_file, label, get_cloud_items,
+                              get_cloud_ids, add_to_cloud, remove_from_cloud, is_syncable):
+        """Three-way merge between a local list and its cloud counterpart.
+
+        Additions and removals propagate in both directions. Items the cloud
+        cannot store are never pushed and never removed because of cloud state.
+        """
+        summary = {
+            'ok': False,
+            'reason': '',
+            'added_local': 0,
+            'added_cloud': 0,
+            'removed_local': 0,
+            'removed_cloud': 0,
+        }
+        try:
+            token = self.get_access_token()
+        except Exception:
+            token = None
+        if not token:
+            summary['reason'] = 'not_logged_in'
+            return summary
+
+        cloud_items = get_cloud_items()
+        if cloud_items is None:
+            summary['reason'] = 'cloud_unavailable'
+            return summary
+
+        local_items = self._load_local_list(local_file) or []
+        local_by_id = {}
+        for it in local_items:
+            if isinstance(it, dict) and it.get('id'):
+                local_by_id[str(it['id'])] = it
+        cloud_by_id = {str(it['id']): it for it in cloud_items if it.get('id')}
+
+        local_ids = set(local_by_id)
+        cloud_ids = set(cloud_by_id)
+        last_ids = self._load_sync_snapshot(snapshot_file)
+
+        local_added = local_ids - last_ids      # added locally since last sync
+        local_removed = last_ids - local_ids    # removed locally since last sync
+        cloud_added = cloud_ids - last_ids      # added in cloud since last sync
+        cloud_removed = last_ids - cloud_ids    # removed in cloud since last sync
+
+        # Push local-only additions (excluding types the cloud cannot store),
+        # pull cloud-only additions. Removals propagate only when the other
+        # side did not just add the same item (additions win).
+        to_add_cloud = {cid for cid in (local_added - cloud_ids)
+                        if is_syncable(local_by_id.get(cid))}
+        to_add_local = cloud_added - local_ids
+        to_remove_cloud = local_removed - cloud_added
+        to_remove_local = {cid for cid in (cloud_removed - local_added)
+                           if is_syncable(local_by_id.get(cid))}
+
+        try:
+            xbmc.log(
+                "NLZiet %s: last=%s local=%s cloud=%s to_add_cloud=%s to_add_local=%s to_remove_cloud=%s to_remove_local=%s"
+                % (label, last_ids, local_ids, cloud_ids, to_add_cloud, to_add_local, to_remove_cloud, to_remove_local),
+                xbmc.LOGDEBUG,
+            )
+        except Exception:
+            pass
+
+        added_cloud_ok = set()
+        for cid in to_add_cloud:
+            if add_to_cloud(cid):
+                added_cloud_ok.add(cid)
+
+        removed_cloud_ok = set()
+        for cid in to_remove_cloud:
+            if remove_from_cloud(cid):
+                removed_cloud_ok.add(cid)
+
+        # Verify the cloud actually applied the writes; the API silently ignores
+        # ids it cannot store, so trust the re-fetched state over the responses.
+        verified_cloud_ids = get_cloud_ids()
+        if verified_cloud_ids is not None:
+            added_cloud_ok &= verified_cloud_ids
+            removed_cloud_ok = {cid for cid in to_remove_cloud
+                                if cid not in verified_cloud_ids}
+            cloud_final_ids = verified_cloud_ids
+        else:
+            cloud_final_ids = (cloud_ids | added_cloud_ok) - removed_cloud_ok
+
+        summary['added_cloud'] = len(added_cloud_ok)
+        summary['removed_cloud'] = len(removed_cloud_ok)
+
+        final_local = dict(local_by_id)
+        for cid in to_remove_local:
+            final_local.pop(cid, None)
+        for cid in to_add_local:
+            final_local[cid] = cloud_by_id[cid]
+        summary['removed_local'] = len([c for c in to_remove_local if c in local_by_id])
+        summary['added_local'] = len(to_add_local)
+
+        self._save_local_list(local_file, list(final_local.values()))
+
+        # The snapshot is what both sides agree on: the intersection of the
+        # final local list and the actual cloud list.
+        self._save_sync_snapshot(set(final_local) & cloud_final_ids, snapshot_file)
+
+        summary['ok'] = True
+        return summary
+
+    def sync_watch_later(self):
+        """Two-way sync between the local Watch Later and /v9/watchlist.
+
+        Only episodes and movies are synced; any leftover series entries are
+        first relocated to My Series, and channels are never pushed.
+        """
+        self.migrate_series_from_watch_later()
+        return self._sync_list_with_cloud(
+            self.watchlater_file, self.watchlater_sync_file, 'sync_watch_later',
+            self.get_cloud_watchlist_items, self._cloud_watchlist_ids,
+            self.add_to_cloud_watch_later, self.remove_from_cloud_watch_later,
+            self._is_watch_later_syncable)
+
+    def sync_my_series(self):
+        """Two-way sync between the local My Series and /v9/trackedseries."""
+        return self._sync_list_with_cloud(
+            self.myseries_file, self.myseries_sync_file, 'sync_my_series',
+            self.get_cloud_tracked_series, self._cloud_tracked_series_ids,
+            self.add_to_cloud_my_series, self.remove_from_cloud_my_series,
+            self._is_my_series_syncable)
 
     # --- End local list storage ---------------------------------------------
 

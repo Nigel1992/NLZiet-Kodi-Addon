@@ -106,6 +106,26 @@ msgctxt "#30136"
 msgid "NLZiet library path"
 msgstr "NLZiet library path"
 
+msgctxt "#30008"
+msgid "Synchronization"
+msgstr "Synchronization"
+
+msgctxt "#30114"
+msgid "Sync Watch Later and My Series with NLZiet"
+msgstr "Sync Watch Later and My Series with NLZiet"
+
+msgctxt "#30115"
+msgid "Sync Watch Later now"
+msgstr "Sync Watch Later now"
+
+msgctxt "#30116"
+msgid "When enabled, Watch Later and My Series are synchronised both ways with your NLZiet account. Items you add or remove in Kodi appear in the NLZiet app and vice versa."
+msgstr "When enabled, Watch Later and My Series are synchronised both ways with your NLZiet account. Items you add or remove in Kodi appear in the NLZiet app and vice versa."
+
+msgctxt "#30117"
+msgid "Sync My Series now"
+msgstr "Sync My Series now"
+
 # -------------
 # Comon strings
 # -------------
@@ -199,8 +219,8 @@ msgid "Search"
 msgstr "Search"
 
 msgctxt "#33022"
-msgid "My List"
-msgstr "My List"
+msgid "My List (Kodi only)"
+msgstr "My List (Kodi only)"
 
 msgctxt "#33023"
 msgid "Series"
@@ -271,12 +291,12 @@ msgid "Now watching"
 msgstr "Now watching"
 
 msgctxt "#33040"
-msgid "Added to My List"
-msgstr "Added to My List"
+msgid "Added to My List (Kodi only)"
+msgstr "Added to My List (Kodi only)"
 
 msgctxt "#33041"
-msgid "Removed from My List"
-msgstr "Removed from My List"
+msgid "Removed from My List (Kodi only)"
+msgstr "Removed from My List (Kodi only)"
 
 msgctxt "#33042"
 msgid "All"
@@ -319,8 +339,8 @@ msgid "No profiles available. Please login first."
 msgstr "No profiles available. Please login first."
 
 msgctxt "#33052"
-msgid "My List is empty"
-msgstr "My List is empty"
+msgid "My List (Kodi only) is empty"
+msgstr "My List (Kodi only) is empty"
 
 msgctxt "#33053"
 msgid "No items found for {}"
@@ -335,8 +355,8 @@ msgid "This will clear cookies and tokens. Continue?"
 msgstr "This will clear cookies and tokens. Continue?"
 
 msgctxt "#33056"
-msgid "Do you want to keep your My List?"
-msgstr "Do you want to keep your My List?"
+msgid "Do you want to keep your My List (Kodi only)?"
+msgstr "Do you want to keep your My List (Kodi only)?"
 
 msgctxt "#33057"
 msgid "Keep"
@@ -399,12 +419,12 @@ msgid "Watch Later"
 msgstr "Watch Later"
 
 msgctxt "#33074"
-msgid "Add to My List"
-msgstr "Add to My List"
+msgid "Add to My List (Kodi only)"
+msgstr "Add to My List (Kodi only)"
 
 msgctxt "#33075"
-msgid "Remove from My List"
-msgstr "Remove from My List"
+msgid "Remove from My List (Kodi only)"
+msgstr "Remove from My List (Kodi only)"
 
 msgctxt "#33076"
 msgid "Add to Watch Later"
@@ -545,3 +565,71 @@ msgstr "{}: {}"
 msgctxt "#33112"
 msgid "Not allowed"
 msgstr "Not allowed"
+
+msgctxt "#33113"
+msgid "Watch Later synced ({} changes)"
+msgstr "Watch Later synced ({} changes)"
+
+msgctxt "#33114"
+msgid "Watch Later sync failed"
+msgstr "Watch Later sync failed"
+
+msgctxt "#33115"
+msgid "Log in to sync Watch Later"
+msgstr "Log in to sync Watch Later"
+
+msgctxt "#33116"
+msgid "+{} cloud, -{} cloud, +{} local, -{} local"
+msgstr "+{} cloud, -{} cloud, +{} local, -{} local"
+
+msgctxt "#33117"
+msgid "My Series"
+msgstr "My Series"
+
+msgctxt "#33118"
+msgid "Add to My Series"
+msgstr "Add to My Series"
+
+msgctxt "#33119"
+msgid "Remove from My Series"
+msgstr "Remove from My Series"
+
+msgctxt "#33120"
+msgid "Added to My Series"
+msgstr "Added to My Series"
+
+msgctxt "#33121"
+msgid "Removed from My Series"
+msgstr "Removed from My Series"
+
+msgctxt "#33122"
+msgid "My Series is empty"
+msgstr "My Series is empty"
+
+msgctxt "#33123"
+msgid "Missing id for My Series action"
+msgstr "Missing id for My Series action"
+
+msgctxt "#33124"
+msgid "My Series action failed"
+msgstr "My Series action failed"
+
+msgctxt "#33125"
+msgid "My Series synced ({} changes)"
+msgstr "My Series synced ({} changes)"
+
+msgctxt "#33126"
+msgid "My Series sync failed"
+msgstr "My Series sync failed"
+
+msgctxt "#33127"
+msgid "+{} cloud, -{} cloud, +{} local, -{} local"
+msgstr "+{} cloud, -{} cloud, +{} local, -{} local"
+
+msgctxt "#33128"
+msgid "Only series can be added to My Series"
+msgstr "Only series can be added to My Series"
+
+msgctxt "#33129"
+msgid "Only episodes and movies can be saved to Watch Later"
+msgstr "Only episodes and movies can be saved to Watch Later"

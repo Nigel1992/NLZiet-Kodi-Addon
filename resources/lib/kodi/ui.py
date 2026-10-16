@@ -45,14 +45,17 @@ def pick_menu_png(addon_path, name):
 
 
 def add_directory_item(addon, handle, build_url_func, api_instance_getter,
-                       title, query, is_folder=True, thumb=None, info=None,
+                       title, query, is_folder=True, is_playable=None, thumb=None,
+                       info=None,
                        content=None, playback_state=None, is_live=False,
                        group=None,
                        add_to_library_label='Add to library',
                        mylist_add_label='Add to My List',
                        mylist_remove_label='Remove from My List',
                        watch_later_add_label='Add to Watch Later',
-                       watch_later_remove_label='Remove from Watch Later'):
+                       watch_later_remove_label='Remove from Watch Later',
+                       my_series_add_label='Add to My Series',
+                       my_series_remove_label='Remove from My Series'):
     url = build_url_func(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
 
@@ -88,8 +91,12 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                     li.setLabel2(short)
             except Exception:
                 pass
-    # mark non-folder items as playable so Enter/Select triggers playback
-    if not is_folder:
+    # Non-folder items default to playable so Enter/Select triggers playback.
+    # Callers can opt out (is_playable=False) to create an "action" command item
+    # (e.g. Login/Logout) that runs the plugin without being treated as playable.
+    if is_playable is None:
+        is_playable = not is_folder
+    if is_playable:
         li.setProperty('IsPlayable', 'true')
 
     resume = (playback_state or {}).get('resume') if playback_state else None
@@ -152,7 +159,14 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 except Exception:
                     return False
 
-            # My List accepts any content; Watch Later accepts anything too.
+            # My List accepts any content; the Watch Later / My Series choice
+            # depends on the content type so each item shows the option that
+            # actually works for it (series follow, episodes/movies queue).
+            ctype_l = str(content_type or '').lower()
+            grp_l = str(group or '').lower()
+            is_series_item = 'series' in ctype_l or 'tvshow' in ctype_l or grp_l == 'series'
+            is_channel_item = 'channel' in ctype_l or 'live' in ctype_l or grp_l == 'channels'
+
             if allow_mylist:
                 mylist_label = mylist_remove_label if _check('is_in_my_list') else mylist_add_label
 
@@ -168,19 +182,34 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 except Exception:
                     pass
 
-            watch_later_label = watch_later_remove_label if _check('is_in_watch_later') else watch_later_add_label
+            if allow_mylist and is_series_item:
+                my_series_label = my_series_remove_label if _check('is_in_my_series') else my_series_add_label
+                my_series_query = {'mode': 'toggle_my_series', 'id': str(content_id), 'title': title}
+                if content_type:
+                    my_series_query['type'] = content_type
+                if group:
+                    my_series_query['group'] = group
+                if thumb:
+                    my_series_query['thumb'] = thumb
+                try:
+                    context_items.append((my_series_label, f"RunPlugin({build_url_func(my_series_query)})"))
+                except Exception:
+                    pass
+            elif allow_mylist and not is_channel_item:
+                # Episodes, movies and unknown playables queue in Watch Later.
+                watch_later_label = watch_later_remove_label if _check('is_in_watch_later') else watch_later_add_label
 
-            watch_query = {'mode': 'toggle_watch_later', 'id': str(content_id), 'title': title}
-            if content_type:
-                watch_query['type'] = content_type
-            if group:
-                watch_query['group'] = group
-            if thumb:
-                watch_query['thumb'] = thumb
-            try:
-                context_items.append((watch_later_label, f"RunPlugin({build_url_func(watch_query)})"))
-            except Exception:
-                pass
+                watch_query = {'mode': 'toggle_watch_later', 'id': str(content_id), 'title': title}
+                if content_type:
+                    watch_query['type'] = content_type
+                if group:
+                    watch_query['group'] = group
+                if thumb:
+                    watch_query['thumb'] = thumb
+                try:
+                    context_items.append((watch_later_label, f"RunPlugin({build_url_func(watch_query)})"))
+                except Exception:
+                    pass
 
         if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
             try:
