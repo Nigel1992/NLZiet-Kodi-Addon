@@ -593,3 +593,27 @@ def test_toggle_does_not_touch_cloud_when_sync_disabled(monkeypatch, kodi_record
     default.toggle_watch_later('s1', 'Show', 'movie')
 
     assert calls == []
+
+
+def test_cloud_list_paginates_past_default_page(tmp_path):
+    """The cloud endpoints return 10 items by default; we must page past that."""
+    api = _isolated_api(tmp_path)
+    seen = []
+    total = 1200
+
+    def fake_request(method, content_id=None, path='/v9/watchlist', params=None):
+        seen.append(dict(params or {}))
+        limit = (params or {}).get('limit', 10)
+        offset = (params or {}).get('offset', 0)
+        ids = ['id{}'.format(i) for i in range(offset, min(offset + limit, total))]
+        entries = [{'content': {'id': cid, 'title': 'T' + cid, 'type': 'Series'}}
+                   for cid in ids]
+        return {'data': entries}
+
+    api._watchlist_request = fake_request
+
+    items = api.get_cloud_tracked_series()
+
+    assert len(items) == total
+    assert seen[0].get('limit') == 500
+    assert seen[-1].get('offset') == 1000

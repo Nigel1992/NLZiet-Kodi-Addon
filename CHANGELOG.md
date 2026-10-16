@@ -1,8 +1,13 @@
 # Changelog
 
-> **Latest Version:** v1.4.0 (October 16, 2026)
+> **Latest Version:** v1.4.1 (October 16, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.1] - 2026-10-16
+
+### Fixed
+- **Cloud list sync no longer truncated to 10 items**: the NLZiet watchlist endpoints (`/v9/watchlist` and `/v9/trackedseries`) return only the first 10 entries unless a `limit` is sent. My Series and Watch Later now request pages of 500 and follow `offset` until a short page is returned, so every followed series / watch-later item syncs both ways instead of silently dropping anything beyond the 10th.
 
 ## [1.4.0] - 2026-10-16
 

@@ -7,7 +7,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.4.0 — 2026-10-16. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.4.1 — 2026-10-16. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -35,6 +35,10 @@
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.4.1
+
+- **Fixed**: cloud-synced lists were capped at 10 items. The NLZiet watchlist endpoints (`/v9/watchlist` and `/v9/trackedseries`) only return the first 10 entries unless a `limit` is sent, so **Kijk Later** and **Mijn Series** synced at most 10 items. The addon now requests pages of 500 and follows `offset` until the list is complete, so all items sync both ways.
 
 ### New in v1.4.0
 

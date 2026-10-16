@@ -1770,20 +1770,25 @@ class NLZietAPI:
             pass
         return headers
 
-    def _watchlist_request(self, method, content_id=None, path='/v9/watchlist'):
+    # Largest page size the cloud list endpoints accept. Requests without a
+    # `limit` silently return only the first 10 entries.
+    _CLOUD_LIST_PAGE_SIZE = 500
+
+    def _watchlist_request(self, method, content_id=None, path='/v9/watchlist', params=None):
         """Perform a cloud list request. Returns the decoded JSON (dict) or None.
 
         GET lists the list. POST adds `content_id`. DELETE removes it. The
         `path` selects the endpoint: `/v9/watchlist` stores playable items
         (episodes/movies) while `/v9/trackedseries` stores followed series.
+        Extra query parameters can be passed through `params`.
         """
         try:
-            params = {}
+            query = dict(params or {})
             if content_id:
-                params['id'] = str(content_id)
+                query['id'] = str(content_id)
             url = urllib.parse.urljoin(self.base_url, path)
-            if params:
-                url = url + '?' + urllib.parse.urlencode(params)
+            if query:
+                url = url + '?' + urllib.parse.urlencode(query)
             headers = self._watchlist_headers()
             data = b'' if method.upper() in ('POST', 'DELETE') else None
             req = urllib.request.Request(url, data=data, headers=headers, method=method.upper())
@@ -1841,19 +1846,30 @@ class NLZietAPI:
         return item
 
     def _cloud_list(self, path):
-        """Return a normalized cloud list from `path`, or None when unavailable."""
-        payload = self._watchlist_request('GET', path=path)
-        if payload is None:
-            return None
-        entries = payload.get('data') if isinstance(payload, dict) else payload
-        if not isinstance(entries, list):
-            return []
+        """Return a normalized cloud list from `path`, or None when unavailable.
+
+        The endpoints return only the first 10 entries unless a `limit` is sent,
+        so pages are fetched with `offset` until a short page is reached. This
+        keeps long lists (e.g. many followed series) from being truncated.
+        """
         items = []
-        for entry in entries:
-            normalized = self._normalize_cloud_item(entry)
-            if normalized:
-                items.append(normalized)
-        return items
+        offset = 0
+        while True:
+            payload = self._watchlist_request(
+                'GET', path=path,
+                params={'limit': self._CLOUD_LIST_PAGE_SIZE, 'offset': offset})
+            if payload is None:
+                return None
+            entries = payload.get('data') if isinstance(payload, dict) else payload
+            if not isinstance(entries, list) or not entries:
+                return items
+            for entry in entries:
+                normalized = self._normalize_cloud_item(entry)
+                if normalized:
+                    items.append(normalized)
+            if len(entries) < self._CLOUD_LIST_PAGE_SIZE:
+                return items
+            offset += len(entries)
 
     def get_cloud_watchlist_items(self):
         """Return playable cloud items (episodes/movies) from /v9/watchlist."""
