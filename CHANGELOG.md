@@ -1,8 +1,21 @@
 # Changelog
 
-> **Latest Version:** v1.4.1 (October 16, 2026)
+> **Latest Version:** v1.4.2 (October 19, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.2] - 2026-10-19
+
+### Added
+- **Episode info in Kijk Later**: every item in **Kijk Later** now shows its episode numbering ("Afl. 3 van 12") and how long it is still available ("nog 5 dagen beschikbaar" / "nog 3 uur beschikbaar" / "niet meer beschikbaar") as two subtly coloured lines at the top of its description — in the info dialog (plot) as well as in the outline (plotoutline). The numbering comes from the season catalogue, fetched once per series/season while the list renders, and falls back to parsing the episode subtitle when the API returns no catalogue data.
+
+### Fixed
+- **Saved lists showed the broadcaster logo instead of the poster**: the raw NLZiet payload of Kijk Later / My List items only carries the channel logo (`logoUrl`), which the artwork picker preferred over real artwork, so rows showed an NPO/RTL logo instead of the film or series poster. Real posters and stills now always win, and broadcaster logos are only used as a last resort (for example in the channel list).
+- **NPO teletext subtitles**: NPO publishes teletext-derived WebVTT files that open with the teletext page number ("888") and colour the dialogue with yellow/white class tags, which Kodi rendered literally instead of using its own subtitle overlay. External NPO subtitles are now cleaned before playback — the page-number cue, the "TT888"/`service.npo.nl` banner and the teletext colour tags are stripped — and cached locally. RTL and SBS subtitles are left untouched, and anything that cannot be cleaned is passed through unchanged.
+- **Availability line colour**: the "nog X dagen beschikbaar" line used an invalid colour value (`ffoooo66`) that Kodi silently ignored; it is now a warm amber that stands out subtly on dark skins.
+
+### Changed
+- Added Dutch and English strings for the episode numbering and availability lines.
 
 ## [1.4.1] - 2026-10-16
 

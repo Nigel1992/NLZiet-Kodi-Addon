@@ -243,6 +243,29 @@ def optimize_image_url(url):
     return url + '?width=3840'
 
 
+def _first_content_url(src):
+    """Return the best url-like value on ``src``, brand logos taken last.
+
+    Key names that indicate a broadcaster/channel logo (``logoUrl`` and
+    friends) are only used when no other image exists, so a station logo
+    never outranks real content artwork like posters or stills.
+    """
+    candidates = []
+    logos = []
+    for key, value in src.items():
+        if not isinstance(value, str):
+            continue
+        if not (value.startswith('http://') or value.startswith('https://') or value.startswith('file://')):
+            continue
+        if isinstance(key, str) and 'logo' in key.lower():
+            logos.append(value)
+        else:
+            candidates.append(value)
+    for value in candidates or logos:
+        return optimize_image_url(value)
+    return None
+
+
 def pick_landscape_thumb(src):
     """Return the best landscape-oriented thumbnail or path for an item.
 
@@ -284,10 +307,11 @@ def pick_landscape_thumb(src):
             if isinstance(kk, str) and 'landscape' in kk.lower() and isinstance(vv, str) and vv:
                 return optimize_image_url(vv)
 
-        # As a final fallback, return any url-like string value
-        for vv in src.values():
-            if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
-                return optimize_image_url(vv)
+        # As a final fallback, return any url-like string value; broadcaster
+        # logos only when no other image is available
+        generic = _first_content_url(src)
+        if generic:
+            return generic
     except Exception:
         pass
     return None
@@ -317,10 +341,10 @@ def pick_portrait_thumb(src):
                     v = img.get(k)
                     if isinstance(v, str) and v:
                         return optimize_image_url(v)
-        # Fallback to any image URL
-        for vv in src.values():
-            if isinstance(vv, str) and (vv.startswith('http://') or vv.startswith('https://') or vv.startswith('file://')):
-                return optimize_image_url(vv)
+        # Fallback to any image URL (broadcaster logos only as a last resort)
+        generic = _first_content_url(src)
+        if generic:
+            return generic
     except Exception:
         pass
     return None

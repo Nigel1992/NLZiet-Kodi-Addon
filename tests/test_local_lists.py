@@ -1,5 +1,6 @@
 import importlib
 import sys
+import time
 
 
 def _load_default(monkeypatch):
@@ -432,3 +433,140 @@ def test_main_menu_lists_my_list_and_watch_later_when_logged_in(monkeypatch, kod
     assert 'watch_later' in modes
     assert 'my_series' in modes
     assert 'my_movies' not in modes
+
+
+def test_browse_watch_later_shows_numbering_and_days_in_description(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    expiry = int(time.time()) + 5 * 86400 + 60
+    entries = []
+
+    class FakeApi:
+        def get_watch_later(self):
+            return [
+                {
+                    'id': 'e1', 'title': 'Sisi', 'type': 'Episode', 'group': 'episodes',
+                    'seriesId': 'ser1', 'expires_at': expiry,
+                    'description': 'Een oorlog voltrekt zich.',
+                    'raw': {'type': 'Episode', 'seriesId': 'ser1', 'seasonId': 'seas1',
+                            'subtitle': 'Afl. 6'},
+                },
+                {'id': 'm1', 'title': 'Film', 'type': 'Movie', 'expires_at': expiry},
+            ]
+
+        def get_series_episodes(self, series_id, season_id=None, limit=400, offset=0):
+            return [{'id': 'e1', 'episode_number': 1}, {'id': 'e2', 'episode_number': 2}]
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+    monkeypatch.setattr(
+        default, 'add_directory_item',
+        lambda title, query, **kwargs: entries.append((title, kwargs.get('info') or {})),
+    )
+
+    default.browse_watch_later()
+
+    # The title stays clean; numbering and availability each get their own
+    # accent-colored line in the description, above the actual plot text.
+    episode_title, episode_info = entries[0]
+    assert episode_title == 'Sisi'
+    numbering_tag = f'[COLOR {default.NUMBERING_COLOR_RAW}]Afl. 1 van 2[/COLOR]'
+    availability_tag = f'[COLOR {default.EXPIRY_COLOR_RAW}]nog 5 dagen beschikbaar[/COLOR]'
+    assert episode_info['plot'].split('\n') == [
+        numbering_tag, availability_tag, 'Een oorlog voltrekt zich.',
+    ]
+    assert episode_info['plotoutline'].split('\n') == [
+        numbering_tag, availability_tag, 'Een oorlog voltrekt zich.',
+    ]
+
+    # Movies only carry the availability line, no numbering.
+    movie_title, movie_info = entries[1]
+    assert movie_title == 'Film'
+    assert movie_info['plot'].split('\n') == [availability_tag]
+    assert movie_info['plotoutline'].split('\n') == [availability_tag]
+
+
+def test_browse_watch_later_numbering_falls_back_to_subtitle(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    entries = []
+
+    class FakeApi:
+        def get_watch_later(self):
+            return [{
+                'id': 'e9', 'title': 'Shetland', 'type': 'Episode', 'group': 'episodes',
+                'seriesId': 'serX',
+                'raw': {'type': 'Episode', 'seriesId': 'serX', 'seasonId': 'seasX',
+                        'subtitle': 'S6:A1 Shetland'},
+            }]
+
+        def get_series_episodes(self, series_id, season_id=None, limit=400, offset=0):
+            raise RuntimeError('offline')
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+    monkeypatch.setattr(
+        default, 'add_directory_item',
+        lambda title, query, **kwargs: entries.append((title, kwargs.get('info') or {})),
+    )
+
+    default.browse_watch_later()
+
+    # Without a catalogue we still show the numbering from the subtitle,
+    # accent-colored on its own line (no description and no availability).
+    colored = f'[COLOR {default.NUMBERING_COLOR_RAW}]Afl. 1[/COLOR]'
+    assert entries == [('Shetland', {'plot': colored, 'plotoutline': colored})]
+
+
+def test_my_list_descriptions_stay_plain(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    expiry = int(time.time()) + 5 * 86400
+    entries = []
+
+    class FakeApi:
+        def get_my_list(self):
+            return [{'id': 'm1', 'title': 'Film', 'type': 'movie', 'expires_at': expiry,
+                     'description': 'Gewone beschrijving'}]
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+    monkeypatch.setattr(
+        default, 'add_directory_item',
+        lambda title, query, **kwargs: entries.append((title, kwargs.get('info') or {})),
+    )
+
+    default.browse_my_list_group('movies')
+
+    # Only Kijk Later is enriched; My List keeps its plain descriptions.
+    assert entries == [('Film', {'plot': 'Gewone beschrijving',
+                                 'plotoutline': 'Gewone beschrijving'})]
+
+
+def test_render_list_items_exposes_stored_poster_to_artwork(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    calls = []
+
+    monkeypatch.setattr(
+        default, 'add_directory_item',
+        lambda title, query, **kwargs: calls.append((title, kwargs)),
+    )
+
+    default._render_list_items([
+        {
+            'id': 'e1', 'title': 'Sisi', 'type': 'Episode', 'group': 'episodes',
+            'posterUrl': 'https://images.nlziet.nl/poster.jpeg',
+            'raw': {'type': 'Episode',
+                    'logoUrl': 'https://cdn.nlziet.nl/npo.png',
+                    'image': {'landscapeUrl': 'https://images.nlziet.nl/still.jpeg'}},
+        },
+        {
+            'id': 'e2', 'title': 'Zonder poster', 'type': 'Movie', 'group': 'movies',
+            'raw': {'type': 'Movie', 'logoUrl': 'https://cdn.nlziet.nl/npo.png'},
+        },
+    ])
+
+    with_poster = calls[0][1]
+    without_poster = calls[1][1]
+    # The stored poster is exposed as an explicit portrait key so the channel
+    # logo in the raw payload cannot take its portrait slot; the landscape
+    # still keeps priority for the landscape/thumb slots.
+    assert with_poster['content']['portraitUrl'] == 'https://images.nlziet.nl/poster.jpeg'
+    assert with_poster['thumb'] == 'https://images.nlziet.nl/still.jpeg?width=3840'
+    # Without any stored poster nothing is invented; the logo stays the
+    # pickers' last resort.
+    assert 'portraitUrl' not in without_poster['content']

@@ -14,7 +14,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.4.1 — 2026-10-16. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.4.2 — 2026-10-19. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -36,12 +36,20 @@
 - **Localization**: All user-facing text resolves through Kodi's language system (Dutch and English included); English is the fallback for languages without a translation file.
 - **DRM Support**: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
 - **Placement Rows**: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
-- **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping.
+- **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping. **Kijk Later** additionally shows the episode number and the remaining availability as compact, subtly coloured lines in the item description.
 - **Search**: Find series, movies, and episodes by title.
 - **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion. The Trakt add-on must be installed and authorized separately.
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
+- **Clean subtitles**: NPO's teletext-derived subtitles are cleaned before playback, so Kodi shows its normal subtitle overlay instead of the teletext page number ("888") and yellow/white teletext colours.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.4.2
+
+- **Episode info in Kijk Later**: each item now shows its episode numbering ("Afl. 3 van 12") and how long it stays available ("nog 5 dagen beschikbaar") as two subtly coloured lines at the top of its description, in both the info dialog and the outline. Numbering is resolved from the season catalogue (fetched once per series/season) and falls back to the episode subtitle when no catalogue data is available.
+- **Fixed**: saved lists showed the **broadcaster logo** instead of the real poster. The raw NLZiet payload for Kijk Later / My List items only carries the channel logo, which the artwork picker preferred over the actual artwork; real posters and stills now always win, and broadcaster logos are only used as a last resort (such as the channel list).
+- **Fixed**: **NPO teletext subtitles** are cleaned up. NPO publishes teletext-derived WebVTT files that start with the teletext page number ("888") and colour the dialogue yellow/white, which Kodi rendered literally. External NPO subtitles are now stripped of the page-number cue, the service banner and the teletext colour tags (and cached locally) before playback, so Kodi shows its normal subtitle overlay. RTL and SBS subtitles are untouched.
+- **Fixed**: the availability line used an invalid colour value and was rendered without colour; it now uses a warm amber that stands out subtly.
 
 ### New in v1.4.1
 

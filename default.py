@@ -100,9 +100,14 @@ def get_channels_menu_data(api_instance):
     _channel_menu_cache_time = now
     return results, epg_map
 
-# Raw expiry color to test — change this to 'orange' or a hex like 'FFA500' or
-# try the exact raw tag you suggested ('ffoooo66') to experiment.
-EXPIRY_COLOR_RAW = 'ffoooo66'
+# Accent color for availability/expiry lines ("nog X dagen beschikbaar").
+# Valid AARRGGBB hex (Kodi ignores anything else): a warm amber that stands
+# out slightly on dark skins without shouting.
+EXPIRY_COLOR_RAW = 'FFF2A24C'
+
+# Accent color for the episode-numbering lines in Kijk Later descriptions.
+# A calm blue that sits quietly next to the amber availability line.
+NUMBERING_COLOR_RAW = 'FF74A9E6'
 
 # Language/Localization dictionary - Dutch (NL) and English (EN)
 TRANSLATIONS = {
@@ -187,6 +192,15 @@ TRANSLATIONS = {
     'watchlater_sync_failed': {'nl': 'Synchroniseren van Kijk Later mislukt', 'en': 'Watch Later sync failed'},
     'watchlater_sync_not_logged_in': {'nl': 'Log in om Kijk Later te synchroniseren', 'en': 'Log in to sync Watch Later'},
     'watchlater_sync_summary': {'nl': '+{} cloud, -{} cloud, +{} lokaal, -{} lokaal', 'en': '+{} cloud, -{} cloud, +{} local, -{} local'},
+    'episode_numbering_of': {'nl': 'Afl. {} van {}', 'en': 'Ep. {} of {}'},
+    'episode_number_only': {'nl': 'Afl. {}', 'en': 'Ep. {}'},
+    'availability_days': {'nl': 'nog {} dagen beschikbaar', 'en': '{} days left'},
+    'availability_day': {'nl': 'nog {} dag beschikbaar', 'en': '{} day left'},
+    'availability_hours': {'nl': 'nog {} uur beschikbaar', 'en': '{} hours left'},
+    'availability_hour': {'nl': 'nog {} uur beschikbaar', 'en': '{} hour left'},
+    'availability_minutes': {'nl': 'nog {} minuten beschikbaar', 'en': '{} minutes left'},
+    'availability_minute': {'nl': 'nog {} minuut beschikbaar', 'en': '{} minute left'},
+    'availability_expired': {'nl': 'niet meer beschikbaar', 'en': 'no longer available'},
     'my_series': {'nl': 'Mijn Series', 'en': 'My Series'},
     'add_to_my_series': {'nl': 'Toevoegen aan Mijn Series', 'en': 'Add to My Series'},
     'remove_from_my_series': {'nl': 'Verwijderen uit Mijn Series', 'en': 'Remove from My Series'},
@@ -360,6 +374,15 @@ STRING_IDS = {
     'myseries_sync_summary': 33127,
     'only_series': 33128,
     'only_episodes_movies': 33129,
+    'episode_numbering_of': 33130,
+    'episode_number_only': 33131,
+    'availability_days': 33132,
+    'availability_day': 33133,
+    'availability_hours': 33134,
+    'availability_hour': 33135,
+    'availability_minutes': 33136,
+    'availability_minute': 33137,
+    'availability_expired': 33138,
 }
 
 
@@ -2417,8 +2440,129 @@ def _search_group_key(itype_l, item):
     return 'other'
 
 
-def _render_list_items(items):
-    """Render stored list items, linking series to their detail page."""
+# Per-process cache of season catalogue lookups used by the Kijk Later
+# labels. Keyed by (series_id, season_id) so several saved episodes of one
+# season share a single catalogue request while the list renders.
+_EPISODE_NUMBERING_CACHE = {}
+
+
+def _expiry_epoch(api, value):
+    """Parse a stored expiry value (epoch seconds or ISO date) to epoch seconds."""
+    if value in (None, ''):
+        return None
+    if api is not None:
+        try:
+            parsed = api._parse_timestamp(value)
+        except Exception:
+            parsed = None
+        if parsed:
+            return int(parsed)
+    try:
+        if isinstance(value, (int, float)):
+            epoch = int(value)
+            if epoch > 10 ** 12:
+                epoch //= 1000
+            return epoch if epoch > 10 ** 9 else None
+        text = str(value).strip()
+        if text.isdigit():
+            epoch = int(text)
+            if epoch > 10 ** 12:
+                epoch //= 1000
+            return epoch if epoch > 10 ** 9 else None
+        if text.endswith('Z'):
+            text = text[:-1] + '+00:00'
+        parsed = datetime.fromisoformat(text)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=ZoneInfo('UTC'))
+        return int(parsed.timestamp())
+    except Exception:
+        return None
+
+
+def _availability_label(api, item):
+    """Return the localized 'still available' text for a stored list item."""
+    if not isinstance(item, dict):
+        return None
+    value = item.get('expires_at')
+    raw = item.get('raw') if isinstance(item.get('raw'), dict) else {}
+    if value in (None, ''):
+        value = (raw.get('availableUntil') or raw.get('availableTo') or
+                 raw.get('expires_at'))
+    expires_at = _expiry_epoch(api, value)
+    if not expires_at:
+        return None
+    secs = expires_at - int(time.time())
+    if secs <= 0:
+        return get_string('availability_expired')
+    days = secs // 86400
+    if days >= 1:
+        return get_string('availability_days' if days > 1 else 'availability_day', int(days))
+    hours = secs // 3600
+    if hours >= 1:
+        return get_string('availability_hours' if hours > 1 else 'availability_hour', int(hours))
+    minutes = max(1, secs // 60)
+    return get_string('availability_minutes' if minutes > 1 else 'availability_minute', int(minutes))
+
+
+def _episode_numbering_label(api, item):
+    """Return 'Afl. X van Y' (episode X of Y in its season) for episode items.
+
+    The season catalogue is fetched once per (series, season) and kept in
+    ``_EPISODE_NUMBERING_CACHE``; when the catalogue is unavailable we fall
+    back to the numbering embedded in the stored subtitle.
+    """
+    if _content_group(item) != 'episodes':
+        return None
+    raw = item.get('raw') if isinstance(item.get('raw'), dict) else {}
+    series_id = item.get('seriesId') or raw.get('seriesId')
+    season_id = raw.get('seasonId') or item.get('seasonId')
+    content_id = str(item.get('id') or '')
+    number = None
+    total = None
+    if api is not None and series_id and season_id:
+        key = (str(series_id), str(season_id))
+        if key not in _EPISODE_NUMBERING_CACHE:
+            entry = None
+            try:
+                episodes = api.get_series_episodes(str(series_id), season_id=str(season_id), limit=400) or []
+                entry = {
+                    'numbers': {
+                        str(ep.get('id') or ''): _metadata_int(ep.get('episode_number'), minimum=1)
+                        for ep in episodes if isinstance(ep, dict)
+                    },
+                    'total': len(episodes),
+                }
+            except Exception:
+                entry = None
+            _EPISODE_NUMBERING_CACHE[key] = entry
+        entry = _EPISODE_NUMBERING_CACHE[key]
+        if entry:
+            number = entry['numbers'].get(content_id)
+            total = entry['total']
+    if number:
+        if total:
+            return get_string('episode_numbering_of', number, total)
+        return get_string('episode_number_only', number)
+    subtitle = str(raw.get('subtitle') or item.get('subtitle') or '')
+    match = re.search(r'S(\d+)\s*[:.]?\s*(?:E|A)(\d+)', subtitle, re.I)
+    if match:
+        number = _metadata_int(match.group(2), minimum=1)
+    else:
+        match = re.search(r'\bAfl\.?\s*(\d+)\b', subtitle, re.I)
+        if match:
+            number = _metadata_int(match.group(1), minimum=1)
+    return get_string('episode_number_only', number) if number else None
+
+
+def _render_list_items(items, enrich=False, api=None):
+    """Render stored list items, linking series to their detail page.
+
+    With ``enrich`` (Kijk Later only) the description also shows the episode
+    numbering and the number of days the item is still available — each on
+    its own line with a subtle accent color, in plot and plotoutline alike.
+    """
+    if enrich and api is None:
+        api = _get_list_api()
     for itm in items:
         try:
             title = itm.get('title') or itm.get('name') or itm.get('id') or get_string('item_label')
@@ -2435,6 +2579,34 @@ def _render_list_items(items):
                 content.setdefault('type', itm.get('type'))
             if itm.get('group'):
                 content.setdefault('group', itm.get('group'))
+            # Stored lists keep the real poster on the item itself while the
+            # raw payload may only carry a broadcaster logo; expose the poster
+            # under an explicit portrait key so the artwork pickers prefer it.
+            poster = itm.get('posterUrl') or itm.get('thumb')
+            if (isinstance(poster, str) and poster.startswith(('http://', 'https://'))
+                    and not content.get('portraitUrl')):
+                content['portraitUrl'] = poster
+            if enrich:
+                # Description decoration must never drop an item from the list.
+                try:
+                    numbering = _episode_numbering_label(api, itm)
+                    availability = _availability_label(api, itm)
+                except Exception:
+                    numbering = None
+                    availability = None
+                if numbering or availability:
+                    truncated = (description[:250] + '...') if len(description) > 250 else description
+                    # Each piece gets its own row with a subtle accent color,
+                    # in the plot as well as in the plotoutline.
+                    lines = []
+                    if numbering:
+                        lines.append(_make_color_tag(NUMBERING_COLOR_RAW, numbering))
+                    if availability:
+                        lines.append(_make_color_tag(EXPIRY_COLOR_RAW, availability))
+                    info = {
+                        'plot': '\n'.join(lines + ([description] if description else [])),
+                        'plotoutline': '\n'.join(lines + ([truncated] if truncated else [])),
+                    }
             group = _content_group(itm)
             if group in ('series', 'tvshows', 'documentary'):
                 add_directory_item(title, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content)
@@ -2539,7 +2711,7 @@ def browse_watch_later():
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
-    _render_list_items(items)
+    _render_list_items(items, enrich=True, api=api)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -3537,6 +3709,37 @@ def ensure_inputstream_for_drm():
     return None
 
 
+def _prepare_external_subtitles(sub_urls, api=None):
+    """Return subtitle locations that are ready for playback.
+
+    Teletext-derived WebVTT files (NPO) are downloaded and cleaned so Kodi
+    shows its regular subtitle overlay instead of the teletext page number
+    ("888") and yellow/white teletext colours. Anything that cannot be cleaned
+    is passed through unchanged, so subtitle handling never blocks playback.
+    """
+    if not sub_urls:
+        return []
+    try:
+        from resources.lib import subtitles as subtitle_tools
+
+        cache_dir = xbmcvfs.translatePath(
+            'special://profile/addon_data/{0}/subtitle_cache'.format(ADDON.getAddonInfo('id'))
+        )
+        headers = {}
+        user_agent = getattr(api, 'user_agent', None) if api else None
+        if user_agent:
+            headers['User-Agent'] = user_agent
+        return subtitle_tools.prepare_subtitle_urls(
+            sub_urls,
+            cache_dir=cache_dir,
+            headers=headers,
+            log=lambda message: xbmc.log(message, xbmc.LOGINFO),
+        )
+    except Exception as exc:
+        xbmc.log('NLZiet: subtitle preparation failed: {0}'.format(exc), xbmc.LOGWARNING)
+        return list(sub_urls)
+
+
 # Global playback monitor for live TV subtitle control
 _playback_monitor = None
 
@@ -3748,7 +3951,7 @@ def play_item(content_id, fmt=None, **kwargs):
             if sub_urls and subs_enabled:
                 xbmc.log(f"NLZiet attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                 try:
-                    li.setSubtitles(sub_urls)
+                    li.setSubtitles(_prepare_external_subtitles(sub_urls, api=api))
                 except Exception as e:
                     xbmc.log(f"NLZiet subtitle attach failed: {e}", xbmc.LOGINFO)
                     # fallback: store as property for debugging or later handling
@@ -3814,7 +4017,7 @@ def play_item(content_id, fmt=None, **kwargs):
             if sub_urls and subs_enabled:
                 xbmc.log(f"NLZiet non-DRM attaching subtitles: {sub_urls}", xbmc.LOGINFO)
                 try:
-                    li.setSubtitles(sub_urls)
+                    li.setSubtitles(_prepare_external_subtitles(sub_urls, api=api))
                 except Exception as e:
                     xbmc.log(f"NLZiet non-DRM subtitle attach failed: {e}", xbmc.LOGINFO)
             elif sub_urls:

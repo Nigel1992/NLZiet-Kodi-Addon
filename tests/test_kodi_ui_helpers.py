@@ -42,6 +42,57 @@ def test_make_color_tag_uses_raw_value_or_default():
     assert ui.make_color_tag('FF0000', 'x') == '[COLOR FF0000]x[/COLOR]'
 
 
+def test_artwork_prefers_real_images_over_broadcaster_logo(monkeypatch):
+    items = []
+    added = []
+    monkeypatch.setattr(
+        ui.xbmcgui,
+        'ListItem',
+        lambda **kwargs: items.append(FakeListItem(**kwargs)) or items[-1],
+    )
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: False)
+    monkeypatch.setattr(
+        ui.xbmcplugin,
+        'addDirectoryItem',
+        lambda handle, url, item, isFolder: added.append(item),
+    )
+
+    ui.add_directory_item(
+        FakeAddon(),
+        42,
+        lambda query: ui.build_url('plugin://plugin.video.nlziet', query),
+        lambda: None,
+        'Sisi',
+        {'mode': 'play', 'id': 'e1'},
+        is_folder=False,
+        thumb='https://images.nlziet.nl/poster.jpeg',
+        content={
+            'logoUrl': 'https://cdn.nlziet.nl/npo.png',
+            'image': {'landscapeUrl': 'https://images.nlziet.nl/still.jpeg'},
+            'portraitUrl': 'https://images.nlziet.nl/poster.jpeg',
+        },
+    )
+
+    art = items[-1].art[-1]
+    assert 'npo.png' not in str(art)
+    assert 'poster.jpeg' in art['poster']
+    assert 'still.jpeg' in art['thumb']
+    assert 'still.jpeg' in art['icon']
+    assert 'still.jpeg' in art['fanart']
+
+
+def test_pickers_use_logo_only_as_last_resort():
+    logo = 'https://cdn.nlziet.nl/npo.png'
+    still = 'https://images.nlziet.nl/still.jpeg'
+
+    # A real image wins even when the logo comes first in the payload.
+    assert still in ui.pick_portrait_thumb({'logoUrl': logo, 'previewUrl': still})
+    assert still in ui.pick_landscape_thumb({'logoUrl': logo, 'previewUrl': still})
+    # With a logo as the only artwork (e.g. channel listings) it is still used.
+    assert logo in ui.pick_portrait_thumb({'logoUrl': logo})
+    assert logo in ui.pick_landscape_thumb({'logoUrl': logo})
+
+
 def test_pick_menu_icon_prefers_png_then_svg(monkeypatch):
     monkeypatch.setattr(ui.os.path, 'exists', lambda path: path.endswith('.svg'))
 

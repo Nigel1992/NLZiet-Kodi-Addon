@@ -633,3 +633,40 @@ msgstr "Alleen series kunnen aan Mijn Series worden toegevoegd"
 msgctxt "#33129"
 msgid "Only episodes and movies can be saved to Watch Later"
 msgstr "Alleen afleveringen en films kunnen in Kijk Later worden opgeslagen"
+
+msgctxt "#33130"
+msgid "Ep. {} of {}"
+msgstr "Afl. {} van {}"
+
+msgctxt "#33131"
+msgid "Ep. {}"
+msgstr "Afl. {}"
+
+msgctxt "#33132"
+msgid "{} days left"
+msgstr "nog {} dagen beschikbaar"
+
+msgctxt "#33133"
+msgid "{} day left"
+msgstr "nog {} dag beschikbaar"
+
+msgctxt "#33134"
+msgid "{} hours left"
+msgstr "nog {} uur beschikbaar"
+
+msgctxt "#33135"
+msgid "{} hour left"
+msgstr "nog {} uur beschikbaar"
+
+msgctxt "#33136"
+msgid "{} minutes left"
+msgstr "nog {} minuten beschikbaar"
+
+msgctxt "#33137"
+msgid "{} minute left"
+msgstr "nog {} minuut beschikbaar"
+
+msgctxt "#33138"
+msgid "no longer available"
+msgstr "niet meer beschikbaar"
+
