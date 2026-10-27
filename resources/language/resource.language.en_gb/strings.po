@@ -670,3 +670,71 @@ msgctxt "#33138"
 msgid "no longer available"
 msgstr "no longer available"
 
+msgctxt "#33139"
+msgid "Aired: {}"
+msgstr "Aired: {}"
+
+msgctxt "#33140"
+msgid "Add all episodes to Watch Later"
+msgstr "Add all episodes to Watch Later"
+
+msgctxt "#33141"
+msgid "{} episodes added to Watch Later"
+msgstr "{} episodes added to Watch Later"
+
+msgctxt "#33142"
+msgid "Season {}"
+msgstr "Season {}"
+
+msgctxt "#33143"
+msgid "Episode {}"
+msgstr "Episode {}"
+
+msgctxt "#33144"
+msgid "Automatically add new episodes: {}"
+msgstr "Automatically add new episodes: {}"
+
+msgctxt "#33145"
+msgid "On"
+msgstr "On"
+
+msgctxt "#33146"
+msgid "Off"
+msgstr "Off"
+
+msgctxt "#33147"
+msgid "{} new episodes added to Watch Later"
+msgstr "{} new episodes added to Watch Later"
+
+msgctxt "#33148"
+msgid "Automatically add new episodes"
+msgstr "Automatically add new episodes"
+
+msgctxt "#33149"
+msgid "Notify when items are about to expire"
+msgstr "Notify when items are about to expire"
+
+msgctxt "#33150"
+msgid "Notify when less than (hours) remain"
+msgstr "Notify when less than (hours) remain"
+
+msgctxt "#33151"
+msgid "Notifications for Watch Later"
+msgstr "Notifications for Watch Later"
+
+msgctxt "#33152"
+msgid "Notifications for My Series"
+msgstr "Notifications for My Series"
+
+msgctxt "#33153"
+msgid "Notifications"
+msgstr "Notifications"
+
+msgctxt "#33154"
+msgid "Expiring soon: {}"
+msgstr "Expiring soon: {}"
+
+
+msgctxt "#33155"
+msgid "Automatically add new episodes released for series in My Series and episodes in Watch Later. Only new episodes are added; the first time is a baseline."
+msgstr "Automatically add new episodes released for series in My Series and episodes in Watch Later. Only new episodes are added; the first time is a baseline."

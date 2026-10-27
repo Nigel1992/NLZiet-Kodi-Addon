@@ -106,6 +106,11 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="auto_add_new_episodes" type="boolean" label="33148" help="33155">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="sync_watch_later_now" type="action" label="30115" help="">
           <level>0</level>
           <data>RunPlugin(plugin://$ID?mode=sync_watch_later)</data>
@@ -119,6 +124,38 @@
           <control type="button" format="action">
             <close>false</close>
           </control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="category_expiry" label="33153" help="">
+      <group id="1" label="">
+        <setting id="expiry_notify_enabled" type="boolean" label="33149" help="">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="expiry_notify_hours" type="integer" label="33150" help="">
+          <level>0</level>
+          <default>24</default>
+          <constraints>
+            <minimum>1</minimum>
+            <step>1</step>
+            <maximum>168</maximum>
+          </constraints>
+          <control type="slider" format="integer">
+            <popup>false</popup>
+          </control>
+        </setting>
+        <setting id="expiry_notify_watch_later" type="boolean" label="33151" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="expiry_notify_my_series" type="boolean" label="33152" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
         </setting>
       </group>
     </category>

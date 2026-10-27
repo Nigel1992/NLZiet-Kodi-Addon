@@ -31,6 +31,16 @@ class Router:
             self.handlers['browse_my_list_group'](params.get('group'))
         elif mode == 'watch_later':
             self.handlers['browse_watch_later']()
+        elif mode == 'watch_later_collection':
+            self.handlers['browse_watch_later_collection'](
+                params.get('collection_id'),
+                params.get('season')
+            )
+        elif mode == 'add_series_watch_later':
+            self.handlers['add_series_watch_later'](
+                params.get('series_id'),
+                params.get('title')
+            )
         elif mode == 'my_series':
             self.handlers['browse_my_series']()
         elif mode == 'sync_watch_later':
