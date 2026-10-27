@@ -1541,6 +1541,24 @@ class NLZietAPI:
             pass
         return False
 
+    def _normalize_local_item(self, item, cid):
+        raw = item.get('raw') if isinstance(item.get('raw'), dict) else None
+        thumb = item.get('thumb') or item.get('posterUrl') or item.get('poster') or None
+        normalized = {
+            'id': cid,
+            'title': item.get('title') or item.get('name') or (raw or {}).get('title') or '',
+            'type': item.get('type') or item.get('contentType') or item.get('typeName') or (raw or {}).get('type') or '',
+            'group': item.get('group') or None,
+            'posterUrl': item.get('posterUrl') or item.get('thumb') or item.get('poster') or None,
+            'thumb': thumb,
+            'description': item.get('description') or item.get('plot') or item.get('synopsis') or '',
+            'expires_at': item.get('expires_at'),
+            'raw': raw if raw is not None else item,
+        }
+        if isinstance(item.get('collection'), dict):
+            normalized['collection'] = item['collection']
+        return normalized
+
     def _add_to_local_list(self, path, item):
         """Add a normalized item to a local list. Returns True on success."""
         try:
@@ -1556,20 +1574,7 @@ class NLZietAPI:
                         return True
                 except Exception:
                     continue
-            raw = item.get('raw') if isinstance(item.get('raw'), dict) else None
-            thumb = item.get('thumb') or item.get('posterUrl') or item.get('poster') or None
-            normalized = {
-                'id': cid,
-                'title': item.get('title') or item.get('name') or '',
-                'type': item.get('type') or item.get('contentType') or item.get('typeName') or '',
-                'group': item.get('group') or None,
-                'posterUrl': item.get('posterUrl') or item.get('thumb') or item.get('poster') or None,
-                'thumb': thumb,
-                'description': item.get('description') or item.get('plot') or item.get('synopsis') or '',
-                'expires_at': item.get('expires_at'),
-                'raw': raw if raw is not None else item,
-            }
-            items.append(normalized)
+            items.append(self._normalize_local_item(item, cid))
             return self._save_local_list(path, items)
         except Exception:
             try:
@@ -1626,6 +1631,27 @@ class NLZietAPI:
     def remove_from_watch_later(self, content_id):
         """Remove an item from the local Watch Later queue by id. Returns True if removed."""
         return self._remove_from_local_list(self.watchlater_file, content_id)
+
+    def add_series_to_watch_later(self, series_id, series_title, episodes):
+        """Queue all episodes of a series as one collection. Returns the number added."""
+        items = self._load_local_list(self.watchlater_file) or []
+        collection = {'id': str(series_id), 'title': series_title}
+        by_id = {str(it.get('id')): it for it in items if isinstance(it, dict) and it.get('id')}
+        added = 0
+        for ep in episodes or []:
+            if not isinstance(ep, dict) or not ep.get('id'):
+                continue
+            cid = str(ep['id'])
+            if cid in by_id:
+                by_id[cid]['collection'] = collection
+                continue
+            normalized = self._normalize_local_item(ep, ep['id'])
+            normalized['collection'] = collection
+            items.append(normalized)
+            by_id[cid] = normalized
+            added += 1
+        self._save_local_list(self.watchlater_file, items)
+        return added
 
     # --- My Series ----------------------------------------------------------
     def get_my_series(self):
@@ -2128,6 +2154,14 @@ class NLZietAPI:
             final_local.pop(cid, None)
         for cid in to_add_local:
             final_local[cid] = cloud_by_id[cid]
+        # Items on both sides keep the local copy, but the cloud availability
+        # window is authoritative: a rerun gets a new availableUntil.
+        for cid in (local_ids & cloud_ids) & set(final_local):
+            cloud_it = cloud_by_id[cid]
+            if cloud_it.get('expires_at'):
+                final_local[cid]['expires_at'] = cloud_it['expires_at']
+            if isinstance(cloud_it.get('raw'), dict):
+                final_local[cid]['raw'] = cloud_it['raw']
         summary['removed_local'] = len([c for c in to_remove_local if c in local_by_id])
         summary['added_local'] = len(to_add_local)
 

@@ -23,6 +23,7 @@ from resources.lib.nlziet_api import NLZietAPI
 from resources.lib.app_context import AddonContext
 from resources.lib.kodi import ui as kodi_ui
 from resources.lib.router import Router
+from resources.lib import tvmaze
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -108,6 +109,10 @@ EXPIRY_COLOR_RAW = 'FFF2A24C'
 # Accent color for the episode-numbering lines in Kijk Later descriptions.
 # A calm blue that sits quietly next to the amber availability line.
 NUMBERING_COLOR_RAW = 'FF74A9E6'
+
+# Muted grey for the "Aflevering X" prefix in season folders, so it stays
+# quieter than the episode title next to it.
+EPISODE_PREFIX_COLOR_RAW = 'FF8C8C8C'
 
 # Language/Localization dictionary - Dutch (NL) and English (EN)
 TRANSLATIONS = {
@@ -201,6 +206,13 @@ TRANSLATIONS = {
     'availability_minutes': {'nl': 'nog {} minuten beschikbaar', 'en': '{} minutes left'},
     'availability_minute': {'nl': 'nog {} minuut beschikbaar', 'en': '{} minute left'},
     'availability_expired': {'nl': 'niet meer beschikbaar', 'en': 'no longer available'},
+    'broadcast_at': {'nl': 'Uitgezonden: {}', 'en': 'Aired: {}'},
+    'add_series_to_watch_later': {'nl': 'Alle afleveringen toevoegen aan Kijk Later', 'en': 'Add all episodes to Watch Later'},
+    'series_added_to_watch_later': {'nl': '{} afleveringen toegevoegd aan Kijk Later', 'en': '{} episodes added to Watch Later'},
+    'season_folder': {'nl': 'Seizoen {}', 'en': 'Season {}'},
+    'episode_number_prefix': {'nl': 'Aflevering {}', 'en': 'Episode {}'},
+    'auto_added_episodes': {'nl': '{} nieuwe afleveringen toegevoegd aan Kijk Later', 'en': '{} new episodes added to Watch Later'},
+    'expiry_soon': {'nl': 'Verloopt binnenkort: {}', 'en': 'Expiring soon: {}'},
     'my_series': {'nl': 'Mijn Series', 'en': 'My Series'},
     'add_to_my_series': {'nl': 'Toevoegen aan Mijn Series', 'en': 'Add to My Series'},
     'remove_from_my_series': {'nl': 'Verwijderen uit Mijn Series', 'en': 'Remove from My Series'},
@@ -383,6 +395,13 @@ STRING_IDS = {
     'availability_minutes': 33136,
     'availability_minute': 33137,
     'availability_expired': 33138,
+    'broadcast_at': 33139,
+    'add_series_to_watch_later': 33140,
+    'series_added_to_watch_later': 33141,
+    'season_folder': 33142,
+    'episode_number_prefix': 33143,
+    'auto_added_episodes': 33147,
+    'expiry_soon': 33154,
 }
 
 
@@ -900,6 +919,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         watch_later_remove_label=get_string('remove_from_watch_later'),
         my_series_add_label=get_string('add_to_my_series'),
         my_series_remove_label=get_string('remove_from_my_series'),
+        add_series_watch_later_label=get_string('add_series_to_watch_later'),
     )
 
 
@@ -1057,6 +1077,9 @@ def main_menu():
         xbmc.log('NLZiet: failed to set background image', xbmc.LOGDEBUG)
     
     xbmcplugin.endOfDirectory(HANDLE)
+    if logged_in:
+        _maybe_run_auto_add()
+        _maybe_run_expiry_check()
 
 
 def browse_series_categories():
@@ -2408,7 +2431,7 @@ def _content_group(item):
     explicit = str(item.get('group') or '').strip().lower()
     if explicit in GROUP_ORDER:
         return explicit
-    typ = str(item.get('type') or '').lower()
+    typ = str(item.get('type') or _payload_value(item, 'type') or '').lower()
     if 'channel' in typ or 'live' in typ:
         return 'channels'
     if 'episode' in typ:
@@ -2504,6 +2527,60 @@ def _availability_label(api, item):
     return get_string('availability_minutes' if minutes > 1 else 'availability_minute', int(minutes))
 
 
+_NUMBERING_CACHE_TTL = 86400
+
+
+def _season_numbering(api, series_id, season_id):
+    """Return the season catalogue numbering, from memory, disk or the API.
+
+    Successful lookups are kept on disk next to the list files for a day, so
+    opening a list does not re-fetch the same season every time the addon runs.
+    """
+    key = (str(series_id), str(season_id))
+    if key in _EPISODE_NUMBERING_CACHE:
+        return _EPISODE_NUMBERING_CACHE[key]
+    disk_path = None
+    disk = {}
+    watch_path = getattr(api, 'watchlater_sync_file', None)
+    if watch_path:
+        disk_path = os.path.join(os.path.dirname(watch_path), 'episode_numbering_cache.json')
+        try:
+            with open(disk_path, 'r', encoding='utf-8') as handle:
+                disk = json.load(handle) or {}
+        except Exception:
+            disk = {}
+    skey = '{}|{}'.format(*key)
+    stored = disk.get(skey) if isinstance(disk, dict) else None
+    if (isinstance(stored, dict) and stored.get('entry')
+            and time.time() - float(stored.get('ts') or 0) < _NUMBERING_CACHE_TTL):
+        _EPISODE_NUMBERING_CACHE[key] = stored['entry']
+        return stored['entry']
+
+    entry = None
+    try:
+        episodes = api.get_series_episodes(str(series_id), season_id=str(season_id), limit=400) or []
+        entry = {
+            'numbers': {
+                str(ep.get('id') or ''): _metadata_int(ep.get('episode_number'), minimum=1)
+                for ep in episodes if isinstance(ep, dict)
+            },
+            'total': len(episodes),
+        }
+    except Exception:
+        entry = None
+    _EPISODE_NUMBERING_CACHE[key] = entry
+    if entry and disk_path:
+        disk = disk if isinstance(disk, dict) else {}
+        disk[skey] = {'ts': time.time(), 'entry': entry}
+        try:
+            os.makedirs(os.path.dirname(disk_path), exist_ok=True)
+            with open(disk_path, 'w', encoding='utf-8') as handle:
+                json.dump(disk, handle)
+        except Exception:
+            pass
+    return entry
+
+
 def _episode_numbering_label(api, item):
     """Return 'Afl. X van Y' (episode X of Y in its season) for episode items.
 
@@ -2520,22 +2597,7 @@ def _episode_numbering_label(api, item):
     number = None
     total = None
     if api is not None and series_id and season_id:
-        key = (str(series_id), str(season_id))
-        if key not in _EPISODE_NUMBERING_CACHE:
-            entry = None
-            try:
-                episodes = api.get_series_episodes(str(series_id), season_id=str(season_id), limit=400) or []
-                entry = {
-                    'numbers': {
-                        str(ep.get('id') or ''): _metadata_int(ep.get('episode_number'), minimum=1)
-                        for ep in episodes if isinstance(ep, dict)
-                    },
-                    'total': len(episodes),
-                }
-            except Exception:
-                entry = None
-            _EPISODE_NUMBERING_CACHE[key] = entry
-        entry = _EPISODE_NUMBERING_CACHE[key]
+        entry = _season_numbering(api, series_id, season_id)
         if entry:
             number = entry['numbers'].get(content_id)
             total = entry['total']
@@ -2554,7 +2616,77 @@ def _episode_numbering_label(api, item):
     return get_string('episode_number_only', number) if number else None
 
 
-def _render_list_items(items, enrich=False, api=None):
+def _payload_value(item, key):
+    """Find a stored value on the item, its raw payload, or a nested raw payload.
+
+    Episodes saved through a series action keep the API payload one level deeper,
+    so every level is checked.
+    """
+    if not isinstance(item, dict):
+        return None
+    levels = [item]
+    raw = item.get('raw') if isinstance(item.get('raw'), dict) else {}
+    levels.append(raw)
+    if isinstance(raw.get('raw'), dict):
+        levels.append(raw['raw'])
+    for level in levels:
+        value = level.get(key)
+        if value not in (None, ''):
+            return value
+    return None
+
+
+def _item_title(item):
+    """Series or item title; falls back to the payload when the stored title is empty."""
+    return str(item.get('title') or item.get('name') or _payload_value(item, 'title') or '').strip()
+
+
+def _list_item_subtitle(item):
+    """Return the episode/program subtitle from the stored raw data, if useful."""
+    text = _clean_episode_title(_payload_value(item, 'subtitle') or '')
+    if not text or text == str(item.get('title') or '').strip():
+        return None
+    return text
+
+
+def _broadcast_datetime(item):
+    """Return the broadcast moment of a stored episode, or None when unknown."""
+    for value in (_payload_value(item, 'broadcastAt'), _payload_value(item, 'availableFrom')):
+        if isinstance(value, str) and 'T' in value:
+            try:
+                return datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except Exception:
+                continue
+    return None
+
+
+def _tvmaze_season_episode(api, item, episode_title):
+    """Return (season, episode) from TVmaze, matched on series and episode title."""
+    if not episode_title or _content_group(item) != 'episodes':
+        return None
+    series_title = _item_title(item)
+    watch_path = getattr(api, 'watchlater_sync_file', None)
+    cache_path = os.path.join(os.path.dirname(watch_path), 'tvmaze_cache.json') if watch_path else None
+    return tvmaze.lookup_season_episode(series_title, episode_title, cache_path)
+
+
+def _order_watch_later(items):
+    """Keep series in the order they were first added, episodes in broadcast order."""
+    def series_key(item):
+        return _item_title(item).casefold()
+
+    first_seen = {}
+    for index, item in enumerate(items):
+        first_seen.setdefault(series_key(item), index)
+
+    def sort_key(item):
+        broadcast = _broadcast_datetime(item) if _content_group(item) == 'episodes' else None
+        return (first_seen[series_key(item)], broadcast.timestamp() if broadcast else 0)
+
+    return sorted(items, key=sort_key)
+
+
+def _render_list_items(items, enrich=False, api=None, episode_label_only=False, episode_numbers=None):
     """Render stored list items, linking series to their detail page.
 
     With ``enrich`` (Kijk Later only) the description also shows the episode
@@ -2565,7 +2697,7 @@ def _render_list_items(items, enrich=False, api=None):
         api = _get_list_api()
     for itm in items:
         try:
-            title = itm.get('title') or itm.get('name') or itm.get('id') or get_string('item_label')
+            title = _item_title(itm) or itm.get('id') or get_string('item_label')
             source = itm.get('raw') if isinstance(itm.get('raw'), dict) else itm
             thumb = _pick_landscape_thumb(source) or itm.get('thumb') or itm.get('posterUrl') or None
             description = itm.get('description') or ''
@@ -2586,45 +2718,70 @@ def _render_list_items(items, enrich=False, api=None):
             if (isinstance(poster, str) and poster.startswith(('http://', 'https://'))
                     and not content.get('portraitUrl')):
                 content['portraitUrl'] = poster
+            label = title
             if enrich:
                 # Description decoration must never drop an item from the list.
+                season_episode = None
                 try:
                     numbering = _episode_numbering_label(api, itm)
                     availability = _availability_label(api, itm)
+                    subtitle_text = _list_item_subtitle(itm)
+                    broadcast = _broadcast_datetime(itm) if _content_group(itm) == 'episodes' else None
+                    if not numbering:
+                        season_episode = _tvmaze_season_episode(api, itm, subtitle_text)
+                        if season_episode:
+                            numbering = f"S{season_episode[0]}E{season_episode[1]:02d}"
                 except Exception:
                     numbering = None
                     availability = None
-                if numbering or availability:
+                    subtitle_text = None
+                    broadcast = None
+                    season_episode = None
+                if subtitle_text and episode_label_only:
+                    number = (episode_numbers or {}).get(str(itm.get('id')))
+                    if number:
+                        prefix = _make_color_tag(EPISODE_PREFIX_COLOR_RAW, get_string('episode_number_prefix', number))
+                        label = f"{prefix}: {subtitle_text}"
+                    else:
+                        label = subtitle_text
+                elif broadcast and subtitle_text:
+                    label = f"{title} - {subtitle_text}"
+                if numbering or availability or subtitle_text or broadcast:
                     truncated = (description[:250] + '...') if len(description) > 250 else description
                     # Each piece gets its own row with a subtle accent color,
                     # in the plot as well as in the plotoutline.
                     lines = []
                     if numbering:
                         lines.append(_make_color_tag(NUMBERING_COLOR_RAW, numbering))
+                    if broadcast:
+                        lines.append(get_string('broadcast_at', broadcast.strftime('%d-%m-%Y %H:%M')))
                     if availability:
                         lines.append(_make_color_tag(EXPIRY_COLOR_RAW, availability))
+                    if subtitle_text:
+                        lines.append(subtitle_text)
                     info = {
                         'plot': '\n'.join(lines + ([description] if description else [])),
                         'plotoutline': '\n'.join(lines + ([truncated] if truncated else [])),
                     }
+                    if broadcast:
+                        info['aired'] = broadcast.date().isoformat()
+                    if season_episode:
+                        info['season'] = season_episode[0]
+                        info['episode'] = season_episode[1]
             group = _content_group(itm)
             if group in ('series', 'tvshows', 'documentary'):
-                add_directory_item(title, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content)
+                add_directory_item(label, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content)
             else:
                 play_query = {'mode': 'play', 'id': itm.get('id')}
                 if group == 'channels':
                     play_query['fmt'] = 'live'
-                add_directory_item(title, play_query, is_folder=False, thumb=thumb, info=info, content=content)
+                add_directory_item(label, play_query, is_folder=False, thumb=thumb, info=info, content=content)
         except Exception:
             continue
 
 
 def browse_my_list():
     api = _get_list_api()
-    try:
-        api.backfill_my_list()
-    except Exception:
-        pass
     try:
         items = api.get_my_list() or []
     except Exception:
@@ -2633,6 +2790,7 @@ def browse_my_list():
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
+        _backfill_quietly(api, 'backfill_my_list')
         return
     # Group My List items by category so the My List top-level shows one folder
     # per category (Series, TV Shows, Documentaires, Films, Kanalen, ...).
@@ -2654,15 +2812,12 @@ def browse_my_list():
     if not any_folder:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
     xbmcplugin.endOfDirectory(HANDLE)
+    _backfill_quietly(api, 'backfill_my_list')
 
 
 def _browse_saved_group(group):
     """Show items from the user's My List filtered to a single group."""
     api = _get_list_api()
-    try:
-        api.backfill_my_list()
-    except Exception:
-        pass
     try:
         items = api.get_my_list() or []
     except Exception:
@@ -2674,10 +2829,10 @@ def _browse_saved_group(group):
         message = get_string('no_items_for_group', _group_label(group))
         xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
-        return
-
-    _render_list_items(filtered)
-    xbmcplugin.endOfDirectory(HANDLE)
+    else:
+        _render_list_items(filtered)
+        xbmcplugin.endOfDirectory(HANDLE)
+    _backfill_quietly(api, 'backfill_my_list')
 
 
 def browse_my_list_group(group):
@@ -2685,20 +2840,398 @@ def browse_my_list_group(group):
     _browse_saved_group(group)
 
 
+_LIST_SYNC_INTERVAL = 300
+
+
+def _list_sync_marker(api, name):
+    return os.path.join(os.path.dirname(api.watchlater_sync_file), 'last_sync_{}'.format(name))
+
+
+def _list_sync_due(api, name):
+    """Return True when the list was not synced within the last few minutes."""
+    try:
+        with open(_list_sync_marker(api, name), 'r', encoding='utf-8') as handle:
+            last = float(handle.read().strip() or 0)
+    except Exception:
+        last = 0
+    return time.time() - last >= _LIST_SYNC_INTERVAL
+
+
+def _mark_list_synced(api, name):
+    try:
+        path = _list_sync_marker(api, name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+
+
+def _list_ids(getter):
+    try:
+        return {str(i.get('id')) for i in (getter() or []) if isinstance(i, dict)}
+    except Exception:
+        return set()
+
+
+def _backfill_quietly(api, method):
+    try:
+        getattr(api, method)()
+    except Exception:
+        pass
+
+
+def _sync_list_after_render(api, name, enabled, sync_fn, getter):
+    """Sync a list after its directory was ended, refreshing it only on change.
+
+    Runs at most once per _LIST_SYNC_INTERVAL so returning to a list stays fast.
+    """
+    if not enabled or not _list_sync_due(api, name):
+        return
+    _mark_list_synced(api, name)
+    before = _list_ids(getter)
+    try:
+        sync_fn(notify=False)
+    except Exception:
+        pass
+    if _list_ids(getter) != before:
+        xbmc.executebuiltin('Container.Refresh')
+
+
+def _watch_later_collection_id(item):
+    """Folder key for an episode: all episodes of one series share the same key."""
+    if not isinstance(item, dict) or _content_group(item) != 'episodes':
+        return None
+    title = _item_title(item).casefold()
+    return 'title:' + title if title else None
+
+
+def _find_series_id_by_title(api, title):
+    wanted = str(title or '').strip().casefold()
+    if not wanted:
+        return None
+    try:
+        hits = api.search(title, 'series') or []
+    except Exception:
+        hits = []
+    for hit in hits:
+        if isinstance(hit, dict) and _content_group(hit) == 'series' \
+                and str(hit.get('title') or '').strip().casefold() == wanted:
+            return hit.get('id')
+    try:
+        series_list = api.get_series_list(limit=999) or []
+    except Exception:
+        series_list = []
+    for series in series_list:
+        if isinstance(series, dict) and str(series.get('title') or '').strip().casefold() == wanted:
+            return series.get('id')
+    return None
+
+
+def _find_episodes_by_title(api, title):
+    """Episodes whose title matches exactly; used when the series has no NLZiet id."""
+    wanted = str(title or '').strip().casefold()
+    if not wanted:
+        return []
+    try:
+        hits = api.search(title, 'episodes') or []
+    except Exception:
+        return []
+    found = {}
+    for hit in hits:
+        if isinstance(hit, dict) and hit.get('id') and _content_group(hit) == 'episodes' \
+                and str(hit.get('title') or '').strip().casefold() == wanted:
+            found.setdefault(str(hit['id']), hit)
+    return list(found.values())
+
+
+def _collect_series_episodes(api, series_id):
+    detail = api.get_series_detail(series_id) or {}
+    episodes = []
+    seasons = detail.get('seasons') or []
+    if seasons:
+        for season_info in seasons:
+            episodes.extend(_get_series_season_episodes(
+                api,
+                series_id,
+                season_info.get('id'),
+                season_info.get('episodes_url'),
+                limit=1000,
+            ))
+    else:
+        episodes = api.get_series_episodes(series_id, limit=1000) or []
+    return detail.get('title') or '', episodes
+
+
+def add_series_watch_later(series_id=None, title=None):
+    """Queue every episode of a series in Watch Later as one collection folder."""
+    try:
+        api = get_api_instance()
+        sid = series_id or _find_series_id_by_title(api, title)
+        series_title, episodes = '', []
+        if sid:
+            series_title, episodes = _collect_series_episodes(api, sid)
+        if not episodes:
+            episodes = _find_episodes_by_title(api, title)
+        if not episodes:
+            xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
+            return
+        series_title = series_title or title or str(sid)
+        added = api.add_series_to_watch_later(sid or series_title, series_title, episodes)
+        xbmcgui.Dialog().notification(
+            'NLZiet', get_string('series_added_to_watch_later', added), xbmcgui.NOTIFICATION_INFO)
+    except Exception as exc:
+        xbmc.log(f"NLZiet add_series_watch_later failed: {exc}", xbmc.LOGWARNING)
+        xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_action_failed'), xbmcgui.NOTIFICATION_ERROR)
+
+
+AUTO_ADD_INTERVAL = 6 * 3600
+
+
+def _auto_add_enabled():
+    try:
+        return ADDON.getSetting('auto_add_new_episodes') in ('true', '1', 'yes', True)
+    except Exception:
+        return False
+
+
+def _auto_add_due(api):
+    marker = os.path.join(os.path.dirname(api.watchlater_sync_file), 'last_auto_add')
+    try:
+        with open(marker, 'r', encoding='utf-8') as handle:
+            last = float(handle.read().strip() or 0)
+    except Exception:
+        last = 0
+    return time.time() - last >= AUTO_ADD_INTERVAL
+
+
+def _mark_auto_add(api):
+    try:
+        marker = os.path.join(os.path.dirname(api.watchlater_sync_file), 'last_auto_add')
+        with open(marker, 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+
+
+def _auto_add_sources(api):
+    """Followed series plus every series that has episodes in Kijk Later, keyed by title."""
+    sources = {}
+    for series in api.get_my_series() or []:
+        if isinstance(series, dict) and series.get('id') and _item_title(series):
+            sources['title:' + _item_title(series).casefold()] = (str(series['id']), _item_title(series))
+    for item in api.get_watch_later() or []:
+        key = _watch_later_collection_id(item)
+        if key and key not in sources:
+            sources[key] = (None, _item_title(item))
+    return sources
+
+
+def _run_auto_add(api):
+    """Add episodes that appeared since the last run; the first run only records them.
+
+    Each series remembers the episode ids it has seen. A series seen for the first
+    time is recorded without adding anything, so turning the option on does not
+    flood Kijk Later with the whole back catalogue.
+    """
+    state_path = os.path.join(os.path.dirname(api.watchlater_sync_file), 'auto_add_state.json')
+    try:
+        with open(state_path, 'r', encoding='utf-8') as handle:
+            state = json.load(handle) or {}
+    except Exception:
+        state = {}
+
+    added = 0
+    for key, (sid, title) in _auto_add_sources(api).items():
+        entry = state.get(key) if isinstance(state.get(key), dict) else {}
+        sid = sid or entry.get('id') or _find_series_id_by_title(api, title)
+        if not sid:
+            continue
+        try:
+            series_title, episodes = _collect_series_episodes(api, sid)
+        except Exception:
+            continue
+        episodes = [ep for ep in episodes if isinstance(ep, dict) and ep.get('id')]
+        if not episodes:
+            continue
+        seen = set(entry.get('seen') or [])
+        if 'seen' in entry:
+            new = [ep for ep in episodes if str(ep['id']) not in seen]
+            if new:
+                added += api.add_series_to_watch_later(sid, series_title or title, new)
+        state[key] = {'id': sid, 'seen': [str(ep['id']) for ep in episodes]}
+
+    try:
+        os.makedirs(os.path.dirname(state_path), exist_ok=True)
+        with open(state_path, 'w', encoding='utf-8') as handle:
+            json.dump(state, handle)
+    except Exception:
+        pass
+    _mark_auto_add(api)
+    return added
+
+
+def _maybe_run_auto_add():
+    if not _auto_add_enabled():
+        return
+    try:
+        api = get_api_instance()
+        if not _auto_add_due(api):
+            return
+        added = _run_auto_add(api)
+        if added:
+            xbmcgui.Dialog().notification('NLZiet', get_string('auto_added_episodes', added), xbmcgui.NOTIFICATION_INFO)
+    except Exception as exc:
+        xbmc.log(f"NLZiet auto add failed: {exc}", xbmc.LOGWARNING)
+
+
+EXPIRY_CHECK_INTERVAL = 2 * 3600
+
+
+def _setting_on(name, default=False):
+    try:
+        value = ADDON.getSetting(name)
+    except Exception:
+        return default
+    if value in ('', None):
+        return default
+    return value in ('true', '1', 'yes', True)
+
+
+def _expiry_hours():
+    try:
+        return max(1, int(float(ADDON.getSetting('expiry_notify_hours') or 24)))
+    except Exception:
+        return 24
+
+
+def _availability_until(item):
+    """Epoch seconds when the item (or episode) stops being available, if known."""
+    if not isinstance(item, dict):
+        return None
+    value = item.get('expires_at') or item.get('availableUntil') or _payload_value(item, 'availableUntil')
+    if not isinstance(value, str) or 'T' not in value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp()
+    except Exception:
+        return None
+
+
+def _expiry_due_names(api):
+    """Titles of Kijk Later items and followed-series episodes that expire soon."""
+    now = time.time()
+    horizon = now + _expiry_hours() * 3600
+    state_path = os.path.join(os.path.dirname(api.watchlater_sync_file), 'expiry_notified.json')
+    try:
+        with open(state_path, 'r', encoding='utf-8') as handle:
+            notified = json.load(handle) or {}
+    except Exception:
+        notified = {}
+
+    candidates = []
+    if _setting_on('expiry_notify_watch_later', True):
+        for item in api.get_watch_later() or []:
+            until = _availability_until(item)
+            if until and item.get('id'):
+                candidates.append((_item_title(item) or str(item['id']), str(item['id']), until))
+    if _setting_on('expiry_notify_my_series', True):
+        for series in api.get_my_series() or []:
+            sid = series.get('id') if isinstance(series, dict) else None
+            if not sid:
+                continue
+            try:
+                series_title, episodes = _collect_series_episodes(api, sid)
+            except Exception:
+                continue
+            series_title = series_title or _item_title(series)
+            for ep in episodes:
+                until = _availability_until(ep)
+                if not until or not isinstance(ep, dict) or not ep.get('id'):
+                    continue
+                subtitle = _list_item_subtitle(ep)
+                name = f"{series_title}: {subtitle}" if subtitle else series_title
+                candidates.append((name, str(ep['id']), until))
+
+    due = []
+    seen_keys = set()
+    for name, key, until in sorted(candidates, key=lambda c: c[2]):
+        if key in seen_keys or not (now <= until <= horizon):
+            continue
+        seen_keys.add(key)
+        if notified.get(key) == int(until):
+            continue
+        notified[key] = int(until)
+        due.append(name)
+
+    notified = {k: v for k, v in notified.items() if v >= now - 86400}
+    try:
+        os.makedirs(os.path.dirname(state_path), exist_ok=True)
+        with open(state_path, 'w', encoding='utf-8') as handle:
+            json.dump(notified, handle)
+    except Exception:
+        pass
+    return due
+
+
+def _maybe_run_expiry_check():
+    if not _setting_on('expiry_notify_enabled', False):
+        return
+    try:
+        api = get_api_instance()
+        marker = os.path.join(os.path.dirname(api.watchlater_sync_file), 'last_expiry_check')
+        try:
+            with open(marker, 'r', encoding='utf-8') as handle:
+                last = float(handle.read().strip() or 0)
+        except Exception:
+            last = 0
+        if time.time() - last < EXPIRY_CHECK_INTERVAL:
+            return
+        with open(marker, 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+        due = _expiry_due_names(api)
+        if due:
+            shown = ', '.join(due[:3]) + (f' (+{len(due) - 3})' if len(due) > 3 else '')
+            xbmcgui.Dialog().notification('NLZiet', get_string('expiry_soon', shown), xbmcgui.NOTIFICATION_WARNING)
+    except Exception as exc:
+        xbmc.log(f"NLZiet expiry check failed: {exc}", xbmc.LOGWARNING)
+
+
+def _render_watch_later_top(items, api):
+    """Show one folder per series collection, then the individual items."""
+    ordered = _order_watch_later(items)
+    keyed = {}
+    for itm in ordered:
+        cid = _watch_later_collection_id(itm)
+        if cid:
+            keyed.setdefault(cid, []).append(itm)
+    collections = {}
+    standalone = []
+    for itm in ordered:
+        cid = _watch_later_collection_id(itm)
+        members = keyed.get(cid) if cid else None
+        is_folder = members and (len(members) > 1 or isinstance(itm.get('collection'), dict))
+        if is_folder:
+            collections[cid] = members
+        else:
+            standalone.append(itm)
+    for cid, members in collections.items():
+        label = _item_title(members[0]) or cid
+        add_directory_item(
+            label, {'mode': 'watch_later_collection', 'collection_id': cid},
+            is_folder=True, thumb=_pick_landscape_thumb(members[0]))
+    _render_list_items(standalone, enrich=True, api=api)
+
+
 def browse_watch_later():
-    """Show the Watch Later queue, syncing with the cloud when enabled."""
+    """Show the Watch Later queue; the cloud sync runs after the list is shown.
+
+    Syncing while the directory is still loading keeps Kodi's busy spinner on
+    screen, so the list is rendered first and the sync (throttled) follows.
+    """
     api = _get_list_api()
     try:
         api.migrate_series_from_watch_later()
-    except Exception:
-        pass
-    if _watch_later_sync_enabled():
-        try:
-            sync_watch_later(notify=False)
-        except Exception:
-            pass
-    try:
-        api.backfill_watch_later()
     except Exception:
         pass
     try:
@@ -2708,25 +3241,78 @@ def browse_watch_later():
 
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
+    else:
+        _render_watch_later_top(items, api)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+    _backfill_quietly(api, 'backfill_watch_later')
+    _sync_list_after_render(
+        api, 'watch_later', _watch_later_sync_enabled(),
+        sync_watch_later, api.get_watch_later)
+
+
+def _member_season_episode(api, item):
+    """Season and episode numbers: NLZiet's own S1:A2 code first, TVmaze as fallback."""
+    raw_subtitle = str(_payload_value(item, 'subtitle') or '')
+    match = re.search(r'S(\d+)\s*[:.]?\s*[AE](\d+)', raw_subtitle, re.I)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    try:
+        return _tvmaze_season_episode(api, item, _list_item_subtitle(item))
+    except Exception:
+        return None
+
+
+def browse_watch_later_collection(collection_id=None, season=None):
+    """Show one series folder: season folders when known, otherwise the episodes."""
+    api = _get_list_api()
+    try:
+        items = api.get_watch_later() or []
+    except Exception:
+        items = []
+    members = _order_watch_later([itm for itm in items if _watch_later_collection_id(itm) == str(collection_id)])
+    if not members:
+        xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
-    _render_list_items(items, enrich=True, api=api)
+    by_season = {}
+    unknown = []
+    episode_numbers = {}
+    for itm in members:
+        found = _member_season_episode(api, itm)
+        if found:
+            by_season.setdefault(found[0], []).append((found[1], itm))
+            episode_numbers[str(itm.get('id'))] = found[1]
+        else:
+            unknown.append(itm)
+    for number in by_season:
+        by_season[number].sort(key=lambda pair: pair[0])
+        by_season[number] = [itm for _, itm in by_season[number]]
+
+    labels = {'enrich': True, 'api': api, 'episode_label_only': True, 'episode_numbers': episode_numbers}
+    if season not in (None, ''):
+        _render_list_items(by_season.get(int(season), []), **labels)
+    elif by_season:
+        for number in sorted(by_season):
+            add_directory_item(
+                get_string('season_folder', number),
+                {'mode': 'watch_later_collection', 'collection_id': str(collection_id), 'season': str(number)},
+                is_folder=True)
+        _render_list_items(unknown, **labels)
+    else:
+        _render_list_items(members, **labels)
     xbmcplugin.endOfDirectory(HANDLE)
+
+    _backfill_quietly(api, 'backfill_watch_later')
+    _sync_list_after_render(
+        api, 'watch_later', _watch_later_sync_enabled(),
+        sync_watch_later, api.get_watch_later)
 
 
 def browse_my_series():
-    """Show the followed-series list, syncing with the cloud when enabled."""
+    """Show the followed-series list; the cloud sync runs after the list is shown."""
     api = _get_list_api()
-    if _my_series_sync_enabled():
-        try:
-            sync_my_series(notify=False)
-        except Exception:
-            pass
-    try:
-        api.backfill_my_series()
-    except Exception:
-        pass
     try:
         items = api.get_my_series() or []
     except Exception:
@@ -2734,11 +3320,14 @@ def browse_my_series():
 
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_series_empty'), xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
-        return
-
-    _render_list_items(items)
+    else:
+        _render_list_items(items)
     xbmcplugin.endOfDirectory(HANDLE)
+
+    _backfill_quietly(api, 'backfill_my_series')
+    _sync_list_after_render(
+        api, 'my_series', _my_series_sync_enabled(),
+        sync_my_series, api.get_my_series)
 
 
 def _fetch_list_detail(api, item_id, group):
@@ -4074,6 +4663,8 @@ def get_route_handlers():
         'browse_my_series': browse_my_series,
         'toggle_mylist': toggle_mylist,
         'toggle_watch_later': toggle_watch_later,
+        'add_series_watch_later': add_series_watch_later,
+        'browse_watch_later_collection': browse_watch_later_collection,
         'toggle_my_series': toggle_my_series,
         'sync_watch_later': sync_watch_later,
         'sync_my_series': sync_my_series,

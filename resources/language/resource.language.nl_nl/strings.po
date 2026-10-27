@@ -670,3 +670,71 @@ msgctxt "#33138"
 msgid "no longer available"
 msgstr "niet meer beschikbaar"
 
+msgctxt "#33139"
+msgid "Aired: {}"
+msgstr "Uitgezonden: {}"
+
+msgctxt "#33140"
+msgid "Add all episodes to Watch Later"
+msgstr "Alle afleveringen toevoegen aan Kijk Later"
+
+msgctxt "#33141"
+msgid "{} episodes added to Watch Later"
+msgstr "{} afleveringen toegevoegd aan Kijk Later"
+
+msgctxt "#33142"
+msgid "Season {}"
+msgstr "Seizoen {}"
+
+msgctxt "#33143"
+msgid "Episode {}"
+msgstr "Aflevering {}"
+
+msgctxt "#33144"
+msgid "Automatically add new episodes: {}"
+msgstr "Nieuwe afleveringen automatisch toevoegen: {}"
+
+msgctxt "#33145"
+msgid "On"
+msgstr "Aan"
+
+msgctxt "#33146"
+msgid "Off"
+msgstr "Uit"
+
+msgctxt "#33147"
+msgid "{} new episodes added to Watch Later"
+msgstr "{} nieuwe afleveringen toegevoegd aan Kijk Later"
+
+msgctxt "#33148"
+msgid "Automatically add new episodes"
+msgstr "Nieuwe afleveringen automatisch toevoegen"
+
+msgctxt "#33149"
+msgid "Notify when items are about to expire"
+msgstr "Meldingen bij bijna verlopen"
+
+msgctxt "#33150"
+msgid "Notify when less than (hours) remain"
+msgstr "Melden bij minder dan (uur) resterend"
+
+msgctxt "#33151"
+msgid "Notifications for Watch Later"
+msgstr "Meldingen voor Kijk Later"
+
+msgctxt "#33152"
+msgid "Notifications for My Series"
+msgstr "Meldingen voor Mijn Series"
+
+msgctxt "#33153"
+msgid "Notifications"
+msgstr "Meldingen"
+
+msgctxt "#33154"
+msgid "Expiring soon: {}"
+msgstr "Verloopt binnenkort: {}"
+
+
+msgctxt "#33155"
+msgid "Automatically add new episodes released for series in My Series and episodes in Watch Later. Only new episodes are added; the first time is a baseline."
+msgstr "Voegt automatisch nieuwe afleveringen toe voor series in Mijn Series en afleveringen in Kijk Later. Alleen nieuwe afleveringen worden toegevoegd; de eerste keer wordt alleen het huidige overzicht vastgelegd."

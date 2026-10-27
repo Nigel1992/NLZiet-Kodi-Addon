@@ -55,7 +55,8 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        watch_later_add_label='Add to Watch Later',
                        watch_later_remove_label='Remove from Watch Later',
                        my_series_add_label='Add to My Series',
-                       my_series_remove_label='Remove from My Series'):
+                       my_series_remove_label='Remove from My Series',
+                       add_series_watch_later_label=None):
     url = build_url_func(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
 
@@ -208,6 +209,15 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                     watch_query['thumb'] = thumb
                 try:
                     context_items.append((watch_later_label, f"RunPlugin({build_url_func(watch_query)})"))
+                except Exception:
+                    pass
+
+            if allow_mylist and not is_channel_item and add_series_watch_later_label and (is_series_item or 'episode' in ctype_l or grp_l == 'episodes'):
+                series_id = content_id if is_series_item else (content.get('seriesId') if isinstance(content, dict) else None)
+                series_title = (content.get('title') if isinstance(content, dict) else None) or title
+                series_query = {'mode': 'add_series_watch_later', 'series_id': str(series_id or ''), 'title': series_title}
+                try:
+                    context_items.append((add_series_watch_later_label, f"RunPlugin({build_url_func(series_query)})"))
                 except Exception:
                     pass
 

@@ -10,7 +10,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.4.2 — 2026-10-19. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.4.3 — 2026-10-28. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -39,6 +39,15 @@
 - **Clean subtitles**: NPO's teletext-derived subtitles are cleaned before playback, so Kodi shows its normal subtitle overlay instead of the teletext page number ("888") and yellow/white teletext colours.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.4.3
+
+- **Kijk Later series folders**: when you add all episodes of a series to Kijk Later (or have two or more episodes of the same series), they appear in a folder with season subfolders. Episodes are ordered by season and episode number (via NLZiet codes or TVmaze), and labels show "Aflevering X: ..." for easier browsing.
+- **Add all episodes to Watch Later**: right-click a series or episode to queue every episode of that series into Kijk Later as one collection.
+- **Auto-add new episodes**: optionally add new episodes for series in Mijn Series and episodes already in Kijk Later. The first time you enable it, only new episodes added after that will be queued.
+- **Expiry notifications**: get notified when items in Kijk Later or Mijn Series are about to expire, with a configurable time window and per-list toggles (Settings → Meldingen).
+- **TVmaze integration**: missing season/episode numbers are resolved via TVmaze so ordering and labels work for series where NLZiet omits them (e.g. Blue Murder Motel).
+- **Improved Kijk Later ordering**: episodes of the same series are grouped and sorted by broadcast time, and episode subtitles are shown even for items added in bulk.
 
 ### New in v1.4.2
 

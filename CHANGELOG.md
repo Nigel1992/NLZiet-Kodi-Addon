@@ -1,8 +1,24 @@
 # Changelog
 
-> **Latest Version:** v1.4.2 (October 19, 2026)
+> **Latest Version:** v1.4.3 (October 28, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.3] - 2026-10-28
+
+### Added
+- **Kijk Later series folders**: episodes of the same series are grouped into a folder with season subfolders. Ordering uses NLZiet's `Sx:Ax` codes first, with TVmaze as fallback. Episode labels show "Aflevering X: ..." with a muted prefix.
+- **Add all episodes to Watch Later**: context menu on a series or episode adds every episode of that series to Kijk Later as one collection.
+- **Automatically add new episodes**: new setting under Settings → Synchronization to queue new episodes for series in **Mijn Series** and episodes already in **Kijk Later**. On first enable it establishes a baseline (no back-catalogue dump).
+- **Expiry notifications**: new **Meldingen** settings category to alert when items in Kijk Later or Mijn Series are about to expire, with configurable hours and per-list toggles.
+- **TVmaze lookup**: resolves missing season/episode numbers and titles for better ordering when NLZiet provides incomplete metadata.
+
+### Fixed
+- **Bulk-added episodes grouped correctly**: episodes added via "add all episodes" are now grouped under the series folder and sorted properly, even when stored with incomplete top-level metadata.
+- **Nested payloads respected**: Kijk Later renders subtitles and broadcast times from nested API payloads (fixes missing episode titles for bulk-added items).
+
+### Changed
+- **Settings help text**: clarified what "Automatically add new episodes" does.
 
 ## [1.4.2] - 2026-10-19
 
