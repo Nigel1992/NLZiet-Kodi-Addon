@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import urllib.request
 import os
+import threading
 import xbmc
 import xbmcaddon
 import xbmcgui
@@ -39,6 +40,8 @@ _channel_menu_cache_data = []
 _channel_menu_cache_epg = {}
 _channel_menu_cache_time = 0
 _channel_menu_cache_ttl = 45  # seconds
+_last_token_check = 0
+_token_check_interval = 300
 
 def get_api_instance():
     """Get or create a cached API instance to avoid repeated disk I/O and initialization."""
@@ -114,6 +117,10 @@ NUMBERING_COLOR_RAW = 'FF74A9E6'
 # quieter than the episode title next to it.
 EPISODE_PREFIX_COLOR_RAW = 'FF8C8C8C'
 
+# Bright green marks followed series that have received new episodes since the
+# last time the My Series list was opened.
+MY_SERIES_NEW_COLOR_RAW = 'FF7ED321'
+
 # Language/Localization dictionary - Dutch (NL) and English (EN)
 TRANSLATIONS = {
     'login': {'nl': 'Inloggen', 'en': 'Login'},
@@ -185,6 +192,14 @@ TRANSLATIONS = {
     'library_export_failed': {'nl': 'Bibliotheek export mislukt', 'en': 'Library export failed'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
+    'subtitle_cache_cleared': {'nl': '{} ondertitelcachebestanden verwijderd', 'en': '{} subtitle cache files removed'},
+    'subtitle_cache_clear_failed': {'nl': 'Ondertitelcache kon niet worden verwijderd', 'en': 'Could not clear subtitle cache'},
+    'search_history_new': {'nl': 'Nieuwe zoekopdracht', 'en': 'New search'},
+    'search_history_delete': {'nl': 'Zoekopdrachten verwijderen', 'en': 'Delete searches'},
+    'search_history_deleted': {'nl': '{} zoekopdrachten verwijderd', 'en': '{} searches deleted'},
+    'add_series_all': {'nl': 'Alle bestaande afleveringen toevoegen', 'en': 'Add all existing episodes'},
+    'add_series_from_now': {'nl': 'Alleen nieuwe afleveringen vanaf nu volgen', 'en': 'Follow new episodes from now on'},
+    'series_following_started': {'nl': 'Nieuwe afleveringen worden vanaf nu automatisch toegevoegd', 'en': 'New episodes will be added automatically from now on'},
     'watch_later': {'nl': 'Kijk Later', 'en': 'Watch Later'},
     'add_to_mylist': {'nl': 'Toevoegen aan Mijn lijst (alleen Kodi)', 'en': 'Add to My List (Kodi only)'},
     'remove_from_mylist': {'nl': 'Verwijderen uit Mijn lijst (alleen Kodi)', 'en': 'Remove from My List (Kodi only)'},
@@ -331,6 +346,14 @@ STRING_IDS = {
     'library_export_failed': 33068,
     'diagnostics_exported': 33069,
     'diagnostics_failed': 33070,
+    'subtitle_cache_cleared': 33159,
+    'subtitle_cache_clear_failed': 33160,
+    'search_history_new': 33161,
+    'search_history_delete': 33162,
+    'search_history_deleted': 33163,
+    'add_series_all': 33164,
+    'add_series_from_now': 33165,
+    'series_following_started': 33166,
     'watch_later': 33073,
     'add_to_mylist': 33074,
     'remove_from_mylist': 33075,
@@ -993,6 +1016,10 @@ def _is_logged_in():
 
 def _check_and_handle_token_expiry():
     """Check if token is expired and needs refresh. Show notification if re-login is required."""
+    global _last_token_check
+    if time.time() - _last_token_check < _token_check_interval:
+        return True
+    _last_token_check = time.time()
     try:
         api = get_api_instance()
         
@@ -1078,8 +1105,8 @@ def main_menu():
     
     xbmcplugin.endOfDirectory(HANDLE)
     if logged_in:
-        _maybe_run_auto_add()
-        _maybe_run_expiry_check()
+        _run_after_directory(_maybe_run_auto_add)
+        _run_after_directory(_maybe_run_expiry_check)
 
 
 def browse_series_categories():
@@ -2123,6 +2150,29 @@ def export_diagnostics():
         xbmcgui.Dialog().notification('NLZiet', get_string('diagnostics_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
+def clear_subtitle_cache():
+    """Remove cached, cleaned subtitle files from the addon profile."""
+    try:
+        from resources.lib import subtitles as subtitle_tools
+
+        cache_dir = xbmcvfs.translatePath(
+            'special://profile/addon_data/{0}/subtitle_cache'.format(ADDON.getAddonInfo('id'))
+        )
+        removed = subtitle_tools.clear_cache(cache_dir)
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string('subtitle_cache_cleared', removed),
+            xbmcgui.NOTIFICATION_INFO,
+        )
+    except Exception as exc:
+        xbmc.log('NLZiet: subtitle cache clearing failed: {0}'.format(exc), xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string('subtitle_cache_clear_failed'),
+            xbmcgui.NOTIFICATION_ERROR,
+        )
+
+
 def show_login_dialog(preset_email='', preset_password=''):
     """Show login dialog to get email and password from user.
     
@@ -2686,7 +2736,10 @@ def _order_watch_later(items):
     return sorted(items, key=sort_key)
 
 
-def _render_list_items(items, enrich=False, api=None, episode_label_only=False, episode_numbers=None):
+def _render_list_items(
+    items, enrich=False, api=None, episode_label_only=False, episode_numbers=None,
+    highlight_ids=None,
+):
     """Render stored list items, linking series to their detail page.
 
     With ``enrich`` (Kijk Later only) the description also shows the episode
@@ -2719,6 +2772,8 @@ def _render_list_items(items, enrich=False, api=None, episode_label_only=False, 
                     and not content.get('portraitUrl')):
                 content['portraitUrl'] = poster
             label = title
+            if str(itm.get('id')) in (highlight_ids or set()):
+                label = _make_color_tag(MY_SERIES_NEW_COLOR_RAW, label)
             if enrich:
                 # Description decoration must never drop an item from the list.
                 season_episode = None
@@ -2790,7 +2845,7 @@ def browse_my_list():
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
         xbmcplugin.endOfDirectory(HANDLE)
-        _backfill_quietly(api, 'backfill_my_list')
+        _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
         return
     # Group My List items by category so the My List top-level shows one folder
     # per category (Series, TV Shows, Documentaires, Films, Kanalen, ...).
@@ -2812,7 +2867,7 @@ def browse_my_list():
     if not any_folder:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
     xbmcplugin.endOfDirectory(HANDLE)
-    _backfill_quietly(api, 'backfill_my_list')
+    _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
 def _browse_saved_group(group):
@@ -2832,7 +2887,7 @@ def _browse_saved_group(group):
     else:
         _render_list_items(filtered)
         xbmcplugin.endOfDirectory(HANDLE)
-    _backfill_quietly(api, 'backfill_my_list')
+    _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
 def browse_my_list_group(group):
@@ -2879,6 +2934,11 @@ def _backfill_quietly(api, method):
         getattr(api, method)()
     except Exception:
         pass
+
+
+def _run_after_directory(target, *args):
+    """Run non-essential refresh work without blocking Kodi's menu transition."""
+    threading.Thread(target=target, args=args, daemon=True).start()
 
 
 def _sync_list_after_render(api, name, enabled, sync_fn, getter):
@@ -2963,10 +3023,20 @@ def _collect_series_episodes(api, series_id):
     return detail.get('title') or '', episodes
 
 
-def add_series_watch_later(series_id=None, title=None):
-    """Queue every episode of a series in Watch Later as one collection folder."""
+def add_series_watch_later(series_id=None, title=None, from_now=None):
+    """Add all episodes or start following a series from the current baseline."""
     try:
         api = get_api_instance()
+        if isinstance(from_now, str):
+            from_now = from_now.lower() in ('true', '1', 'yes')
+        if from_now is None:
+            choice = xbmcgui.Dialog().select(
+                get_string('add_series_to_watch_later'),
+                [get_string('add_series_all'), get_string('add_series_from_now')],
+            )
+            if choice < 0:
+                return
+            from_now = choice == 1
         sid = series_id or _find_series_id_by_title(api, title)
         series_title, episodes = '', []
         if sid:
@@ -2977,6 +3047,28 @@ def add_series_watch_later(series_id=None, title=None):
             xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
             return
         series_title = series_title or title or str(sid)
+        if from_now:
+            state_path = os.path.join(
+                os.path.dirname(api.watchlater_sync_file), 'auto_add_state.json'
+            )
+            try:
+                with open(state_path, 'r', encoding='utf-8') as handle:
+                    state = json.load(handle) or {}
+            except (OSError, TypeError, ValueError):
+                state = {}
+            key = 'title:' + series_title.casefold()
+            state[key] = {
+                'id': str(sid or series_title),
+                'seen': [str(ep['id']) for ep in episodes if ep.get('id')],
+            }
+            os.makedirs(os.path.dirname(state_path), exist_ok=True)
+            with open(state_path, 'w', encoding='utf-8') as handle:
+                json.dump(state, handle)
+            ADDON.setSetting('auto_add_new_episodes', 'true')
+            xbmcgui.Dialog().notification(
+                'NLZiet', get_string('series_following_started'), xbmcgui.NOTIFICATION_INFO
+            )
+            return
         added = api.add_series_to_watch_later(sid or series_title, series_title, episodes)
         xbmcgui.Dialog().notification(
             'NLZiet', get_string('series_added_to_watch_later', added), xbmcgui.NOTIFICATION_INFO)
@@ -3245,8 +3337,9 @@ def browse_watch_later():
         _render_watch_later_top(items, api)
     xbmcplugin.endOfDirectory(HANDLE)
 
-    _backfill_quietly(api, 'backfill_watch_later')
-    _sync_list_after_render(
+    _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
+    _run_after_directory(
+        _sync_list_after_render,
         api, 'watch_later', _watch_later_sync_enabled(),
         sync_watch_later, api.get_watch_later)
 
@@ -3304,10 +3397,72 @@ def browse_watch_later_collection(collection_id=None, season=None):
         _render_list_items(members, **labels)
     xbmcplugin.endOfDirectory(HANDLE)
 
-    _backfill_quietly(api, 'backfill_watch_later')
-    _sync_list_after_render(
+    _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
+    _run_after_directory(
+        _sync_list_after_render,
         api, 'watch_later', _watch_later_sync_enabled(),
         sync_watch_later, api.get_watch_later)
+
+
+def _my_series_state_path(api):
+    sync_file = getattr(api, 'watchlater_sync_file', None)
+    if not sync_file:
+        return None
+    return os.path.join(os.path.dirname(sync_file), 'my_series_state.json')
+
+
+def _new_my_series_ids(api, items):
+    """Return series ids with unseen episodes and the updated episode state."""
+    state_path = _my_series_state_path(api)
+    if not state_path:
+        return set(), {}
+    try:
+        with open(state_path, 'r', encoding='utf-8') as handle:
+            previous = json.load(handle) or {}
+    except (OSError, TypeError, ValueError):
+        previous = {}
+
+    current = {}
+    new_ids = set()
+    for item in items:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        series_id = str(item['id'])
+        try:
+            _, episodes = _collect_series_episodes(api, series_id)
+        except Exception as exc:
+            xbmc.log(
+                'NLZiet: could not check new My Series episodes for {0}: {1}'.format(
+                    series_id, exc
+                ),
+                xbmc.LOGDEBUG,
+            )
+            continue
+        episode_ids = {
+            str(episode['id'])
+            for episode in episodes
+            if isinstance(episode, dict) and episode.get('id')
+        }
+        if episode_ids and series_id in previous:
+            if episode_ids - set(previous.get(series_id) or []):
+                new_ids.add(series_id)
+        if episode_ids:
+            current[series_id] = sorted(episode_ids)
+        elif series_id in previous:
+            current[series_id] = previous[series_id]
+    return new_ids, current
+
+
+def _save_my_series_state(api, state):
+    state_path = _my_series_state_path(api)
+    if not state_path:
+        return
+    try:
+        os.makedirs(os.path.dirname(state_path), exist_ok=True)
+        with open(state_path, 'w', encoding='utf-8') as handle:
+            json.dump(state, handle)
+    except OSError as exc:
+        xbmc.log('NLZiet: could not save My Series state: {0}'.format(exc), xbmc.LOGWARNING)
 
 
 def browse_my_series():
@@ -3321,11 +3476,14 @@ def browse_my_series():
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_series_empty'), xbmcgui.NOTIFICATION_INFO)
     else:
-        _render_list_items(items)
+        new_ids, state = _new_my_series_ids(api, items)
+        _render_list_items(items, highlight_ids=new_ids)
+        _save_my_series_state(api, state)
     xbmcplugin.endOfDirectory(HANDLE)
 
-    _backfill_quietly(api, 'backfill_my_series')
-    _sync_list_after_render(
+    _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
+    _run_after_directory(
+        _sync_list_after_render,
         api, 'my_series', _my_series_sync_enabled(),
         sync_my_series, api.get_my_series)
 
@@ -3759,12 +3917,70 @@ def apply_profile():
         xbmcgui.Dialog().notification('NLZiet', get_string('profile_apply_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
-def do_search():
-    kb = xbmc.Keyboard('', get_string('search_heading'))
-    kb.doModal()
-    if not kb.isConfirmed():
+def _load_search_history():
+    try:
+        history = json.loads(ADDON.getSetting('search_history') or '[]')
+        if isinstance(history, list):
+            return [str(query).strip() for query in history if str(query).strip()]
+    except (TypeError, ValueError):
+        xbmc.log('NLZiet: invalid search history ignored', xbmc.LOGWARNING)
+    return []
+
+
+def _save_search_history(history):
+    ADDON.setSetting('search_history', json.dumps(history[:20], ensure_ascii=False))
+
+
+def _remember_search(query):
+    query = (query or '').strip()
+    if not query:
         return
-    query = kb.getText()
+    history = [old for old in _load_search_history() if old.casefold() != query.casefold()]
+    _save_search_history([query] + history)
+
+
+def _choose_search_query():
+    history = _load_search_history()
+    if not history:
+        options = [get_string('search_history_new')]
+    else:
+        options = [
+            get_string('search_history_new'),
+            get_string('search_history_delete'),
+        ] + history
+
+    selected = xbmcgui.Dialog().select(get_string('search_heading'), options)
+    if selected < 0:
+        return None
+    if selected == 0:
+        kb = xbmc.Keyboard('', get_string('search_heading'))
+        kb.doModal()
+        return kb.getText().strip() if kb.isConfirmed() else None
+    if history and selected == 1:
+        indexes = xbmcgui.Dialog().multiselect(
+            get_string('search_history_delete'),
+            history,
+        )
+        if indexes:
+            deleted = len(indexes)
+            _save_search_history([
+                query for index, query in enumerate(history) if index not in indexes
+            ])
+            xbmcgui.Dialog().notification(
+                'NLZiet',
+                get_string('search_history_deleted', deleted),
+                xbmcgui.NOTIFICATION_INFO,
+            )
+        return None
+    query = history[selected - 2] if history else None
+    return query
+
+
+def do_search():
+    query = _choose_search_query()
+    if not query:
+        return
+    _remember_search(query)
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for search
@@ -4675,6 +4891,7 @@ def get_route_handlers():
         'confirm_logout': confirm_logout,
         'refresh_account_info': refresh_account_info,
         'export_diagnostics': export_diagnostics,
+        'clear_subtitle_cache': clear_subtitle_cache,
         'search_group': search_group,
         'show_series_detail': show_series_detail,
         'show_series_season': show_series_season,

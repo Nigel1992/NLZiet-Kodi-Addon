@@ -39,7 +39,8 @@ class Router:
         elif mode == 'add_series_watch_later':
             self.handlers['add_series_watch_later'](
                 params.get('series_id'),
-                params.get('title')
+                params.get('title'),
+                params.get('from_now')
             )
         elif mode == 'my_series':
             self.handlers['browse_my_series']()
@@ -87,6 +88,8 @@ class Router:
             self.handlers['refresh_account_info']()
         elif mode == 'export_diagnostics':
             self.handlers['export_diagnostics']()
+        elif mode == 'clear_subtitle_cache':
+            self.handlers['clear_subtitle_cache']()
         elif mode == 'search_group':
             self.handlers['search_group'](params.get('q'), params.get('group'))
         elif mode == 'series_detail':

@@ -96,6 +96,16 @@ def test_string_ids_cover_all_translation_keys(monkeypatch):
     assert len(ids) == len(set(ids))
 
 
+def test_search_history_is_deduplicated_and_limited(monkeypatch):
+    default = _import_default(monkeypatch)
+
+    default._remember_search('  nieuws  ')
+    default._remember_search('Films')
+    default._remember_search('NIEUWS')
+
+    assert default._load_search_history() == ['NIEUWS', 'Films']
+
+
 def test_login_dialog_masks_password(monkeypatch):
     default = _import_default(monkeypatch)
     calls = []

@@ -78,6 +78,42 @@ msgctxt "#30113"
 msgid "Save a support report with secrets and personal data removed."
 msgstr "Save a support report with secrets and personal data removed."
 
+msgctxt "#33158"
+msgid "Clear subtitle cache"
+msgstr "Clear subtitle cache"
+
+msgctxt "#33159"
+msgid "{} subtitle cache files removed"
+msgstr "{} subtitle cache files removed"
+
+msgctxt "#33160"
+msgid "Could not clear subtitle cache"
+msgstr "Could not clear subtitle cache"
+
+msgctxt "#33161"
+msgid "New search"
+msgstr "New search"
+
+msgctxt "#33162"
+msgid "Delete searches"
+msgstr "Delete searches"
+
+msgctxt "#33163"
+msgid "{} searches deleted"
+msgstr "{} searches deleted"
+
+msgctxt "#33164"
+msgid "Add all existing episodes"
+msgstr "Add all existing episodes"
+
+msgctxt "#33165"
+msgid "Follow new episodes from now on"
+msgstr "Follow new episodes from now on"
+
+msgctxt "#33166"
+msgid "New episodes will be added automatically from now on"
+msgstr "New episodes will be added automatically from now on"
+
 msgctxt "#30130"
 msgid "TV Integration"
 msgstr "TV Integration"
@@ -708,7 +744,7 @@ msgstr "{} new episodes added to Watch Later"
 
 msgctxt "#33148"
 msgid "Automatically add new episodes"
-msgstr "Automatically add new episodes"
+msgstr "Automatically add new episodes only"
 
 msgctxt "#33149"
 msgid "Notify when items are about to expire"

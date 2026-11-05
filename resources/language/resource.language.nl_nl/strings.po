@@ -78,6 +78,42 @@ msgctxt "#30113"
 msgid "Save a support report with secrets and personal data removed."
 msgstr "Sla een supportrapport op waaruit geheimen en persoonsgegevens zijn verwijderd."
 
+msgctxt "#33158"
+msgid "Clear subtitle cache"
+msgstr "Ondertitelcache wissen"
+
+msgctxt "#33159"
+msgid "{} subtitle cache files removed"
+msgstr "{} ondertitelcachebestanden verwijderd"
+
+msgctxt "#33160"
+msgid "Could not clear subtitle cache"
+msgstr "Ondertitelcache kon niet worden verwijderd"
+
+msgctxt "#33161"
+msgid "New search"
+msgstr "Nieuwe zoekopdracht"
+
+msgctxt "#33162"
+msgid "Delete searches"
+msgstr "Zoekopdrachten verwijderen"
+
+msgctxt "#33163"
+msgid "{} searches deleted"
+msgstr "{} zoekopdrachten verwijderd"
+
+msgctxt "#33164"
+msgid "Add all existing episodes"
+msgstr "Alle bestaande afleveringen toevoegen"
+
+msgctxt "#33165"
+msgid "Follow new episodes from now on"
+msgstr "Alleen nieuwe afleveringen vanaf nu volgen"
+
+msgctxt "#33166"
+msgid "New episodes will be added automatically from now on"
+msgstr "Nieuwe afleveringen worden vanaf nu automatisch toegevoegd"
+
 msgctxt "#30130"
 msgid "TV Integration"
 msgstr "TV Integratie"
@@ -708,7 +744,7 @@ msgstr "{} nieuwe afleveringen toegevoegd aan Kijk Later"
 
 msgctxt "#33148"
 msgid "Automatically add new episodes"
-msgstr "Nieuwe afleveringen automatisch toevoegen"
+msgstr "Alleen nieuwe afleveringen automatisch toevoegen"
 
 msgctxt "#33149"
 msgid "Notify when items are about to expire"

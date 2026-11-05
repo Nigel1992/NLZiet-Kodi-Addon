@@ -1,8 +1,23 @@
 # Changelog
 
-> **Latest Version:** v1.4.3 (October 28, 2026)
+> **Latest Version:** v1.4.4 (November 5, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.4] - 2026-11-05
+
+### Added
+- **Search history**: recent searches are saved locally, can be reused, and can be selectively deleted.
+- **My Series new-episode indicator**: series with episodes that appeared since the previous check are shown with a green title.
+- **Series add mode**: adding a series to Kijk Later now lets you choose between all existing episodes or following only new episodes from now on.
+- **Subtitle cache action**: clear cleaned subtitle files from Settings → Debugging.
+
+### Fixed
+- **Blue spinner on menu navigation**: non-essential backfill, list sync, auto-add and expiry checks now run after the directory is displayed, without blocking menu transitions or returning from playback.
+- **Auto-add baseline**: following a series from now on records the current episode list as a baseline, preventing the existing back catalogue from being added.
+
+### Changed
+- Token expiry checks are throttled to avoid repeated refresh work during rapid menu navigation.
 
 ## [1.4.3] - 2026-10-28
 

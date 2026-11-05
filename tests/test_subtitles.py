@@ -122,6 +122,21 @@ def test_prepare_subtitle_urls_falls_back_on_error(tmp_path, monkeypatch):
     assert subtitles.prepare_subtitle_urls([url], cache_dir=str(tmp_path)) == [url]
 
 
+def test_clear_cache_removes_only_addon_subtitle_files(tmp_path):
+    cached = tmp_path / 'v1_subtitle.vtt'
+    unrelated = tmp_path / 'other.vtt'
+    cached.write_text('cached', encoding='utf-8')
+    unrelated.write_text('keep', encoding='utf-8')
+
+    assert subtitles.clear_cache(str(tmp_path)) == 1
+    assert not cached.exists()
+    assert unrelated.exists()
+
+
+def test_clear_cache_handles_missing_directory(tmp_path):
+    assert subtitles.clear_cache(str(tmp_path / 'missing')) == 0
+
+
 def _import_default(monkeypatch):
     monkeypatch.setattr(sys, 'argv', ['plugin://plugin.video.nlziet', '42', ''])
     sys.modules.pop('default', None)

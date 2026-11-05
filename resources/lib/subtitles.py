@@ -109,6 +109,27 @@ def prune_cache(cache_dir, max_age=DEFAULT_CACHE_MAX_AGE, log=None):
         pass
 
 
+def clear_cache(cache_dir):
+    """Remove all cached subtitle files created by this addon.
+
+    Returns the number of files removed. Files with another name are left
+    untouched so the action cannot remove unrelated Kodi data.
+    """
+    if not cache_dir or not os.path.isdir(cache_dir):
+        return 0
+
+    removed = 0
+    for name in os.listdir(cache_dir):
+        if not (name.startswith(CACHE_VERSION + '_') and name.endswith('.vtt')):
+            continue
+        path = os.path.join(cache_dir, name)
+        if not os.path.isfile(path):
+            continue
+        os.remove(path)
+        removed += 1
+    return removed
+
+
 def _is_webvtt_url(url):
     path = urllib.parse.urlparse(url).path.lower()
     return path.endswith('.vtt') or path.endswith('.webvtt')

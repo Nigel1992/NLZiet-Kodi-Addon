@@ -1,4 +1,5 @@
 import importlib
+import json
 import sys
 import time
 
@@ -630,6 +631,10 @@ def test_browse_watch_later_syncs_after_listing_and_refreshes_on_change(monkeypa
 
     default.browse_watch_later()
 
+    for _ in range(50):
+        if 'sync' in order:
+            break
+        time.sleep(0.01)
     assert order == ['item', 'end', 'sync']
     assert builtins == ['Container.Refresh']
 
@@ -684,6 +689,10 @@ def test_browse_my_series_syncs_after_listing(monkeypatch, kodi_recorder, tmp_pa
 
     default.browse_my_series()
 
+    for _ in range(50):
+        if 'sync' in order:
+            break
+        time.sleep(0.01)
     assert order == ['item', 'end', 'sync']
 
 
@@ -848,9 +857,31 @@ def test_add_series_watch_later_falls_back_to_episode_search_without_series_id(m
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.add_series_watch_later(None, 'Blue Murder Motel')
+    default.add_series_watch_later(None, 'Blue Murder Motel', from_now=False)
 
     assert stored['args'] == ('Blue Murder Motel', 'Blue Murder Motel', ['e1', 'e2'])
+
+
+def test_add_series_watch_later_from_now_stores_baseline(monkeypatch, tmp_path, kodi_recorder):
+    default = _load_default(monkeypatch)
+
+    class FakeApi:
+        watchlater_sync_file = str(tmp_path / 'watchlater_sync.json')
+
+        def get_series_detail(self, series_id):
+            return {'title': 'Show', 'seasons': []}
+
+        def get_series_episodes(self, series_id, limit=1000):
+            return [{'id': 'e1'}, {'id': 'e2'}]
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.add_series_watch_later('s1', 'Show', from_now=True)
+
+    state_path = tmp_path / 'auto_add_state.json'
+    state = json.loads(state_path.read_text(encoding='utf-8'))
+    assert state['title:show'] == {'id': 's1', 'seen': ['e1', 'e2']}
+    assert default.ADDON.getSetting('auto_add_new_episodes') == 'true'
 
 
 def test_collection_shows_season_folders_then_episodes(monkeypatch, kodi_recorder):
@@ -1072,6 +1103,52 @@ def test_auto_add_first_run_records_then_adds_only_new_episodes(monkeypatch, tmp
 
     assert default._run_auto_add(api) == 0
     assert added_calls == [['e3']]
+
+
+def test_auto_add_setting_is_disabled_by_default_and_can_be_enabled(monkeypatch):
+    default = _load_default(monkeypatch)
+    values = {}
+    monkeypatch.setattr(
+        default.ADDON,
+        'getSetting',
+        lambda key: values.get(key, ''),
+    )
+
+    assert default._auto_add_enabled() is False
+    values['auto_add_new_episodes'] = 'true'
+    assert default._auto_add_enabled() is True
+
+
+def test_new_my_series_ids_use_previous_episode_snapshot(monkeypatch, tmp_path):
+    default = _load_default(monkeypatch)
+
+    class FakeApi:
+        watchlater_sync_file = str(tmp_path / 'watchlater_sync.json')
+
+        def get_series_detail(self, series_id):
+            return {'title': 'Show', 'seasons': []}
+
+        def get_series_episodes(self, series_id, limit=1000):
+            return [{'id': 'e1'}, {'id': 'e2'}]
+
+    api = FakeApi()
+    items = [{'id': 'series-1', 'title': 'Show'}]
+
+    new_ids, state = default._new_my_series_ids(api, items)
+    assert new_ids == set()
+    default._save_my_series_state(api, state)
+
+    new_ids, state = default._new_my_series_ids(
+        api, items
+    )
+    assert new_ids == set()
+
+    monkeypatch.setattr(
+        api, 'get_series_episodes',
+        lambda series_id, limit=1000: [{'id': 'e1'}, {'id': 'e2'}, {'id': 'e3'}],
+    )
+    new_ids, _ = default._new_my_series_ids(api, items)
+    assert new_ids == {'series-1'}
 
 
 def test_expiry_notifies_once_for_items_inside_the_window(monkeypatch, tmp_path, kodi_recorder):

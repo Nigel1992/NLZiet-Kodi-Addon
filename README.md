@@ -12,7 +12,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.4.3 — 2026-10-28. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.4.4 — 2026-11-05. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -39,8 +39,19 @@
 - **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion. The Trakt add-on must be installed and authorized separately.
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Clean subtitles**: NPO's teletext-derived subtitles are cleaned before playback, so Kodi shows its normal subtitle overlay instead of the teletext page number ("888") and yellow/white teletext colours.
+- **Search history**: recent searches can be reused or selectively removed.
+- **New episode tracking**: My Series highlights series with new episodes, and Kijk Later can follow only episodes released from now on.
+- **Responsive navigation**: background sync and maintenance work does not block menu transitions or returning from playback.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.4.4
+
+- **Search history**: recent searches are saved locally, can be reused, and can be selectively deleted.
+- **My Series new-episode indicator**: series with episodes that appeared since the previous check are shown with a green title.
+- **Series add mode**: choose between adding all existing episodes to Kijk Later or following only new episodes from now on. The current episodes become the baseline and are not added.
+- **Subtitle cache management**: clear cleaned subtitle files from Settings → Debugging.
+- **Faster navigation**: backfill, list synchronization, automatic episode checks, expiry checks and token checks no longer unnecessarily block menu transitions or returning from playback.
 
 ### New in v1.4.3
 

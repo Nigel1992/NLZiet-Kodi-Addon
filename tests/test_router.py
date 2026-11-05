@@ -18,7 +18,7 @@ EXPECTED_HANDLER_NAMES = {
     'export_series_library', 'browse_placement_row', 'browse_tv_shows',
     'browse_tv_genre', 'browse_series_categories', 'browse_series_genre',
     'browse_movie_categories', 'browse_movie_genre', 'browse_category',
-    'play_item', 'select_iptv_channels',
+    'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
 }
 
 
@@ -128,6 +128,24 @@ def test_unknown_mode_matches_existing_noop_except_content(kodi_recorder):
 
     assert calls == []
     assert kodi_recorder.set_content == [(5, 'videos')]
+
+
+def test_clear_subtitle_cache_route_dispatches():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch('mode=clear_subtitle_cache')
+
+    assert calls == [('clear_subtitle_cache', (), {})]
+
+
+def test_add_series_watch_later_route_passes_from_now():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch('mode=add_series_watch_later&series_id=s1&title=Show&from_now=true')
+
+    assert calls == [('add_series_watch_later', ('s1', 'Show', 'true'), {})]
 
 
 def test_library_export_and_diagnostics_routes_dispatch():
