@@ -1,8 +1,13 @@
 # Changelog
 
-> **Latest Version:** v1.4.4 (November 5, 2026)
+> **Latest Version:** v1.4.4.1 (November 6, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.4.1] - 2026-11-06 (hotfix)
+
+### Fixed
+- **Slow Mijn Series loading**: detecting newly added episodes previously fetched every series' episodes synchronously while rendering the list. This now runs in the background, so Mijn Series opens immediately; the new-episode highlight/refresh follows after the list is shown.
 
 ## [1.4.4] - 2026-11-05
 

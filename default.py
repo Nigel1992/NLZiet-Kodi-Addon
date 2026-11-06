@@ -3453,6 +3453,20 @@ def _new_my_series_ids(api, items):
     return new_ids, current
 
 
+def _check_my_series_new_episodes(api, items):
+    '''Background helper: detect newly added episodes and refresh on change.'''
+    try:
+        new_ids, state = _new_my_series_ids(api, items)
+        _save_my_series_state(api, state)
+        if new_ids:
+            try:
+                xbmc.executebuiltin('Container.Refresh')
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 def _save_my_series_state(api, state):
     state_path = _my_series_state_path(api)
     if not state_path:
@@ -3476,12 +3490,14 @@ def browse_my_series():
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_series_empty'), xbmcgui.NOTIFICATION_INFO)
     else:
-        new_ids, state = _new_my_series_ids(api, items)
-        _render_list_items(items, highlight_ids=new_ids)
-        _save_my_series_state(api, state)
+        # Detecting newly added episodes requires fetching every series' episodes,
+        # which is slow. Do it in the background so the list renders immediately;
+        # highlight/refresh happen after the directory has been shown.
+        _render_list_items(items)
     xbmcplugin.endOfDirectory(HANDLE)
 
     _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
+    _run_after_directory(_check_my_series_new_episodes, api, list(items))
     _run_after_directory(
         _sync_list_after_render,
         api, 'my_series', _my_series_sync_enabled(),
