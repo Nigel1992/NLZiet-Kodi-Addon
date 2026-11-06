@@ -1,8 +1,13 @@
 # Changelog
 
-> **Latest Version:** v1.4.4.1 (November 6, 2026)
+> **Latest Version:** v1.4.4.2 (November 6, 2026)
 
 All notable changes to this project are recorded in this file.
+
+## [1.4.4.2] - 2026-11-06 (hotfix)
+
+### Fixed
+- **Episodes not loading**: `ZoneInfo('Europe/Amsterdam')` failed on systems without tzdata, raising `KeyError: 'Europe/Amsterdam'` and breaking episode loading. Now falls back to UTC.
 
 ## [1.4.4.1] - 2026-11-06 (hotfix)
 

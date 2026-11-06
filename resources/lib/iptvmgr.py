@@ -5,7 +5,7 @@ from resources.lib import nlziet_api
 import os
 import json
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
@@ -73,7 +73,11 @@ def get_epg():
         chan_ids = [chan['id'] for chan in nlziet.get_channels()]
     else:
         chan_ids = [chan['id'] for chan in nlziet.get_channels() if chan['id'] in enabled_chans]
-    now = datetime.now(tz=ZoneInfo('Europe/Amsterdam'))
+    try:
+        _tz = ZoneInfo('Europe/Amsterdam')
+    except Exception:
+        _tz = timezone.utc
+    now = datetime.now(tz=_tz)
     epg = {}
     for day_delta in range(-7, 5):
         day_str = (now + timedelta(days=day_delta)).strftime("%Y-%m-%d")

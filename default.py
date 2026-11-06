@@ -12,7 +12,7 @@ import xbmcplugin
 import xbmcvfs
 import time
 import platform
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape
 
 try:
@@ -4255,7 +4255,11 @@ def browse_category(content_type):
 
                         # New structure: channel_epg has 'current' and 'next' keys
                         if channel_epg:
-                            now = datetime.now(tz=ZoneInfo('Europe/Amsterdam'))
+                            try:
+                                _tz = ZoneInfo('Europe/Amsterdam')
+                            except Exception:
+                                _tz = timezone.utc
+                            now = datetime.now(tz=_tz)
                             now_plus_6 = now + timedelta(hours=6)
                             epg_lines = []
                             for pgm in channel_epg:

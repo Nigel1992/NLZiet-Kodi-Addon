@@ -2814,7 +2814,11 @@ class NLZietAPI:
             value = src.get(key) if isinstance(src, dict) else None
             parsed = self._parse_timestamp(value)
             if parsed:
-                return datetime.datetime.fromtimestamp(parsed, tz=ZoneInfo('Europe/Amsterdam')).date().isoformat()
+                try:
+                    _tz = ZoneInfo('Europe/Amsterdam')
+                except Exception:
+                    _tz = datetime.timezone.utc
+                return datetime.datetime.fromtimestamp(parsed, tz=_tz).date().isoformat()
             if isinstance(value, str) and re.match(r'^\d{4}-\d{2}-\d{2}$', value):
                 return value
         return None
