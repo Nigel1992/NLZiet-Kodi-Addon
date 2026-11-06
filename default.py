@@ -1087,7 +1087,7 @@ def main_menu():
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
         add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
-        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('series'))
+        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
@@ -2779,7 +2779,7 @@ def _render_list_items(
                 season_episode = None
                 try:
                     numbering = _episode_numbering_label(api, itm)
-                    availability = _availability_label(api, itm)
+                    availability = None if _content_group(itm) == 'channels' else _availability_label(api, itm)
                     subtitle_text = _list_item_subtitle(itm)
                     broadcast = _broadcast_datetime(itm) if _content_group(itm) == 'episodes' else None
                     if not numbering:
@@ -4210,7 +4210,7 @@ def browse_category(content_type):
             desc = item.get('description') or item.get('subtitle') or ''
             if desc:
                 title_for_info = item.get('title') or ''
-                expiry_text = item.get('expires_in') or None
+                expiry_text = None if content_type.lower() == 'channels' else (item.get('expires_in') or None)
                 truncated = (desc[:250] + '...') if len(desc) > 250 else desc
                 plot_full = desc
                 po = truncated

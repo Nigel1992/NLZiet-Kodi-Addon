@@ -1,6 +1,15 @@
 # Changelog
 
-> **Latest Version:** v1.4.4.2 (November 6, 2026)
+> **Latest Version:** v1.4.5 (November 6, 2026)
+
+## [1.4.5] - 2026-11-06
+
+### Added
+- **Premium menu icons**: refreshed all main-menu icons with a consistent gradient icon set (squared, no rounded-corner clipping).
+
+### Fixed
+- **Live TV watched status**: items under Channels/Kanalen no longer show a watched/checkmark indicator, since they are live streams.
+- **Icon cropping**: menu icons are now cropped to a clean square so rounded corners are not clipped by the skin.
 
 All notable changes to this project are recorded in this file.
 

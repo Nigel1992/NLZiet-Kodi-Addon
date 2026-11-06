@@ -79,9 +79,10 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
     if item_info:
         if is_live:
             # For live TV, set video info to display EPG, but don't track resume points
-            # Clear any bookmark/resume data so context menu doesn't appear
+            # or watched status (live channels should never show a checkmark).
             info_copy = item_info.copy()
             info_copy.pop('resume', None)  # Remove any resume position
+            info_copy['playcount'] = 0     # Prevent watched/checkmark indicator
             li.setInfo('video', info_copy)
         else:
             # For on-demand content, set full video info (allows resume functionality)
