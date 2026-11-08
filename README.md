@@ -30,7 +30,7 @@
 
 ## ✨ Features
 
-- **Live TV**: Stream all supported NLZiet channels with EPG info. Includes a custom full-screen EPG with channel logos, current programme indicator, and 7-day browse.
+- **Live TV**: Stream all supported NLZiet channels with EPG info. Includes a custom full-screen EPG (TV Gids) with channel names, current programme indicator, and 7-day browse.
 - **Series**: Browse, search, and play series with full season/episode navigation.
 - **Movies**: Discover and watch movies from the NLZiet catalog.
 - **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**. **Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu. Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions.
@@ -59,7 +59,7 @@
 
 ### New in v1.5.0
 
-- **Custom EPG**: full-screen EPG dialog with channels on the left and horizontally scrolling programmes on the right. Shows channel logos, current programme (● NU), and date/time per programme. Browse today + 7 days back/forward via a day selector (press I / Info).
+- **Custom EPG**: full-screen EPG dialog with channels on the left and horizontally scrolling programmes on the right. Shows channel names, current programme (● NU), and date/time per programme. Browse today + 7 days back/forward via a day selector (press I / Info).
 - **Live TV restart/replay**: "Afspelen (terugkijken)" on live programmes now starts from the beginning instead of jumping to realtime.
 - **Context menu**: long-press Enter on any programme for Play / Add to My Series / Add to Watch Later.
 - **Auto subtitle cache clearing**: optional periodic clearing of the subtitle cache (configurable hours).
@@ -307,7 +307,7 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 
 ## ✨ Functies
 
-- **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info. Bevat een aangepaste volledig-scherm EPG met zenderlogo's, huidige-programma-indicator en 7 dagen bladeren.
+- **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info. Bevat een aangepaste volledig-scherm EPG (TV Gids) met zendernamen, huidige-programma-indicator en 7 dagen bladeren.
 - **Series**: Blader, zoek en speel series af met volledige seizoen/aflevering-navigatie.
 - **Films**: Ontdek en kijk films uit de NLZiet-catalogus.
 - **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**. **Kijk Later** bevat afleveringen en films, terwijl **Mijn Series** hele series volgt — elk item toont de bijpassende actie in het contextmenu. Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
