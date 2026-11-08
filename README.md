@@ -30,17 +30,23 @@
 
 ## ✨ Features
 
-- **Live TV**: Stream all supported NLZiet channels with EPG info. Includes a custom full-screen EPG (TV Gids) with channel names, current programme indicator, and 7-day browse.
+- **Live TV**: Stream all supported NLZiet channels with EPG info.
+Includes a custom full-screen EPG (TV Gids) with channel names, current programme indicator, and 7-day browse.
 - **Series**: Browse, search, and play series with full season/episode navigation.
 - **Movies**: Discover and watch movies from the NLZiet catalog.
-- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**. **Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu. Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions.
+- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**.
+**Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu.
+Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions.
 - **Profile Management**: Switch between user profiles from the Kodi UI.
 - **Localization**: All user-facing text resolves through Kodi's language system (Dutch and English included); English is the fallback for languages without a translation file.
 - **DRM Support**: Widevine-protected streams via `inputstream.adaptive` with automatic `inputstreamhelper` verification.
 - **Placement Rows**: Home screen rows mirror the official NLZiet app (e.g., "Recommended", "Popular Series").
-- **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl. N) parsing, with season mapping. **Kijk Later** additionally shows the episode number and the remaining availability as compact, subtly coloured lines in the item description.
+- **Episode Numbering**: Accurate SxxExx and Dutch soap (Afl.
+N) parsing, with season mapping.
+**Kijk Later** additionally shows the episode number and the remaining availability as compact, subtly coloured lines in the item description.
 - **Search**: Find series, movies, and episodes by title.
-- **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion. The Trakt add-on must be installed and authorized separately.
+- **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion.
+The Trakt add-on must be installed and authorized separately.
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.
 - **Clean subtitles**: NPO's teletext-derived subtitles are cleaned before playback, so Kodi shows its normal subtitle overlay instead of the teletext page number ("888") and yellow/white teletext colours.
 - **Search history**: recent searches can be reused or selectively removed.
@@ -90,7 +96,8 @@ scripts/run-addon-check-local.sh --branch omega
 ## 📝 To-Do
 
 - [X] **Fix issue where only 50 movies/series are shown** (pagination/limit handling)
-- [X] **Episodes use episode title instead of count** (show SxxExx or Afl. N when possible)
+- [X] **Episodes use episode title instead of count** (show SxxExx or Afl.
+N when possible)
 - [X] **Fix subfolders in series option** (better season/episode navigation)
 - [ ] **Improve error messages and user feedback**
 - [ ] **Add Dutch/English language toggle**
