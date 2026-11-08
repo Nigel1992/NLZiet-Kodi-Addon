@@ -229,7 +229,7 @@ Coming soon...
 
 ## 🚀 Installation
 
-1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases), or install via the [Kodi repository](https://github.com/Nigel1992/kodi-repository) (recommended for automatic updates).
 2. In Kodi, go to **Add-ons > Install from zip file** and select the downloaded zip.
 3. Open the add-on and use **Inloggen** to authenticate with NLZiet.
 4. Install and authorize the official Kodi **Trakt** add-on if you want movie and episode scrobbling.
@@ -426,7 +426,7 @@ Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZi
 
 ## 🚀 Installatie
 
-1. Download de nieuwste release van [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+1. Download de nieuwste release van [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases), of installeer via de [Kodi repository](https://github.com/Nigel1992/kodi-repository) (aanbevolen voor automatische updates).
 2. In Kodi: **Add-ons > Install from zip file** en selecteer de gedownloade zip.
 3. Open de add-on en gebruik **Inloggen** om je te authenticeren bij NLZiet.
 4. Installeer en autoriseer de officiële Kodi **Trakt**-add-on als je film- en aflevering-scrobbling wilt.
