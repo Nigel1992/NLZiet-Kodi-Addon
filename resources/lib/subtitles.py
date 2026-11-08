@@ -146,6 +146,53 @@ def _download(url, headers=None, timeout=20):
         return response.read().decode('utf-8', 'replace')
 
 
+def _marker_path(cache_dir, marker_name='.last_auto_clear'):
+    return os.path.join(cache_dir, marker_name)
+
+
+def clear_cache_if_due(cache_dir, interval_hours=24, marker_path=None, log=None):
+    """Clear the subtitle cache when it was last cleared more than interval_hours ago.
+
+    Returns the number of files removed (0 when not due or disabled by a
+    non-positive interval).
+    """
+    if not cache_dir:
+        return 0
+    try:
+        hours = max(1, int(float(interval_hours or 24)))
+    except (TypeError, ValueError):
+        hours = 24
+    marker = marker_path or _marker_path(cache_dir)
+    try:
+        with open(marker, 'r', encoding='utf-8') as handle:
+            last = float(handle.read().strip() or 0)
+    except Exception:
+        last = 0
+    if time.time() - last < hours * 3600:
+        return 0
+    removed = clear_cache(cache_dir)
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(marker, 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+    return removed
+
+
+def auto_clear_cache(cache_dir, interval_hours=24, marker_path=None, log=None):
+    return clear_cache_if_due(cache_dir, interval_hours=interval_hours, marker_path=marker_path, log=log)
+
+
+def maybe_clear_cache(cache_dir, interval_hours=24, marker_path=None, log=None):
+    return clear_cache_if_due(cache_dir, interval_hours=interval_hours, marker_path=marker_path, log=log)
+
+
+# Aliases
+clear_cache_auto = clear_cache_if_due
+auto_clear_subtitle_cache = clear_cache_if_due
+maybe_clear_subtitle_cache = clear_cache_if_due
+
 def prepare_subtitle_urls(urls, cache_dir=None, headers=None, log=None):
     """Return subtitle locations that are ready for playback.
 

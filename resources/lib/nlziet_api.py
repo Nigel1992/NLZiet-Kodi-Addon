@@ -3635,12 +3635,16 @@ class NLZietAPI:
                         stream_url = None
 
                     chan_epg.append ({
+                        'id': item_id,
+                        'asset_id': pgm_content.get('assetId'),
                         'start': pgm_content['startAt'],
                         'stop': pgm_content['endAt'],
                         'title': pgm_content['title'],
                         'image': pgm_content['image']['landscapeUrl'],
                         'date': pgm_content['firstBroadcast'][:10],
-                        'stream': stream_url
+                        'stream': stream_url,
+                        'is_vod': bool(pgm_content.get('isVodReplaceable')),
+                        'is_replay': bool(pgm_content.get('isReplayAllowed')),
                     })
                 epg[chan_id] = chan_epg
 

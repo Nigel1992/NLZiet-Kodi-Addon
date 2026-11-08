@@ -90,6 +90,14 @@ msgctxt "#33160"
 msgid "Could not clear subtitle cache"
 msgstr "Could not clear subtitle cache"
 
+msgctxt "#33167"
+msgid "Automatically clear subtitle cache"
+msgstr "Automatically clear subtitle cache"
+
+msgctxt "#33168"
+msgid "Clear subtitle cache every (hours)"
+msgstr "Clear subtitle cache every (hours)"
+
 msgctxt "#33161"
 msgid "New search"
 msgstr "New search"

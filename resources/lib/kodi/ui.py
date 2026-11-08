@@ -106,10 +106,14 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
         li.setProperty('ResumeTime', str(resume['position']))
         li.setProperty('TotalTime', str(resume['total']))
 
-    # For live TV, prevent Kodi from showing resume/playback context menu
+    # For live TV, prevent Kodi from showing a resume prompt. A zero-length
+    # resume point makes Kodi skip the bookmark database lookup entirely.
     if is_live:
-        li.setProperty('ResumeTime', '0')
-        li.setProperty('TotalTime', '3600')
+        try:
+            li.getVideoInfoTag().setResumePoint(0.0, 3600.0)
+        except Exception:
+            li.setProperty('ResumeTime', '0')
+            li.setProperty('TotalTime', '3600')
         li.setProperty('IsLive', 'true')  # Mark as live for skin awareness
     # Add context-menu entries for My List / Watch Later / library when we can
     # determine a content id. All entries are collected and applied in a single

@@ -90,6 +90,14 @@ msgctxt "#33160"
 msgid "Could not clear subtitle cache"
 msgstr "Ondertitelcache kon niet worden verwijderd"
 
+msgctxt "#33167"
+msgid "Automatically clear subtitle cache"
+msgstr "Automatisch ondertitelcache wissen"
+
+msgctxt "#33168"
+msgid "Clear subtitle cache every (hours)"
+msgstr "Ondertitelcache wissen elke (uur)"
+
 msgctxt "#33161"
 msgid "New search"
 msgstr "Nieuwe zoekopdracht"
@@ -774,3 +782,16 @@ msgstr "Verloopt binnenkort: {}"
 msgctxt "#33155"
 msgid "Automatically add new episodes released for series in My Series and episodes in Watch Later. Only new episodes are added; the first time is a baseline."
 msgstr "Voegt automatisch nieuwe afleveringen toe voor series in Mijn Series en afleveringen in Kijk Later. Alleen nieuwe afleveringen worden toegevoegd; de eerste keer wordt alleen het huidige overzicht vastgelegd."
+
+
+msgctxt "#33169"
+msgid "programs"
+msgstr "programma's"
+
+msgctxt "#33170"
+msgid "NLZiet EPG"
+msgstr "NLZiet EPG"
+
+msgctxt "#33171"
+msgid "Choose a channel on the left, scroll programmes horizontally. OK plays, context menu adds to lists."
+msgstr "Kies een kanaal links, scroll programma's horizontaal. OK speelt af, contextmenu voegt toe aan lijsten."

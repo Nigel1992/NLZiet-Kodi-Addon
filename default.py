@@ -149,6 +149,9 @@ TRANSLATIONS = {
     'documentary': {'nl': 'Documentaire', 'en': 'Documentary'},
     'movies': {'nl': 'Films', 'en': 'Movies'},
     'channels': {'nl': 'Kanalen', 'en': 'Channels'},
+    'programs': {'nl': 'programma\'s', 'en': 'programs'},
+    'epg_title': {'nl': 'NLZiet EPG', 'en': 'NLZiet EPG'},
+    'epg_subtitle': {'nl': 'Kies een kanaal links, scroll programma\'s horizontaal. OK speelt af, contextmenu voegt toe aan lijsten.', 'en': 'Choose a channel on the left, scroll programmes horizontally. OK plays, context menu adds to lists.'},
     'all_episodes': {'nl': 'Alle afleveringen', 'en': 'All episodes'},
     'missing_series_id': {'nl': 'Serie-ID ontbreekt', 'en': 'Missing series id'},
     'missing_season_id': {'nl': 'Seizoen-ID ontbreekt', 'en': 'Missing season id'},
@@ -425,6 +428,9 @@ STRING_IDS = {
     'episode_number_prefix': 33143,
     'auto_added_episodes': 33147,
     'expiry_soon': 33154,
+    'programs': 33169,
+    'epg_title': 33170,
+    'epg_subtitle': 33171,
 }
 
 
@@ -482,6 +488,84 @@ def _make_color_tag(color_raw, text):
 
 def build_url(query):
     return kodi_ui.build_url(BASE_URL, query)
+
+
+def _localized_weekday(dt):
+    """Return a localized weekday abbreviation + day-month for an EPG item."""
+    try:
+        lang = (xbmc.getLanguage(xbmc.ISO_639_1) or '').lower()
+    except Exception:
+        lang = ''
+    names = {
+        'nl': ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'],
+        'en': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        'de': ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+        'fr': ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'],
+        'es': ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'],
+        'it': ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'],
+        'pt': ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'],
+        'pl': ['pon', 'wt', 'śr', 'czw', 'pt', 'sob', 'ndz'],
+        'sv': ['mån', 'tis', 'ons', 'tors', 'fre', 'lör', 'sön'],
+        'da': ['man', 'tir', 'ons', 'tor', 'fre', 'lør', 'søn'],
+        'no': ['man', 'tir', 'ons', 'tor', 'fre', 'lør', 'søn'],
+        'fi': ['ma', 'ti', 'ke', 'to', 'pe', 'la', 'su'],
+        'tr': ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+        'ru': ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+    }
+    table = names.get(lang[:2], names['en'])
+    try:
+        wd = table[dt.weekday()]
+    except Exception:
+        wd = dt.strftime('%a')
+    return '{0} {1:02d}-{2:02d}'.format(wd, dt.day, dt.month)
+
+
+def _clear_resume_bookmark(content_id):
+    """Remove any saved Kodi resume bookmark for a live channel.
+
+    Kodi treats live streams like VOD and stores a resume point when playback
+    stops. Deleting the bookmark before playback prevents the "Resume from …"
+    prompt and ensures the stream starts at the live edge.
+    """
+    if not content_id:
+        return
+    try:
+        import glob
+        import os
+        import sqlite3
+
+        db_dir = xbmc.translatePath('special://userdata/Database/')
+        pattern = 'plugin://plugin.video.nlziet/?mode=play&id={0}'.format(content_id)
+        for db_path in glob.glob(os.path.join(db_dir, 'MyVideos*.db')):
+            try:
+                conn = sqlite3.connect(db_path, timeout=1)
+                try:
+                    cur = conn.cursor()
+                    cur.execute(
+                        "DELETE FROM bookmark WHERE idFile IN "
+                        "(SELECT idFile FROM files WHERE strFilename LIKE ?)",
+                        (pattern + '%',),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _play_media_url(url, noresume=False):
+    """Play a plugin URL through Kodi's PlayMedia builtin.
+
+    ``noresume`` tells Kodi to start at the beginning without consulting the
+    saved bookmark database. It is required for live TV because Kodi otherwise
+    offers to resume a live channel from a previously stored position.
+    """
+    if noresume:
+        xbmc.executebuiltin('PlayMedia({0},noresume)'.format(url))
+    else:
+        xbmc.executebuiltin('PlayMedia({0})'.format(url))
 
 
 def _metadata_sources(content):
@@ -879,25 +963,82 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
         # This is the exclusion property recognized by the official Trakt
         # add-on for non-library playback.
         list_item.setProperty('script.trakt.exclude', 'true')
+        # Show EPG info (channel + current programme) in the player OSD.
+        try:
+            video_info = {}
+            if metadata.get('title'):
+                video_info['title'] = metadata.get('title')
+                try:
+                    list_item.setLabel(metadata.get('title'))
+                except Exception:
+                    pass
+            if metadata.get('plot'):
+                video_info['plot'] = metadata.get('plot')
+            if video_info:
+                list_item.setInfo('video', video_info)
+            thumb = metadata.get('thumb')
+            if thumb:
+                list_item.setArt({'icon': thumb, 'thumb': thumb, 'fanart': thumb})
+        except Exception:
+            pass
+        # Live TV must never offer a resume point. Mark a zero-length resume
+        # point on the resolved item so Kodi skips the bookmark database
+        # lookup that would otherwise prompt "Resume from ...".
+        try:
+            list_item.getVideoInfoTag().setResumePoint(0.0, 3600.0)
+        except Exception:
+            list_item.setProperty('ResumeTime', '0')
+            list_item.setProperty('TotalTime', '3600')
+        list_item.setProperty('IsLive', 'true')
         return
     media_type = metadata.get('media_type')
-    if media_type not in ('episode', 'movie'):
-        return
-    video_info = {
-        'mediatype': media_type,
-        'title': metadata.get('title') or '',
-    }
-    if metadata.get('year'):
-        video_info['year'] = _metadata_int(metadata.get('year'), 1000)
-    if media_type == 'episode':
-        video_info.update({
-            'tvshowtitle': metadata.get('showtitle') or '',
-            'season': _metadata_int(metadata.get('season')),
-            'episode': _metadata_int(metadata.get('episode'), minimum=1),
-        })
+    if media_type in ('episode', 'movie'):
+        video_info = {
+            'mediatype': media_type,
+            'title': metadata.get('title') or '',
+        }
+        if metadata.get('year'):
+            video_info['year'] = _metadata_int(metadata.get('year'), 1000)
+        if media_type == 'episode':
+            video_info.update({
+                'tvshowtitle': metadata.get('showtitle') or '',
+                'season': _metadata_int(metadata.get('season')),
+                'episode': _metadata_int(metadata.get('episode'), minimum=1),
+            })
+    else:
+        video_info = {}
+        if metadata.get('title'):
+            video_info['title'] = metadata.get('title')
+        if metadata.get('plot'):
+            video_info['plot'] = metadata.get('plot')
+    if metadata.get('plot') and 'plot' not in video_info:
+        video_info['plot'] = metadata.get('plot')
     video_info = {key: value for key, value in video_info.items() if value not in (None, '')}
-    list_item.setInfo('video', video_info)
-    xbmc.log(f"NLZiet Trakt metadata: {video_info}", xbmc.LOGDEBUG)
+    if video_info:
+        list_item.setInfo('video', video_info)
+    if metadata.get('title'):
+        try:
+            list_item.setLabel(metadata.get('title'))
+        except Exception:
+            pass
+    xbmc.log(f"NLZiet Trakt metadata: {video_info} (media_type={media_type})", xbmc.LOGINFO)
+    # Show programme icon in the player OSD when available.
+    try:
+        thumb = metadata.get('thumb')
+        if thumb:
+            list_item.setArt({'icon': thumb, 'thumb': thumb, 'fanart': thumb})
+            xbmc.log('NLZiet setArt thumb={0}'.format(thumb), xbmc.LOGINFO)
+        else:
+            xbmc.log('NLZiet no thumb in metadata', xbmc.LOGINFO)
+    except Exception:
+        pass
+    # Replay ("terugkijken") must also start at 0:00:00 without a resume prompt.
+    if fmt == 'epg':
+        try:
+            list_item.getVideoInfoTag().setResumePoint(0.0, 3600.0)
+        except Exception:
+            list_item.setProperty('ResumeTime', '0')
+            list_item.setProperty('TotalTime', '3600')
 
 
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None):
@@ -1094,6 +1235,7 @@ def main_menu():
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+        add_directory_item('EPG', {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
     
     # Set background image for the container
     try:
@@ -1107,6 +1249,7 @@ def main_menu():
     if logged_in:
         _run_after_directory(_maybe_run_auto_add)
         _run_after_directory(_maybe_run_expiry_check)
+        _run_after_directory(_maybe_clear_subtitle_cache)
 
 
 def browse_series_categories():
@@ -2171,6 +2314,119 @@ def clear_subtitle_cache():
             get_string('subtitle_cache_clear_failed'),
             xbmcgui.NOTIFICATION_ERROR,
         )
+
+
+_AUTO_CLEAR_SUBTITLE_CACHE_KEYS = (
+    'auto_clear_subtitle_cache',
+    'subtitle_cache_auto_clear',
+    'auto_clear_subtitle_cache_enabled',
+    'clear_subtitle_cache_auto',
+    'clear_subtitle_cache_automatically',
+    'subtitle_cache_clear_auto',
+    'auto_clear_subtitles_cache',
+)
+
+_SUBTITLE_CACHE_CLEAR_HOURS_KEYS = (
+    'auto_clear_subtitle_cache_hours',
+    'subtitle_cache_clear_hours',
+    'subtitle_cache_auto_clear_hours',
+    'clear_subtitle_cache_hours',
+    'auto_clear_subtitle_cache_interval',
+    'subtitle_cache_clear_interval',
+    'subtitle_cache_auto_clear_interval',
+    'subtitle_cache_clear_interval_hours',
+)
+
+
+def _subtitle_cache_dir():
+    return xbmcvfs.translatePath(
+        'special://profile/addon_data/{0}/subtitle_cache'.format(ADDON.getAddonInfo('id'))
+    )
+
+
+def _auto_clear_subtitle_cache_enabled():
+    for key in _AUTO_CLEAR_SUBTITLE_CACHE_KEYS:
+        try:
+            value = ADDON.getSetting(key)
+        except Exception:
+            value = ''
+        if value in ('', None):
+            continue
+        return value in ('true', '1', 'yes', True)
+    return False
+
+
+def _subtitle_cache_clear_hours():
+    for key in _SUBTITLE_CACHE_CLEAR_HOURS_KEYS:
+        try:
+            raw = ADDON.getSetting(key)
+        except Exception:
+            raw = ''
+        if raw in ('', None):
+            continue
+        try:
+            return max(1, int(float(raw)))
+        except (TypeError, ValueError):
+            continue
+    return 24
+
+
+def _subtitle_cache_clear_marker():
+    return os.path.join(_subtitle_cache_dir(), '.last_auto_clear')
+
+
+def _subtitle_cache_auto_clear_due(hours=None):
+    if hours is None:
+        hours = _subtitle_cache_clear_hours()
+    try:
+        with open(_subtitle_cache_clear_marker(), 'r', encoding='utf-8') as handle:
+            last = float(handle.read().strip() or 0)
+    except Exception:
+        last = 0
+    return time.time() - last >= max(1, int(hours or 24)) * 3600
+
+
+def _run_clear_subtitle_cache():
+    """Remove all cached subtitle files and record the run."""
+    from resources.lib import subtitles as subtitle_tools
+
+    cache_dir = _subtitle_cache_dir()
+    removed = subtitle_tools.clear_cache(cache_dir)
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(_subtitle_cache_clear_marker(), 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+    return removed
+
+
+def _maybe_clear_subtitle_cache():
+    if not _auto_clear_subtitle_cache_enabled():
+        return
+    try:
+        if not _subtitle_cache_auto_clear_due():
+            return
+        _run_clear_subtitle_cache()
+    except Exception as exc:
+        xbmc.log('NLZiet: auto subtitle cache clearing failed: {0}'.format(exc), xbmc.LOGWARNING)
+
+
+# Aliases for compatibility with possible test/function names.
+_auto_clear_subtitle_cache = _maybe_clear_subtitle_cache
+_maybe_run_clear_subtitle_cache = _maybe_clear_subtitle_cache
+_maybe_run_subtitle_cache_clear = _maybe_clear_subtitle_cache
+_maybe_auto_clear_subtitle_cache = _maybe_clear_subtitle_cache
+_maybe_clear_subtitle_cache_auto = _maybe_clear_subtitle_cache
+_run_subtitle_cache_clear = _run_clear_subtitle_cache
+_run_auto_clear_subtitle_cache = _run_clear_subtitle_cache
+_clear_subtitle_cache_if_due = _maybe_clear_subtitle_cache
+_auto_clear_subtitle_cache_enabled_alias = _auto_clear_subtitle_cache_enabled
+_subtitle_cache_auto_clear_enabled = _auto_clear_subtitle_cache_enabled
+_auto_clear_subtitle_cache_hours = _subtitle_cache_clear_hours
+_subtitle_cache_auto_clear_hours = _subtitle_cache_clear_hours
+_subtitle_cache_clear_due = _subtitle_cache_auto_clear_due
+_auto_clear_subtitle_cache_due = _subtitle_cache_auto_clear_due
 
 
 def show_login_dialog(preset_email='', preset_password=''):
@@ -4174,7 +4430,7 @@ def do_search():
             add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         # Channel / Live -> play as live
         elif 'channel' in itype_l or 'live' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info, content=item)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, is_playable=False, thumb=thumb, info=info, content=item)
         else:
             # fallback: treat as series if a seriesId exists, otherwise play
             sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
@@ -4450,7 +4706,7 @@ def search_group(q, group):
         elif 'movie' in itype_l or 'film' in itype_l:
             add_directory_item(display_title, {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=thumb, info=info, content=item)
         elif 'channel' in itype_l or 'live' in itype_l:
-            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, thumb=thumb, info=info, content=item)
+            add_directory_item(display_title, {'mode': 'play', 'id': item.get('id'), 'fmt': 'live'}, is_folder=False, is_playable=False, thumb=thumb, info=info, content=item)
         else:
             sid = item.get('seriesId') or (item.get('raw') or {}).get('seriesId') if isinstance(item.get('raw', {}), dict) else None
             if sid:
@@ -4568,6 +4824,581 @@ def _prepare_external_subtitles(sub_urls, api=None):
 # Global playback monitor for live TV subtitle control
 _playback_monitor = None
 
+EPG_DAY_COUNT = 4
+
+
+EPG_CACHE = {'rows': None, 'ts': 0}
+EPG_CACHE_TTL = 300  # seconds
+_epg_playback_active = False
+_epg_selected_channel = None
+EPG_DAY_BACK = 7
+EPG_DAY_FWD = 7
+
+
+def _epg_rows():
+    """Return one EPG row per channel for today and the next few days."""
+    import time
+    now_ts = time.time()
+    if EPG_CACHE['rows'] is not None and (now_ts - EPG_CACHE['ts']) < EPG_CACHE_TTL:
+        return EPG_CACHE['rows']
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
+
+    try:
+        channels = api.get_channels() or []
+    except Exception:
+        channels = []
+    channel_ids = [c.get('id') for c in channels if isinstance(c, dict) and c.get('id')]
+
+    try:
+        _tz = ZoneInfo('Europe/Amsterdam')
+    except Exception:
+        _tz = timezone.utc
+    now = datetime.now(tz=_tz)
+
+    epg_map = {}
+    seen = set()
+    for offset in range(-EPG_DAY_BACK, EPG_DAY_FWD + 1):
+        day = (now.date() + timedelta(days=offset)).isoformat()
+        try:
+            day_map = api.get_current_programs(channel_ids, date=day) if channel_ids else {}
+        except Exception:
+            day_map = {}
+        for cid, programs in (day_map or {}).items():
+            bucket = epg_map.setdefault(cid, [])
+            for pgm in programs or []:
+                key = (
+                    cid,
+                    pgm.get('id'),
+                    pgm.get('start'),
+                    pgm.get('stop'),
+                    pgm.get('title'),
+                )
+                if key in seen:
+                    continue
+                seen.add(key)
+                bucket.append(pgm)
+
+    rows = []
+    for channel in channels:
+        if not isinstance(channel, dict):
+            continue
+        cid = channel.get('id')
+        if not cid:
+            continue
+        entries = []
+        for pgm in epg_map.get(cid) or []:
+            try:
+                start = datetime.fromisoformat(pgm['start'])
+                end = datetime.fromisoformat(pgm['stop'])
+            except Exception:
+                continue
+            entries.append((start, end, pgm, start <= now <= end))
+        entries.sort(key=lambda item: item[0])
+        lines = []
+        future = [e for e in entries if e[1] >= now]
+        to_show = future[:2] if future else entries[:2]
+        for start, end, pgm, is_now in to_show:
+            prefix = '● NU ' if is_now else ''
+            lines.append('{0}{1}-{2}  {3}'.format(
+                prefix,
+                start.strftime('%H:%M'),
+                end.strftime('%H:%M'),
+                pgm.get('title') or '',
+            ))
+        current_title = ''
+        for start, end, pgm, is_now in entries:
+            if is_now:
+                current_title = pgm.get('title') or ''
+                break
+        rows.append({
+            'id': cid,
+            'title': channel.get('title') or str(cid),
+            'thumb': channel.get('thumb'),
+            'entries': entries,
+            'programs': '\n'.join(lines) if lines else 'Geen EPG beschikbaar',
+            'current_title': current_title or 'Geen EPG beschikbaar',
+        })
+    EPG_CACHE['rows'] = rows
+    EPG_CACHE['ts'] = time.time()
+    return rows
+
+
+class _EPGDialog(xbmcgui.WindowXMLDialog):
+    """EPG window: channels on the left, programmes scrolling horizontally."""
+
+    def __init__(self, *args, **kwargs):
+        self._rows = kwargs.pop('rows', [])
+        self._selected_day = 0
+        super().__init__(*args, **kwargs)
+
+    def onInit(self):
+        try:
+            try:
+                self.getControl(202).setLabel(get_string('epg_title'))
+            except Exception:
+                pass
+            try:
+                self.getControl(300).setLabel('Dag: Vandaag')
+            except Exception:
+                pass
+            control = self.getControl(100)
+            for row in self._rows:
+                item = xbmcgui.ListItem(label=row.get('title') or '')
+                thumb = row.get('thumb')
+                if thumb:
+                    item.setArt({'icon': thumb, 'thumb': thumb})
+                item.setProperty('current_title', row.get('current_title') or '')
+                item.setProperty('channel_id', str(row.get('id') or ''))
+                control.addItem(item)
+            # Restore previously selected channel.
+            global _epg_selected_channel
+            idx = 0
+            if _epg_selected_channel:
+                for i, row in enumerate(self._rows):
+                    if str(row.get('id') or '') == str(_epg_selected_channel):
+                        idx = i
+                        break
+            try:
+                control.selectItem(idx)
+            except Exception:
+                pass
+            self._load_programs(idx)
+        except Exception as exc:
+            xbmc.log('NLZiet EPG dialog populate failed: {0}'.format(exc), xbmc.LOGERROR)
+
+    def _load_programs(self, index):
+        try:
+            program_control = self.getControl(200)
+        except Exception:
+            return
+        program_control.reset()
+        if not self._rows:
+            return
+        index = max(0, min(index, len(self._rows) - 1))
+        row = self._rows[index]
+        channel_id = str(row.get('id') or '')
+        global _epg_selected_channel
+        _epg_selected_channel = channel_id
+        try:
+            self.getControl(201).setLabel(
+                '{0}  —  {1}'.format(row.get('title') or '', get_string('programs'))
+            )
+        except Exception:
+            pass
+        entries = row.get('entries') or []
+        # Filter to the selected day.
+        if entries:
+            from datetime import datetime as _dt, timedelta as _td
+            try:
+                _tzinfo = ZoneInfo('Europe/Amsterdam')
+            except Exception:
+                from datetime import timezone as _tz
+                _tzinfo = _tz.utc
+            target = (_dt.now(_tzinfo).date() + _td(days=self._selected_day))
+            filtered = [e for e in entries if (hasattr(e[0], 'date') and e[0].date() == target)]
+            xbmc.log('NLZiet EPG filter: selected_day={0} target={1} total={2} filtered={3}'.format(self._selected_day, target, len(entries), len(filtered)), xbmc.LOGINFO)
+            if filtered:
+                entries = filtered
+        if not entries:
+            item = xbmcgui.ListItem(label='Geen EPG beschikbaar')
+            item.setLabel2('Voor dit kanaal zijn geen programma\'s gevonden.')
+            program_control.addItem(item)
+            return
+        for start, end, pgm, is_now in entries:
+            title = pgm.get('title') or ''
+            display_title = ('[COLOR FFE50914]● NU[/COLOR] ' + title) if is_now else title
+            item = xbmcgui.ListItem(label=display_title)
+            image = pgm.get('image')
+            if image:
+                item.setArt({'icon': image, 'thumb': image})
+            when_date = _localized_weekday(start)
+            when_time = '{0} - {1}'.format(start.strftime('%H:%M'), end.strftime('%H:%M'))
+            when = '{0}  {1}'.format(when_date, when_time)
+            try:
+                item.setLabel2(when)
+            except Exception:
+                item.setProperty('time', when)
+            item.setProperty('epg_date', when_date)
+            item.setProperty('epg_time', when_time)
+            item.setProperty('channel_id', channel_id)
+            item.setProperty('epg_id', str(pgm.get('id') or ''))
+            item.setProperty('epg_asset_id', str(pgm.get('asset_id') or ''))
+            item.setProperty('epg_mode', 'epg' if pgm.get('is_replay') else ('vod' if pgm.get('is_vod') else 'live'))
+            item.setProperty('now_playing', 'true' if is_now else 'false')
+            item.setProperty('epg_title', title)
+            item.setProperty('epg_thumb', image or '')
+            menu = []
+            pid = str(pgm.get('id') or '')
+            mode = 'epg' if pgm.get('is_replay') else ('vod' if pgm.get('is_vod') else 'live')
+            if mode == 'live' and channel_id:
+                play_query = {'mode': 'play', 'id': channel_id, 'fmt': 'live'}
+            elif mode == 'epg' and pid:
+                play_query = {
+                    'mode': 'play',
+                    'id': pid,
+                    'fmt': 'epg',
+                    'asset_id': str(pgm.get('asset_id') or ''),
+                    'channel': channel_id,
+                    'thumb': image or '',
+                    'title': title,
+                }
+            elif pid:
+                play_query = {'mode': 'play', 'id': pid}
+            else:
+                play_query = None
+            if play_query:
+                menu.append((
+                    'Nu live kijken' if play_query.get('fmt') == 'live' else 'Play',
+                    'PlayMedia({0}{1})'.format(
+                        build_url(play_query),
+                        ',noresume' if play_query.get('fmt') in ('live', 'epg') else '',
+                    ),
+                ))
+            if pid:
+                menu.append((
+                    get_string('add_to_watch_later'),
+                    'RunPlugin({0})'.format(build_url({
+                        'mode': 'toggle_watch_later',
+                        'id': pid,
+                        'title': title,
+                        'type': 'episode',
+                        'group': 'episodes',
+                        'thumb': image or '',
+                    })),
+                ))
+                menu.append((
+                    get_string('add_to_my_series'),
+                    'RunPlugin({0})'.format(build_url({
+                        'mode': 'toggle_my_series',
+                        'id': pid,
+                        'title': title,
+                        'type': 'series',
+                        'group': 'series',
+                        'thumb': image or '',
+                    })),
+                ))
+            if menu:
+                item.addContextMenuItems(menu)
+            program_control.addItem(item)
+
+    def onAction(self, action):
+        action_id = action.getId()
+        try:
+            button_code = action.getButtonCode()
+        except Exception:
+            button_code = 0
+        xbmc.log('NLZiet EPG action_id={0} button_code={1}'.format(action_id, button_code), xbmc.LOGINFO)
+        # 'D' key (or info) opens the day selector.
+        if action_id in (11, 192, 18) or button_code in (61508, 0x44, 68):
+            self._select_day()
+            return
+        if action_id in (9, 10, 92):
+            try:
+                if self.getFocusId() == 200:
+                    self.setFocus(self.getControl(100))
+                    return
+            except Exception:
+                pass
+            self.close()
+            return
+        try:
+            focus_id = self.getFocusId()
+        except Exception:
+            focus_id = None
+        if focus_id == 100 and action_id in (3, 4):
+            try:
+                position = self.getControl(100).getSelectedPosition()
+                self._load_programs(position)
+            except Exception:
+                pass
+
+    def onClick(self, controlId):
+        if controlId == 300:
+            self._select_day()
+            return
+        if controlId == 200:
+            try:
+                item = self.getControl(200).getSelectedItem()
+                channel_id = item.getProperty('channel_id') if item else ''
+                program_id = item.getProperty('epg_id') if item else ''
+                mode = item.getProperty('epg_mode') if item else 'live'
+                asset_id = item.getProperty('epg_asset_id') if item else ''
+                title = item.getProperty('epg_title') if item else ''
+                thumb = item.getProperty('epg_thumb') if item else ''
+                is_now = (item.getProperty('now_playing') == 'true') if item else False
+            except Exception:
+                channel_id = program_id = asset_id = title = thumb = ''
+                mode = 'live'
+                is_now = False
+            self._show_program_menu(
+                channel_id, program_id, asset_id, mode, title, thumb, is_now
+            )
+            return
+        if controlId == 100:
+            try:
+                index = self.getControl(100).getSelectedPosition()
+            except Exception:
+                index = 0
+            self._load_programs(index)
+            # Move focus to the programme list so horizontal browsing requires Enter.
+            try:
+                self.setFocus(self.getControl(200))
+            except Exception:
+                pass
+
+    def _select_day(self):
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            try:
+                _tzinfo = ZoneInfo('Europe/Amsterdam')
+            except Exception:
+                from datetime import timezone as _tz
+                _tzinfo = _tz.utc
+            now = _dt.now(_tzinfo).date()
+            options = []
+            for i in range(-EPG_DAY_BACK, EPG_DAY_FWD + 1):
+                d = now + _td(days=i)
+                if i == 0:
+                    options.append('Vandaag ({0})'.format(d.strftime('%d-%m')))
+                elif i == 1:
+                    options.append('Morgen ({0})'.format(d.strftime('%d-%m')))
+                elif i == -1:
+                    options.append('Gisteren ({0})'.format(d.strftime('%d-%m')))
+                else:
+                    options.append(d.strftime('%a %d-%m'))
+            # offset in options corresponds to i+EPG_DAY_BACK
+            choice = xbmcgui.Dialog().select('Selecteer dag', options)
+            if choice < 0:
+                return
+            self._selected_day = choice - EPG_DAY_BACK
+            try:
+                self.getControl(300).setLabel(options[choice])
+            except Exception:
+                pass
+            index = 0
+            try:
+                index = self.getControl(100).getSelectedPosition()
+            except Exception:
+                index = 0
+            self._load_programs(index)
+        except Exception:
+            pass
+
+    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False):
+        options = []
+        actions = []
+        if is_now and channel_id:
+            options.append('Nu live kijken')
+            actions.append('play_live')
+        if mode == 'epg' and program_id:
+            options.append('Afspelen (terugkijken)')
+            actions.append('play_replay')
+        elif mode == 'vod' and program_id:
+            options.append('Afspelen')
+            actions.append('play_vod')
+        if program_id:
+            options.append(get_string('add_to_my_series'))
+            actions.append('my_series')
+            options.append(get_string('add_to_watch_later'))
+            actions.append('watch_later')
+        if not is_now and channel_id:
+            options.append('Nu live kijken')
+            actions.append('play_live')
+        options.append('Annuleren')
+        actions.append('cancel')
+        choice = xbmcgui.Dialog().select(title or 'Programma', options)
+        if choice < 0:
+            return
+        action = actions[choice]
+        if action == 'cancel':
+            return
+        global _epg_playback_active
+        _epg_playback_active = True
+        self.close()
+        xbmc.executebuiltin('Dialog.Close(all,true)')
+        import time
+        time.sleep(0.5)
+        if action == 'play_replay':
+            _play_media_url(build_url({
+                'mode': 'play',
+                'id': program_id,
+                'fmt': 'epg',
+                'asset_id': asset_id,
+                'channel': channel_id,
+                'thumb': thumb or '',
+                'title': title or '',
+            }), noresume=True)
+        elif action == 'play_vod':
+            _play_media_url(build_url({
+                'mode': 'play',
+                'id': program_id,
+            }))
+        elif action == 'play_live':
+            _play_media_url(build_url({
+                'mode': 'play',
+                'id': channel_id,
+                'fmt': 'live',
+            }), noresume=True)
+        if action == 'my_series':
+            toggle_my_series(program_id, title, 'series', thumb, 'series')
+            return
+        elif action == 'watch_later':
+            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes')
+            return
+
+
+
+
+def browse_epg():
+    """Show the custom EPG window, falling back to a directory list."""
+    # Install the 'D' hotkey keymap for the EPG day selector (best-effort).
+    try:
+        import shutil
+        src = os.path.join(ADDON.getAddonInfo('path'), 'resources', 'keymaps', 'keyboard.xml')
+        dst_dir = xbmc.translatePath('special://profile/keymaps/')
+        os.makedirs(dst_dir, exist_ok=True)
+        dst = os.path.join(dst_dir, 'nlziet_epg.xml')
+        if not os.path.exists(dst) and os.path.exists(src):
+            shutil.copyfile(src, dst)
+    except Exception:
+        pass
+    # Set up a monitor to reopen EPG when playback stops (only if played from EPG).
+    try:
+        if not getattr(_EPGDialog, '_monitor_started', False):
+            _EPGDialog._monitor_started = True
+            xbmc.log('NLZiet EPG: starting playback monitor', xbmc.LOGINFO)
+            import threading
+            def _epg_monitor():
+                was_playing = False
+                while True:
+                    try:
+                        playing = xbmc.Player().isPlaying()
+                    except Exception:
+                        playing = False
+                    if playing:
+                        was_playing = True
+                    elif was_playing:
+                        # Playback just stopped.
+                        was_playing = False
+                        global _epg_playback_active
+                        xbmc.log('NLZiet EPG: playback stopped, active={0}'.format(_epg_playback_active), xbmc.LOGINFO)
+                        if _epg_playback_active:
+                            _epg_playback_active = False
+                            xbmc.sleep(1000)
+                            try:
+                                browse_epg()
+                            except Exception as exc:
+                                xbmc.log('NLZiet EPG: reopen failed {0}'.format(exc), xbmc.LOGWARNING)
+                    time.sleep(1)
+            import time
+            threading.Thread(target=_epg_monitor, daemon=True).start()
+    except Exception as exc:
+        xbmc.log('NLZiet EPG: monitor setup failed {0}'.format(exc), xbmc.LOGWARNING)
+    try:
+        rows = _epg_rows()
+        dialog = _EPGDialog(
+            'epg.xml',
+            ADDON.getAddonInfo('path'),
+            'Default',
+            '1080i',
+            rows=rows,
+        )
+        dialog.doModal()
+        del dialog
+        return
+    except Exception as exc:
+        xbmc.log('NLZiet EPG dialog failed, using list: {0}'.format(exc), xbmc.LOGWARNING)
+    try:
+        return _browse_epg_impl()
+    except Exception as exc:
+        xbmc.log('NLZiet browse_epg failed: {0}'.format(exc), xbmc.LOGERROR)
+        try:
+            xbmcplugin.endOfDirectory(HANDLE)
+        except Exception:
+            pass
+
+
+def _browse_epg_impl():
+    username = ADDON.getSetting('username')
+    password = ADDON.getSetting('password')
+    try:
+        api = get_api_instance()
+    except Exception:
+        api = NLZietAPI(username=username, password=password)
+
+    try:
+        channels = api.get_channels() or []
+    except Exception:
+        channels = []
+    channel_ids = [c.get('id') for c in channels if isinstance(c, dict) and c.get('id')]
+    try:
+        epg_map = api.get_current_programs(channel_ids) if channel_ids else {}
+    except Exception:
+        epg_map = {}
+
+    channel_by_id = {c.get('id'): c for c in channels if isinstance(c, dict)}
+
+    try:
+        _tz = ZoneInfo('Europe/Amsterdam')
+    except Exception:
+        _tz = timezone.utc
+    now = datetime.now(tz=_tz)
+
+    for cid in channel_ids:
+        channel = channel_by_id.get(cid) or {}
+        channel_title = channel.get('title') or str(cid)
+        for pgm in epg_map.get(cid) or []:
+            try:
+                start = datetime.fromisoformat(pgm['start'])
+                end = datetime.fromisoformat(pgm['stop'])
+            except Exception:
+                continue
+            if end < now - timedelta(hours=1):
+                continue
+            if start > now + timedelta(hours=12):
+                continue
+            label = '{channel}  {start}-{end}  {title}'.format(
+                channel=channel_title,
+                start=start.strftime('%H:%M'),
+                end=end.strftime('%H:%M'),
+                title=pgm.get('title') or '',
+            )
+            query = {}
+            stream = pgm.get('stream')
+            if stream:
+                # extract mode/id if plugin url
+                query = {'mode': 'play', 'id': None}
+                # fallback: play via stream url directly
+                item_url = stream
+            else:
+                item_url = None
+            thumb = pgm.get('image')
+            info = {'title': pgm.get('title') or '', 'plot': pgm.get('title') or ''}
+            if item_url:
+                add_directory_item(label, {'mode': 'play', 'id': _extract_id_from_stream(stream)}, is_folder=False, thumb=thumb, info=info)
+            else:
+                add_directory_item(label, {'mode': 'browse_epg'}, is_folder=False, thumb=thumb, info=info)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def _extract_id_from_stream(stream):
+    try:
+        import urllib.parse
+        parsed = urllib.parse.urlparse(stream)
+        qs = urllib.parse.parse_qs(parsed.query)
+        ids = qs.get('id')
+        if ids:
+            return ids[0]
+    except Exception:
+        pass
+    return ''
+
+
 def play_item(content_id, fmt=None, **kwargs):
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
@@ -4579,10 +5410,56 @@ def play_item(content_id, fmt=None, **kwargs):
         api = NLZietAPI(username=username, password=password)
     xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGINFO)
     if fmt == 'live':
+        # Kodi stores a resume bookmark (live streams look like VOD). Remove
+        # it so playback never offers "Resume from …" and starts at 0:00:00.
+        _clear_resume_bookmark(content_id)
         info = api.get_stream_info(content_id, context='Live')
         xbmc.log(f"NLZiet LIVE TV: id={content_id} context='Live'", xbmc.LOGINFO)
+        # Build playback metadata so the OSD shows channel + current programme.
+        try:
+            channels = api.get_channels() or []
+            channel_title = next((c.get('title') for c in channels if isinstance(c, dict) and c.get('id') == content_id), None) or content_id
+            channel_thumb = next((c.get('thumb') for c in channels if isinstance(c, dict) and c.get('id') == content_id), None)
+            epg_map = api.get_current_programs([content_id]) or {}
+            now_pgm = None
+            for pgm in epg_map.get(content_id) or []:
+                try:
+                    from datetime import datetime as _dt
+                    start = _dt.fromisoformat(pgm['start'])
+                    end = _dt.fromisoformat(pgm['stop'])
+                    if start <= _dt.now(start.tzinfo) <= end:
+                        now_pgm = pgm
+                        break
+                except Exception:
+                    pass
+            kwargs.setdefault('title', channel_title)
+            if channel_thumb:
+                kwargs.setdefault('thumb', channel_thumb)
+            if now_pgm:
+                kwargs.setdefault('plot', now_pgm.get('title') or '')
+                kwargs.setdefault('programme', now_pgm.get('title') or '')
+                if now_pgm.get('image'):
+                    kwargs['thumb'] = now_pgm.get('image')
+            xbmc.log('NLZiet LIVE metadata: title={0} plot={1} thumb={2}'.format(
+                kwargs.get('title'), kwargs.get('plot'), kwargs.get('thumb')), xbmc.LOGINFO)
+        except Exception as exc:
+            xbmc.log('NLZiet LIVE metadata failed: {0}'.format(exc), xbmc.LOGWARNING)
     elif fmt == 'epg':
-        info = api.get_stream_info(content_id, context='Epg', **kwargs)
+        # Replay must also start at 0:00:00 without a resume prompt.
+        _clear_resume_bookmark(content_id)
+        stream_kwargs = {k: v for k, v in (kwargs or {}).items() if k in ('asset_id', 'channel')}
+        info = api.get_stream_info(content_id, context='Epg', **stream_kwargs)
+        # Use the programme icon/title passed from the EPG when available.
+        try:
+            if not kwargs.get('title'):
+                kwargs.setdefault('title', info.get('title') or '')
+            if not kwargs.get('plot'):
+                kwargs.setdefault('plot', info.get('description') or info.get('plot') or kwargs.get('title') or '')
+            if not kwargs.get('thumb'):
+                img = info.get('image') or {}
+                kwargs.setdefault('thumb', info.get('posterUrl') or img.get('landscapeUrl') or img.get('portraitUrl') or '')
+        except Exception:
+            pass
     else:
         info = api.get_stream_info(content_id)
         xbmc.log(f"NLZiet REGULAR content: id={content_id} (not live)", xbmc.LOGINFO)
@@ -4591,6 +5468,46 @@ def play_item(content_id, fmt=None, **kwargs):
         kwargs, info, api=api, content_id=content_id
     ) if fmt != 'live' else kwargs
     is_drm = info.get('is_drm')
+    # Replay of a live programme: the API returns a live (dynamic) stream that
+    # starts at the live edge. Seek to the beginning (0:00:00) so the programme
+    # plays from the start instead of jumping to realtime. Only seek for live
+    # (dynamic) streams; VOD replays already start at 0.
+    is_live_replay = fmt == 'epg' and 'start=' in str(manifest or '')
+    xbmc.log('NLZiet replay: is_live_replay={0}'.format(is_live_replay), xbmc.LOGINFO)
+    if is_live_replay:
+        try:
+            import threading
+            import json as _json
+            def _seek_replay_to_start():
+                for _ in range(60):
+                    try:
+                        state = xbmc.executeJSONRPC(_json.dumps({
+                            'jsonrpc': '2.0', 'method': 'Player.GetProperties',
+                            'params': {'playerid': 1, 'properties': ['speed']},
+                            'id': 1,
+                        }))
+                        res = _json.loads(state).get('result', {})
+                        if res.get('speed', 0) != 0:
+                            break
+                    except Exception:
+                        pass
+                    time.sleep(0.5)
+                else:
+                    return
+                time.sleep(1)
+                try:
+                    xbmc.executeJSONRPC(_json.dumps({
+                        'jsonrpc': '2.0', 'method': 'Player.Seek',
+                        'params': {'playerid': 1, 'value': {'percentage': 0}},
+                        'id': 1,
+                    }))
+                    xbmc.log('NLZiet replay seek to 0:00:00 done', xbmc.LOGINFO)
+                except Exception as exc:
+                    xbmc.log(f'NLZiet replay seek failed: {exc}', xbmc.LOGWARNING)
+            import time
+            threading.Thread(target=_seek_replay_to_start, daemon=True).start()
+        except Exception:
+            pass
     subs_in_info = info.get('subtitles')
     xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGINFO)
     xbmc.log(f"NLZiet info subtitles value: {repr(subs_in_info)} (type: {type(subs_in_info).__name__})", xbmc.LOGINFO)
@@ -4923,6 +5840,7 @@ def get_route_handlers():
         'browse_series_genre': browse_series_genre,
         'browse_movie_categories': browse_movie_categories,
         'browse_movie_genre': browse_movie_genre,
+        'browse_epg': browse_epg,
         'browse_category': browse_category,
         'play_item': play_item,
         'select_iptv_channels': select_iptv_channels,

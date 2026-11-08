@@ -1,6 +1,24 @@
 # Changelog
 
-> **Latest Version:** v1.4.5 (November 6, 2026)
+> **Latest Version:** v1.5.0 (November 8, 2026)
+
+## [1.5.0] - 2026-11-08
+
+### Added
+- **Custom EPG**: full-screen EPG dialog with channels on the left and horizontally scrolling programmes on the right. Shows channel logos, current programme (● NU), and date/time per programme. Browse today + 7 days back/forward via a day selector (press I / Info).
+- **Live TV restart/replay**: "Afspelen (terugkijken)" on live programmes now starts from the beginning instead of jumping to realtime.
+- **Context menu**: long-press Enter on any programme for Play / Add to My Series / Add to Watch Later.
+- **Auto subtitle cache clearing**: optional periodic clearing of the subtitle cache (configurable hours).
+- **Menu icons**: refreshed premium icon set.
+
+### Fixed
+- **Live TV resume prompt**: live streams no longer offer "Resume from …"; always start at the live edge.
+- **EPG day filtering**: selecting a day now correctly filters programmes to that day.
+- **EPG channel highlight**: selected channel stays highlighted while browsing programmes.
+- **Subtitle cache settings**: spinner now has min/max/step so a duration can be selected.
+- **EPG return after playback**: returns to EPG when playback stops.
+
+All notable changes to this project are recorded in this file.
 
 ## [1.4.5] - 2026-11-06
 

@@ -81,6 +81,9 @@ class FakeListItem:
     def setArt(self, art):
         self.art.update(art)
 
+    def setLabel(self, value):
+        self.label = value
+
     def setLabel2(self, value):
         self.label2 = value
 
@@ -132,6 +135,23 @@ def _install_kodi_stubs():
     xbmcgui.ALPHANUM_HIDE_INPUT = 2
     xbmcgui.Dialog = FakeDialog
     xbmcgui.ListItem = FakeListItem
+    xbmcgui.WindowXMLDialog = type(
+        'WindowXMLDialog',
+        (),
+        {
+            '__init__': lambda self, *args, **kwargs: None,
+            'doModal': lambda self: None,
+            'close': lambda self: None,
+            'getControl': lambda self, control_id: type(
+                'Control',
+                (),
+                {
+                    'addItem': lambda self, item: None,
+                    'getSelectedItem': lambda self: None,
+                },
+            )(),
+        },
+    )
 
     xbmcplugin = types.ModuleType('xbmcplugin')
     xbmcplugin.setContent = lambda handle, content: RECORDER.set_content.append((handle, content))

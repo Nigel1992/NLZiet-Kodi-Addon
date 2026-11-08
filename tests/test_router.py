@@ -19,6 +19,7 @@ EXPECTED_HANDLER_NAMES = {
     'browse_tv_genre', 'browse_series_categories', 'browse_series_genre',
     'browse_movie_categories', 'browse_movie_genre', 'browse_category',
     'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
+    'browse_epg',
 }
 
 
@@ -158,4 +159,23 @@ def test_library_export_and_diagnostics_routes_dispatch():
     assert calls == [
         ('export_series_library', ('s1',), {}),
         ('export_diagnostics', (), {}),
+    ]
+
+
+def test_play_route_does_not_forward_mode_keyword():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch(
+        'mode=play&id=abc&fmt=epg&asset_id=asset&channel=npo1'
+    )
+    router.dispatch('mode=play&id=npo1&fmt=live')
+
+    assert calls == [
+        ('play_item', ('abc',), {
+            'fmt': 'epg',
+            'asset_id': 'asset',
+            'channel': 'npo1',
+        }),
+        ('play_item', ('npo1',), {'fmt': 'live'}),
     ]

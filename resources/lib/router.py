@@ -90,6 +90,8 @@ class Router:
             self.handlers['export_diagnostics']()
         elif mode == 'clear_subtitle_cache':
             self.handlers['clear_subtitle_cache']()
+        elif mode == 'browse_epg':
+            self.handlers['browse_epg']()
         elif mode == 'search_group':
             self.handlers['search_group'](params.get('q'), params.get('group'))
         elif mode == 'series_detail':
@@ -126,6 +128,7 @@ class Router:
             self.handlers['browse_category'](params.get('type', 'all'))
         elif mode == 'play':
             content_id = params.pop('id')
+            params.pop('mode', None)
             self.handlers['play_item'](content_id, **params)
         elif mode == 'iptv-select-channels':
             self.handlers['select_iptv_channels']()
