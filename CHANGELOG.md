@@ -1,6 +1,15 @@
 # Changelog
 
-> **Latest Version:** v1.6.0 (November 8, 2026)
+> **Latest Version:** v1.6.1 (November 8, 2026)
+
+## [1.6.1] - 2026-11-08
+
+### Fixed
+- **Live TV OSD**: the OSD now shows the current programme's title and description instead of only the channel name.
+- **Stored lists OSD**: items played from Watch Later / My List now show their stored title, description and artwork on the OSD.
+- **My Series from EPG**: EPG programmes (e.g. Pawn Stars) can now be added to My Series.
+- **Watch Later from EPG**: only programmes that can actually be replayed later are accepted; future programmes are added with a clear message about when they can be played.
+- **Watch Later menu**: stored descriptions now come through on the OSD.
 
 ## [1.6.0] - 2026-11-08
 
