@@ -1245,7 +1245,7 @@ def test_my_series_refuses_non_series_item(monkeypatch, kodi_recorder):
 
     monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
 
-    default.toggle_my_series('e1', 'Aflevering', None, 'img', 'series')
+    default.toggle_my_series('e1', None, None, 'img', 'movies')
 
     assert state['items'] == []
     assert kodi_recorder.notifications[-1][1] == default.get_string('only_series')

@@ -3939,6 +3939,11 @@ def _list_add_problem(kind, detail, stored_type, replay_ok=None, title=None):
         stored = str(stored_type or '').lower()
         confirmed = 'series' in stored or 'tvshow' in stored or bool(isinstance(detail, dict) and detail.get('seasons'))
         if not confirmed:
+            # EPG programmes are episodes of a series. Accept them for My Series
+            # even when the detail endpoint returns 404, which NLZiet does for
+            # replay items.
+            if group == 'series':
+                return None
             return 'only_series'
     return None
 
@@ -3952,7 +3957,7 @@ def _item_playable_now(api, item_id):
     return bool(info.get('manifest'))
 
 
-def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None):
+def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None, description=None):
     """Add or remove an item from a local list.
 
     ``kind`` is one of 'mylist' (any content), 'watch_later' (episodes and
@@ -4021,6 +4026,8 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
             if problem:
                 xbmcgui.Dialog().notification('NLZiet', get_string(problem), xbmcgui.NOTIFICATION_INFO)
                 return
+            if not (detail.get('description') or detail.get('plot')) and description:
+                detail['description'] = description
             if kind == 'watch_later' and replay_ok is not None:
                 if aired:
                     if not _item_playable_now(api, item_id):
@@ -4039,7 +4046,7 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
                 'group': stored_group,
                 'posterUrl': thumb or detail.get('thumb') or None,
                 'thumb': thumb or detail.get('thumb') or None,
-                'description': detail.get('description') or '',
+                'description': detail.get('description') or description or '',
                 'expires_at': detail.get('expires_at'),
             }
             if raw:
@@ -4136,8 +4143,8 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None, group=None):
     _toggle_local_list('mylist', item_id, title, type, thumb, group)
 
 
-def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None):
-    _toggle_local_list('watch_later', item_id, title, type, thumb, group, replay_ok=replay_ok, aired=aired, started=started)
+def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None, description=None):
+    _toggle_local_list('watch_later', item_id, title, type, thumb, group, replay_ok=replay_ok, aired=aired, started=started, description=description)
 
 
 def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None):
@@ -5632,7 +5639,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             toggle_my_series(program_id, title, None, thumb, 'series')
             return
         elif action == 'watch_later':
-            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes', replay_ok=watch_later_vod, aired=aired, started=started)
+            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes', replay_ok=watch_later_vod, aired=aired, started=started, description=pgm.get('description') or pgm.get('plot') or '')
             return
 
 
@@ -5791,11 +5798,57 @@ def play_item(content_id, fmt=None, **kwargs):
         # Fallback to creating a new instance if cache fails
         api = NLZietAPI(username=username, password=password)
     xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGINFO)
+    # Stored list items (Watch Later / My List) are played by id only, so look
+    # their title, description and artwork up from the local lists so the OSD
+    # and Trakt metadata are complete.
+    if fmt not in ('live', 'epg') and not kwargs.get('title'):
+        try:
+            api_local = get_api_instance()
+            for fetcher in (getattr(api_local, 'get_watch_later', None), getattr(api_local, 'get_my_list', None)):
+                if not callable(fetcher):
+                    continue
+                for item in (fetcher() or []):
+                    if str(item.get('id')) == str(content_id):
+                        if item.get('title'):
+                            kwargs.setdefault('title', item.get('title'))
+                        desc = item.get('description') or ''
+                        if desc:
+                            kwargs.setdefault('plot', desc)
+                            kwargs.setdefault('description', desc)
+                        thumb = item.get('thumb') or item.get('posterUrl')
+                        if thumb:
+                            kwargs.setdefault('thumb', thumb)
+                        break
+                if kwargs.get('title'):
+                    break
+        except Exception:
+            pass
     if fmt == 'live':
         # Kodi stores a resume bookmark (live streams look like VOD). Remove
         # it so playback never offers "Resume from …" and starts at 0:00:00.
         _clear_resume_bookmark(content_id)
         info = api.get_stream_info(content_id, context='Live')
+        try:
+            # Look up the current programme's description so the OSD can show it.
+            epg_map = api.get_current_programs([content_id]) or {}
+            now_pgm = None
+            for pgm in epg_map.get(content_id) or []:
+                try:
+                    from datetime import datetime as _dt
+                    start = _dt.fromisoformat(pgm['start'])
+                    end = _dt.fromisoformat(pgm['stop'])
+                    if start <= _dt.now(start.tzinfo) <= end:
+                        now_pgm = pgm
+                        break
+                except Exception:
+                    pass
+            if now_pgm:
+                desc = now_pgm.get('description') or now_pgm.get('plot') or ''
+                if desc:
+                    kwargs.setdefault('description', desc)
+                    kwargs.setdefault('plot', desc)
+        except Exception:
+            pass
         xbmc.log(f"NLZiet LIVE TV: id={content_id} context='Live'", xbmc.LOGINFO)
         # Build playback metadata so the OSD shows channel + current programme.
         try:
@@ -5818,7 +5871,9 @@ def play_item(content_id, fmt=None, **kwargs):
             if channel_thumb:
                 kwargs.setdefault('thumb', channel_thumb)
             if now_pgm:
-                kwargs.setdefault('plot', now_pgm.get('title') or '')
+                if now_pgm.get('title'):
+                    kwargs['title'] = now_pgm.get('title')
+                kwargs.setdefault('plot', now_pgm.get('description') or now_pgm.get('plot') or now_pgm.get('title') or '')
                 kwargs.setdefault('programme', now_pgm.get('title') or '')
                 if now_pgm.get('image'):
                     kwargs['thumb'] = now_pgm.get('image')
@@ -5837,6 +5892,8 @@ def play_item(content_id, fmt=None, **kwargs):
                 kwargs.setdefault('title', info.get('title') or '')
             if not kwargs.get('plot'):
                 kwargs.setdefault('plot', info.get('description') or info.get('plot') or kwargs.get('title') or '')
+            if kwargs.get('description') and not kwargs.get('plot'):
+                kwargs['plot'] = kwargs['description']
             if not kwargs.get('thumb'):
                 img = info.get('image') or {}
                 kwargs.setdefault('thumb', info.get('posterUrl') or img.get('landscapeUrl') or img.get('portraitUrl') or '')
