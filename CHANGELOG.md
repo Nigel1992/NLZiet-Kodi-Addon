@@ -10,13 +10,14 @@
 - **Context menu**: long-press Enter on any programme for Play / Add to My Series / Add to Watch Later.
 - **Auto subtitle cache clearing**: optional periodic clearing of the subtitle cache (configurable hours).
 - **Menu icons**: refreshed premium icon set.
-
-### Fixed
 - **Live TV resume prompt**: live streams no longer offer "Resume from …"; always start at the live edge.
 - **EPG day filtering**: selecting a day now correctly filters programmes to that day.
 - **EPG channel highlight**: selected channel stays highlighted while browsing programmes.
 - **Subtitle cache settings**: spinner now has min/max/step so a duration can be selected.
 - **EPG return after playback**: returns to EPG when playback stops.
+- **EPG OSD info**: title, plot, and icon now shown during playback.
+- **EPG layout**: professional date/time layout on programme cards.
+- **Live TV via EPG**: fixed blue spinning circle; playback starts correctly.
 
 All notable changes to this project are recorded in this file.
 
