@@ -194,7 +194,9 @@
             <maximum>168</maximum>
             <step>1</step>
           </constraints>
-          <visible>eq(-1,true)</visible>
+          <dependencies>
+            <dependency type="enable" setting="auto_clear_subtitle_cache">true</dependency>
+          </dependencies>
           <control type="spinner" format="integer"/>
         </setting>
       </group>
