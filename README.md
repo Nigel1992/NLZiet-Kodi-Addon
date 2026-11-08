@@ -176,23 +176,68 @@ Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZi
 
 ---
 
-## ⚙️ Instellingen
+### Local Addon Check (Filtered Source)
 
-Zie `resources/settings.xml` voor alle beschikbare instellingen (account, synchronisatie, ondertitels, cache, meldingen, debug).  
+Om addon-check lokaal te draaien zonder lokale omgeving/cache-mappen te scannen, gebruik:
+
+```bash
+scripts/run-addon-check-local.sh
+```
+
+Alleen een specifieke branch:
+
+```bash
+scripts/run-addon-check-local.sh --branch omega
+```
 
 ---
 
-## 🛠️ Ontwikkeling
+## 🛣️ Roadmap / Binnenkort
 
-- Python 3 (Kodi 19+).  
-- Tests: `python -m pytest` (155 tests).  
-- Addon-check: `bash scripts/run-addon-check-local.sh`.  
+- **Kids Profile Support**: Volledige kids-modus en ouderlijk toezicht.
+- **Verbeterd zoeken**: Filteren op genre, jaar, releasedatum en meer.
+- **Afspeelgeschiedenis-UI**: Toon Trakt-backed kijkstatus direct in NLZiet-menu's.
+- **Geavanceerd sorteren**: Sorteer series op nieuwste, oudste, alfabetisch, populariteit.
+- **UI Polish**: Verbeterde skin-integratie, aangepaste infodialogen en animaties.
+- **Geautomatiseerd testen**: CI/CD-pipeline voor codekwaliteit en geautomatiseerde releases.
+
+---
+
+## 📝 To-Do
+
+- [X] **Fix issue waarbij maar 50 films/series worden getoond** (paginering/limit-afhandeling)
+- [X] **Afleveringen gebruiken afleveringstitel in plaats van telling** (toon SxxExx of Afl. N indien mogelijk)
+- [X] **Fix submappen in series-optie** (betere seizoen/aflevering-navigatie)
+- [ ] **Verbeter foutmeldingen en gebruikersfeedback**
+- [ ] **Betere artwork en fanart voor alle content**
+- [X] **Instellingen: aangepast API-endpoint toestaan voor gevorderde gebruikers**
+- [ ] **Meer debug- en diagnostische tools toevoegen**
+- [ ] **Toegankelijkheidsverbeteringen voor schermlezers**
+- [X] **Unit tests voor routing, afspeelmetadata en Trakt scrobbling**
+
+## 💖 Steun het project
+
+Alle donaties gaan naar een door jou gekozen goed doel. Je kunt elk goed doel kiezen, en 5% wordt ingehouden vanwege Ko-Fi-kosten. Als dank wordt je naam vermeld als supporter/donor in een GitHub-project. Stuur gerust een e-mail naar thedjskywalker@gmail.com voor bewijs! :)
+
+[![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/nigel1992)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=KYV9ARF99ZSCE)
+
+---
+
+## 🤝 Bijdragen
+
+Pull requests, bugrapporten en featuresuggesties zijn welkom. Open een issue of pull request in deze repository.
 
 ---
 
 ## 📄 Licentie
 
-MIT — zie [LICENSE](LICENSE).  
+MIT. Zie [LICENSE](LICENSE).
 
+---
+
+## ⚠️ Disclaimer
+
+Dit project is niet gelieerd aan of onderschreven door NLZiet. Gebruik op eigen risico. Alleen voor persoonlijk, niet-commercieel gebruik.
 
 </details>
