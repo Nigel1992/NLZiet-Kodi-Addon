@@ -305,12 +305,13 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 <details>
 <summary><b>Nederlands</b></summary>
 
+
 ## ✨ Functies
 
 - **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info. Bevat een aangepaste volledig-scherm EPG (TV Gids) met zendernamen, huidige-programma-indicator en 7 dagen bladeren.
 - **Series**: Blader, zoek en speel series af met volledige seizoen/aflevering-navigatie.
 - **Films**: Ontdek en kijk films uit de NLZiet-catalogus.
-- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**. **Kijk Later** bevat afleveringen en films, terwijl **Mijn Series** hele series volgt — elk item toont de bijpassende actie in het contextmenu. Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
+- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**. **Kijk Later** (Watch Later) bevat afleveringen en films, terwijl **Mijn Series** (My Series) hele series volgt — elk item toont de bijpassende actie in het contextmenu. Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
 - **Profielbeheer**: Schakel tussen gebruikersprofielen vanuit de Kodi-UI.
 - **Lokalisatie**: Alle gebruikerstekst wordt opgelost via Kodi's taalsysteem (Nederlands en Engels inbegrepen); Engels is de fallback voor talen zonder vertaalbestand.
 - **DRM-ondersteuning**: Widevine-beschermde streams via `inputstream.adaptive` met automatische `inputstreamhelper`-verificatie.
@@ -324,6 +325,100 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 - **Nieuwe-aflevering-tracking**: Mijn Series markeert series met nieuwe afleveringen, en Kijk Later kan alleen afleveringen volgen die vanaf nu worden uitgezonden.
 - **Responsieve navigatie**: achtergrond-sync en onderhoud blokkeert geen menunavigatie of terugkeer vanaf afspelen.
 - **Debug Logging**: Eenvoudige logverzameling voor probleemoplossing.
+---
+
+### Nieuw in v1.6.1
+
+- **Live TV OSD**: de OSD toont nu de titel en beschrijving van het huidige programma in plaats van alleen de zendernaam.
+- **Opgeslagen lijsten OSD**: items afgespeeld vanuit Kijk Later / Mijn Lijst tonen hun titel, beschrijving en artwork op de OSD.
+- **Mijn Series vanuit EPG**: EPG-programma's (bijv. Pawn Stars) kunnen nu worden toegevoegd aan Mijn Series.
+- **Kijk Later vanuit EPG**: alleen programma's die later terug te kijken zijn worden geaccepteerd; toekomstige programma's worden toegevoegd met een duidelijke melding over wanneer ze afgespeeld kunnen worden.
+- **Kijk Later-menu**: opgeslagen beschrijvingen komen nu door op de OSD.
+
+### Nieuw in v1.6.0
+
+- **TV Gids-tijdlijn**: de EPG is een tijdlijnrooster met zenders links en programmblokken over het scherm. Afgelopen programma's zijn grijs, live-programma's blauw en toekomstige programma's groen. Een witte lijn toont de huidige tijd.
+- **Programmabeschrijving**: de beschrijving van het geselecteerde programma wordt onderaan getoond en scrolt automatisch.
+- **Sneller openen en dagwisselen**: de EPG opent direct vanuit gecachte data; het kiezen van een dag ververst deze.
+- **Terug naar positie**: nadat afspelen gestart vanuit de EPG stopt, heropent de EPG op dezelfde plek.
+- **Alle cache wissen**: een instellingenknop wist alle add-on-caches, met optioneel automatisch wissen.
+
+### Nieuw in v1.5.0
+
+- **Aangepaste EPG**: volledig-scherm EPG-dialoog met zenders links en horizontaal scrollende programma's rechts. Toont zendernamen, huidige programma (● NU) en datum/tijd per programma. Blader vandaag + 7 dagen terug/vooruit via een dagkiezer (druk op I / Info).
+- **Live TV herstart/replay**: "Afspelen (terugkijken)" bij live-programma's begint nu vanaf het begin in plaats van naar realtime te springen.
+- **Contextmenu**: lang indrukken op Enter bij elk programma voor Afspelen / Toevoegen aan Mijn Series / Toevoegen aan Kijk Later.
+- **Automatisch ondertitelcache wissen**: optioneel periodiek wissen van de ondertitelcache (configureerbare uren).
+- **Menu-iconen**: vernieuwde premium iconenset.
+- **Live TV hervatprompt**: live-streams bieden niet langer "Hervatten van …"; starten altijd aan de live-rand.
+- **EPG-dagfiltering**: het kiezen van een dag filtert nu correct programma's naar die dag.
+- **EPG-zenderhighlight**: geselecteerde zender blijft gemarkeerd tijdens het bladeren door programma's.
+- **Ondertitelcache-instellingen**: spinner heeft nu min/max/stap zodat een duur kan worden gekozen.
+
+### Nieuw in v1.4.4.1 (hotfix)
+
+- **Sneller Mijn Series laden**: detecteren van nieuw toegevoegde afleveringen blokkeert het renderen van de lijst niet langer; de controle (en eventuele highlight/refresh) draait nu op de achtergrond.
+
+### Nieuw in v1.4.4
+
+- **Zoekgeschiedenis**: recente zoekopdrachten worden lokaal opgeslagen, kunnen worden hergebruikt en selectief worden verwijderd.
+- **Mijn Series nieuwe-aflevering-indicator**: series met afleveringen die sinds de vorige controle zijn verschenen worden met een groene titel getoond.
+- **Series-add-modus**: kies tussen het toevoegen van alle bestaande afleveringen aan Kijk Later of het volgen van alleen nieuwe afleveringen vanaf nu. De huidige afleveringen worden de basislijn en worden niet toegevoegd.
+- **Ondertitelcache-beheer**: wis opgeschoonde ondertitelbestanden via Instellingen → Debugging.
+- **Snellere navigatie**: backfill, lijstsynchronisatie, automatische afleveringscontroles, vervaldatumcontroles en tokencontroles blokkeren menunavigatie of terugkeer vanaf afspelen niet langer onnodig.
+
+### Nieuw in v1.4.3
+
+- **Kijk Later-seriemappen**: wanneer je alle afleveringen van een serie toevoegt aan Kijk Later (of twee of meer afleveringen van dezelfde serie hebt), verschijnen ze in een map met seizoenssubmappen. Afleveringen worden gesorteerd op seizoen en afleveringsnummer (via NLZiet-codes of TVmaze), en labels tonen "Aflevering X: ..." voor eenvoudiger bladeren.
+- **Alle afleveringen toevoegen aan Watch Later**: rechtsklik op een serie of aflevering om elke aflevering van die serie in Kijk Later als één collectie in de wachtrij te zetten.
+- **Automatisch nieuwe afleveringen toevoegen**: optioneel nieuwe afleveringen toevoegen voor series in Mijn Series en afleveringen die al in Kijk Later staan. De eerste keer dat je het inschakelt, worden alleen nieuwe afleveringen die na dat moment worden toegevoegd in de wachtrij gezet.
+- **Vervaldatummeldingen**: ontvang een melding wanneer items in Kijk Later of Mijn Series bijna verlopen, met een configureerbaar tijdvenster en per-lijst toggles (Instellingen → Meldingen).
+- **TVmaze-integratie**: ontbrekende seizoen/afleveringsnummers worden via TVmaze opgelost, zodat sortering en labels werken voor series waar NLZiet ze weglaat (bijv. Blue Murder Motel).
+- **Verbeterde Kijk Later-sortering**: afleveringen van dezelfde serie worden gegroepeerd en gesorteerd op uitzendtijd, en afleveringsubtitels worden getoond zelfs voor items die in bulk zijn toegevoegd.
+
+### Nieuw in v1.4.2
+
+- **Afleveringsinfo in Kijk Later**: elk item toont nu zijn afleveringsnummering ("Afl. 3 van 12") en hoe lang het nog beschikbaar is ("nog 5 dagen beschikbaar") als twee subtiel gekleurde regels bovenaan de beschrijving, zowel in de infodialog als in de outline. Nummering wordt opgelost vanuit de seizoenscatalogus (één keer per serie/seizoen opgehaald) en valt terug op de afleveringssubtitel als er geen catalogusdata is.
+- **Opgelost**: opgeslagen lijsten toonden het **zenderlogo** in plaats van de echte poster. De ruwe NLZiet-payload voor Kijk Later / Mijn Lijst-items bevat alleen het zenderlogo, dat de artwork-picker prefereerde boven de echte artwork; echte posters en stills winnen nu altijd, en zenderlogo's worden alleen als laatste redmiddel gebruikt (zoals de zenderlijst).
+- **Opgelost**: **NPO-teletekst-ondertitels** worden opgeschoond. NPO publiceert teletekst-afgeleide WebVTT-bestanden die beginnen met het teletekst-paginanummer ("888") en de dialogen geel/wit kleuren, wat Kodi letterlijk renderde. Externe NPO-ondertitels worden nu ontdaan van de paginanummer-cue, de servicebanner en de teletekst-kleurcodes (en lokaal gecacht) vóór afspelen, zodat Kodi zijn normale ondertiteloverlay toont. RTL- en SBS-ondertitels blijven onaangeroerd.
+- **Opgelost**: de beschikbaarheidsregel gebruikte een ongeldige kleurwaarde en werd zonder kleur gerenderd; deze gebruikt nu een warm amber dat subtiel opvalt.
+
+### Nieuw in v1.4.1
+
+- **Opgelost**: cloud-gesynchroniseerde lijsten waren beperkt tot 10 items. De NLZiet-watchlist-endpoints (`/v9/watchlist` en `/v9/trackedseries`) retourneren alleen de eerste 10 entries tenzij een `limit` wordt meegegeven, waardoor **Kijk Later** en **Mijn Series** maximaal 10 items synchroniseerden. De add-on vraagt nu pagina's van 500 en volgt `offset` totdat de lijst compleet is, zodat alle items beide kanten op synchroniseren.
+
+### Nieuw in v1.4.0
+
+- **Tweerichtings-lijstsynchronisatie**: **Kijk Later** en de nieuwe **Mijn Series**-lijst synchroniseren nu beide kanten op met je NLZiet-account. Afleveringen en films synchroniseren via de cloud-watchlist, gevolgde series via de tracked-series-lijst. Schakel het in onder **Instellingen → Synchronisatie → Sync Watch Later and My Series with NLZiet**; handmatige knoppen **Sync Watch Later now** en **Sync My Series now** zijn ook beschikbaar. Een drieweg-merge ("toevoegingen winnen") voorkomt dat gelijktijdige wijzigingen verloren gaan.
+- **Mijn Series (My Series)**: een nieuwe hoofdmenu-ingang en lokale lijst die hele series volgt; een opgeslagen serie heropent zijn detailpagina.
+- **Per-type contextmenu**: elk item toont de actie die bij zijn type past — **Toevoegen aan Kijk Later** voor afleveringen en films, **Toevoegen aan Mijn Series** voor series, **Toevoegen aan Mijn Lijst** voor alles.
+- **Mijn Lijst is lokaal (alleen Kodi)**: alle Mijn Lijst-labels (menu, toevoeg/verwijder-acties, meldingen, leeg-bericht, uitlogprompt) vermelden nu in zowel Nederlands als Engels dat Mijn Lijst alleen op dit apparaat wordt opgeslagen. Kijk Later en Mijn Series zijn de cloud-gesynchroniseerde lijsten.
+- **Opgelost**: gevolgde series worden niet langer stilzwijgend weggegooid tijdens cloud-sync — omdat de NLZiet-watchlist-API series-ids accepteert maar negeert, worden series nu gerouteerd naar `/v9/trackedseries` zodat ze in de NLZiet-app verschijnen.
+
+### Nieuw in v1.3.0
+
+- **Mijn Lijst-subsecties**: Mijn Lijst groepeert entries nu in een subsectie per categorie (Series, TV Shows, Documentaires, Films, Kanalen) in plaats van één generieke lijst.
+- **Elk contenttype in Mijn Lijst**: TV Shows, Documentaires, Kanalen en individuele afleveringen kunnen nu ook worden opgeslagen in Mijn Lijst, net als Kijk Later.
+- **Volledige lokalisatie**: elke gebruikerstekst — meldingen, dialogen, de zoekprompt, gegroepeerde Mijn Lijst / zoekmaplabels en tellabels — wordt nu opgelost via Kodi's vertaalsysteem, zodat een Nederlandse Kodi de hele add-on in het Nederlands toont (Engels is de fallback).
+- **Opgelost**: live-zenders opgeslagen in Mijn Lijst / Kijk Later spelen nu correct af door ze te openen met de live-streamcontext.
+
+### Nieuw in v1.2.0
+
+- Een lokale **Kijk Later** (Watch Later)-wachtrij toegevoegd met een eigen hoofdmenu-ingang; elke content kan via het contextmenu worden toegevoegd.
+- Een speciaal menu-icoon voor de Kijk Later-wachtrij toegevoegd.
+- Opgeslagen lijstitems bewaren nu de volledige contentmetadata (titel, beschrijving/plot en artwork) zodat Mijn Lijst / Kijk Later rijke items renderen.
+- Runtime-UI-strings gebruiken nu Kodi's vertaalsysteem (`strings.po`); elke taal met een vertaalbestand werkt en Engels is de fallback voor talen zonder.
+- De series-detail-contextmenu opgelost zodat zowel Mijn Lijst als "Toevoegen aan bibliotheek" verschijnen (eerder overschreef de bibliotheekactie de Mijn Lijst-actie).
+
+### Nieuw in v1.1.0
+
+- Privacy-veilige diagnostiekexport toegevoegd onder Instellingen → Debugging.
+- Kodi watched/resume-indicatoren toegevoegd wanneer kijkvoortgangsdata beschikbaar is.
+- Nederlandse/Engelse runtime-lokalisatie op basis van Kodi's geconfigureerde taal.
+- Wachtwoordinvoer gemaskeerd en netwerk-timeouts toegevoegd.
+- De ongebruikte achtergrondservice verwijderd.
+
+### Nieuw in v1.0.3
 
 Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) voor de volledige versiegeschiedenis.
 
@@ -358,4 +453,3 @@ Zie `resources/settings.xml` voor alle beschikbare instellingen (account, synchr
 MIT — zie [LICENSE](LICENSE).
 
 
-</details>
