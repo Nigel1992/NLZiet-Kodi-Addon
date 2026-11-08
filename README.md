@@ -12,7 +12,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.5.0 — 2026-11-08. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.6.0 — 2026-11-08. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -44,6 +44,14 @@
 - **Responsive navigation**: background sync and maintenance work does not block menu transitions or returning from playback.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.6.0
+
+- **TV Gids timeline**: the EPG is a timeline grid with channels down the left and programme blocks across the screen. Past programmes are grey, live programmes blue, and future programmes green. A white line shows the current time.
+- **Programme description**: the selected programme's description is shown at the bottom and scrolls automatically.
+- **Faster opening and day switching**: the EPG opens immediately from cached data; picking a day refreshes it.
+- **Return to position**: after playback started from the EPG stops, the EPG reopens where you were.
+- **Clear all cache**: a settings button clears all addon caches, with optional automatic clearing.
 
 ### New in v1.5.0
 

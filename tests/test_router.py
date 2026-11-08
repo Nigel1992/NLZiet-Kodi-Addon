@@ -19,7 +19,7 @@ EXPECTED_HANDLER_NAMES = {
     'browse_tv_genre', 'browse_series_categories', 'browse_series_genre',
     'browse_movie_categories', 'browse_movie_genre', 'browse_category',
     'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
-    'browse_epg',
+    'clear_all_cache', 'browse_epg',
 }
 
 

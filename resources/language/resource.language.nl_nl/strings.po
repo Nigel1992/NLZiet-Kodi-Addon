@@ -790,8 +790,56 @@ msgstr "programma's"
 
 msgctxt "#33170"
 msgid "NLZiet EPG"
-msgstr "NLZiet EPG"
+msgstr "NLZiet TV Gids"
 
 msgctxt "#33171"
 msgid "Choose a channel on the left, scroll programmes horizontally. OK plays, context menu adds to lists."
 msgstr "Kies een kanaal links, scroll programma's horizontaal. OK speelt af, contextmenu voegt toe aan lijsten."
+
+msgctxt "#33172"
+msgid "TV Guide"
+msgstr "TV Gids"
+
+msgctxt "#33173"
+msgid "Clear all cache"
+msgstr "Alle cache wissen"
+
+msgctxt "#33174"
+msgid "Automatically clear cache"
+msgstr "Cache automatisch wissen"
+
+msgctxt "#33175"
+msgid "Clear cache every (hours)"
+msgstr "Cache wissen elke (uren)"
+
+msgctxt "#33176"
+msgid "{} cache files removed"
+msgstr "{} cachebestanden verwijderd"
+
+msgctxt "#33177"
+msgid "Could not clear cache"
+msgstr "Cache kon niet worden verwijderd"
+
+msgctxt "#33178"
+msgid "Not added: this item was not found on NLZiet."
+msgstr "Niet toegevoegd: dit item is niet gevonden bij NLZiet."
+
+msgctxt "#33179"
+msgid "Not added: this programme cannot be replayed later."
+msgstr "Niet toegevoegd: dit programma is niet terug te kijken en kan later niet worden afgespeeld."
+
+msgctxt "#33180"
+msgid "Added, but this programme has not aired yet. It can only be played later."
+msgstr "Toegevoegd, maar dit programma is nog niet uitgezonden. Het kan pas later worden afgespeeld."
+
+msgctxt "#33181"
+msgid "Not added: this programme cannot be played right now."
+msgstr "Niet toegevoegd: dit programma kan nu niet worden afgespeeld."
+
+msgctxt "#33182"
+msgid "Added. This is a repeat and can be played right away."
+msgstr "Toegevoegd. Dit is een herhaling en kan direct worden afgespeeld."
+
+msgctxt "#33183"
+msgid "Added. This programme is airing now and can only be played after the broadcast."
+msgstr "Toegevoegd. Dit programma is nu bezig en kan pas na de uitzending worden afgespeeld."

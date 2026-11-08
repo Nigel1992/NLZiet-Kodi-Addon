@@ -3641,6 +3641,7 @@ class NLZietAPI:
                         'stop': pgm_content['endAt'],
                         'title': pgm_content['title'],
                         'image': pgm_content['image']['landscapeUrl'],
+                        'description': pgm_content.get('description') or pgm_content.get('synopsis') or '',
                         'date': pgm_content['firstBroadcast'][:10],
                         'stream': stream_url,
                         'is_vod': bool(pgm_content.get('isVodReplaceable')),

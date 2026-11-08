@@ -150,7 +150,14 @@ TRANSLATIONS = {
     'movies': {'nl': 'Films', 'en': 'Movies'},
     'channels': {'nl': 'Kanalen', 'en': 'Channels'},
     'programs': {'nl': 'programma\'s', 'en': 'programs'},
-    'epg_title': {'nl': 'NLZiet EPG', 'en': 'NLZiet EPG'},
+    'epg_title': {'nl': 'NLZiet TV Gids', 'en': 'NLZiet TV Guide'},
+    'tv_guide': {'nl': 'TV Gids', 'en': 'TV Guide'},
+    'list_item_not_found': {'nl': 'Niet toegevoegd: dit item is niet gevonden bij NLZiet.', 'en': 'Not added: this item was not found on NLZiet.'},
+    'list_item_not_reachable_later': {'nl': 'Niet toegevoegd: dit programma is niet terug te kijken en kan later niet worden afgespeeld.', 'en': 'Not added: this programme cannot be replayed later.'},
+    'list_item_not_aired': {'nl': 'Toegevoegd, maar dit programma is nog niet uitgezonden. Het kan pas later worden afgespeeld.', 'en': 'Added, but this programme has not aired yet. It can only be played later.'},
+    'list_item_not_playable': {'nl': 'Niet toegevoegd: dit programma kan nu niet worden afgespeeld.', 'en': 'Not added: this programme cannot be played right now.'},
+    'list_item_repeat_playable': {'nl': 'Toegevoegd. Dit is een herhaling en kan direct worden afgespeeld.', 'en': 'Added. This is a repeat and can be played right away.'},
+    'list_item_airing': {'nl': 'Toegevoegd. Dit programma is nu bezig en kan pas na de uitzending worden afgespeeld.', 'en': 'Added. This programme is airing now and can only be played after the broadcast.'},
     'epg_subtitle': {'nl': 'Kies een kanaal links, scroll programma\'s horizontaal. OK speelt af, contextmenu voegt toe aan lijsten.', 'en': 'Choose a channel on the left, scroll programmes horizontally. OK plays, context menu adds to lists.'},
     'all_episodes': {'nl': 'Alle afleveringen', 'en': 'All episodes'},
     'missing_series_id': {'nl': 'Serie-ID ontbreekt', 'en': 'Missing series id'},
@@ -197,6 +204,11 @@ TRANSLATIONS = {
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
     'subtitle_cache_cleared': {'nl': '{} ondertitelcachebestanden verwijderd', 'en': '{} subtitle cache files removed'},
     'subtitle_cache_clear_failed': {'nl': 'Ondertitelcache kon niet worden verwijderd', 'en': 'Could not clear subtitle cache'},
+    'clear_all_cache': {'nl': 'Alle cache wissen', 'en': 'Clear all cache'},
+    'auto_clear_all_cache': {'nl': 'Cache automatisch wissen', 'en': 'Automatically clear cache'},
+    'auto_clear_all_cache_hours': {'nl': 'Cache wissen elke (uren)', 'en': 'Clear cache every (hours)'},
+    'all_cache_cleared': {'nl': '{} cachebestanden verwijderd', 'en': '{} cache files removed'},
+    'all_cache_clear_failed': {'nl': 'Cache kon niet worden verwijderd', 'en': 'Could not clear cache'},
     'search_history_new': {'nl': 'Nieuwe zoekopdracht', 'en': 'New search'},
     'search_history_delete': {'nl': 'Zoekopdrachten verwijderen', 'en': 'Delete searches'},
     'search_history_deleted': {'nl': '{} zoekopdrachten verwijderd', 'en': '{} searches deleted'},
@@ -351,6 +363,11 @@ STRING_IDS = {
     'diagnostics_failed': 33070,
     'subtitle_cache_cleared': 33159,
     'subtitle_cache_clear_failed': 33160,
+    'clear_all_cache': 33173,
+    'auto_clear_all_cache': 33174,
+    'auto_clear_all_cache_hours': 33175,
+    'all_cache_cleared': 33176,
+    'all_cache_clear_failed': 33177,
     'search_history_new': 33161,
     'search_history_delete': 33162,
     'search_history_deleted': 33163,
@@ -431,6 +448,13 @@ STRING_IDS = {
     'programs': 33169,
     'epg_title': 33170,
     'epg_subtitle': 33171,
+    'tv_guide': 33172,
+    'list_item_not_found': 33178,
+    'list_item_not_reachable_later': 33179,
+    'list_item_not_aired': 33180,
+    'list_item_not_playable': 33181,
+    'list_item_repeat_playable': 33182,
+    'list_item_airing': 33183,
 }
 
 
@@ -1235,7 +1259,7 @@ def main_menu():
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
-        add_directory_item('EPG', {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
+        add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
     
     # Set background image for the container
     try:
@@ -1250,6 +1274,7 @@ def main_menu():
         _run_after_directory(_maybe_run_auto_add)
         _run_after_directory(_maybe_run_expiry_check)
         _run_after_directory(_maybe_clear_subtitle_cache)
+        _run_after_directory(_maybe_clear_all_cache)
 
 
 def browse_series_categories():
@@ -2410,6 +2435,78 @@ def _maybe_clear_subtitle_cache():
         _run_clear_subtitle_cache()
     except Exception as exc:
         xbmc.log('NLZiet: auto subtitle cache clearing failed: {0}'.format(exc), xbmc.LOGWARNING)
+
+
+_CACHE_FILES = ('epg_cache.json', 'tvmaze_cache.json', 'episode_numbering_cache.json')
+_CACHE_MARKER = '.last_cache_auto_clear'
+
+
+def _addon_profile_dir():
+    return xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+
+
+def _run_clear_all_cache():
+    """Remove the EPG, TVmaze, episode and subtitle caches and record the run."""
+    from resources.lib import subtitles as subtitle_tools
+
+    profile_dir = _addon_profile_dir()
+    removed = 0
+    for name in _CACHE_FILES:
+        path = os.path.join(profile_dir, name)
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                removed += 1
+            except OSError as exc:
+                xbmc.log('NLZiet: could not remove {0}: {1}'.format(name, exc), xbmc.LOGWARNING)
+    removed += subtitle_tools.clear_cache(_subtitle_cache_dir())
+    try:
+        with open(os.path.join(profile_dir, _CACHE_MARKER), 'w', encoding='utf-8') as handle:
+            handle.write(str(time.time()))
+    except Exception:
+        pass
+    return removed
+
+
+def clear_all_cache():
+    """Remove all addon caches and tell the user how many files were removed."""
+    try:
+        removed = _run_clear_all_cache()
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string('all_cache_cleared', removed),
+            xbmcgui.NOTIFICATION_INFO,
+        )
+    except Exception as exc:
+        xbmc.log('NLZiet: clearing all cache failed: {0}'.format(exc), xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string('all_cache_clear_failed'),
+            xbmcgui.NOTIFICATION_ERROR,
+        )
+
+
+def _auto_clear_all_cache_due():
+    try:
+        hours = max(1, int(float(ADDON.getSetting('auto_clear_all_cache_hours') or 24)))
+    except (TypeError, ValueError):
+        hours = 24
+    try:
+        with open(os.path.join(_addon_profile_dir(), _CACHE_MARKER), 'r', encoding='utf-8') as handle:
+            last = float(handle.read().strip() or 0)
+    except Exception:
+        last = 0
+    return time.time() - last >= hours * 3600
+
+
+def _maybe_clear_all_cache():
+    if ADDON.getSetting('auto_clear_all_cache') != 'true':
+        return
+    try:
+        if _auto_clear_all_cache_due():
+            _run_clear_all_cache()
+    except Exception as exc:
+        xbmc.log('NLZiet: auto cache clearing failed: {0}'.format(exc), xbmc.LOGWARNING)
 
 
 # Aliases for compatibility with possible test/function names.
@@ -3826,7 +3923,36 @@ def _my_series_sync_enabled():
     return _watch_later_sync_enabled()
 
 
-def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None):
+def _list_add_problem(kind, detail, stored_type, replay_ok=None, title=None):
+    """Return a string key describing why an item cannot be saved to a list, or None.
+
+    The detail endpoint does not return data for every id, so a missing detail
+    only counts as "not found" when the caller also has no title for the item.
+    My Series only accepts items whose series type is confirmed by the detail.
+    """
+    has_detail = isinstance(detail, dict) and bool(detail.get('title') or detail.get('raw'))
+    if not has_detail and not title:
+        return 'list_item_not_found'
+    if replay_ok is False:
+        return 'list_item_not_reachable_later'
+    if kind == 'my_series':
+        stored = str(stored_type or '').lower()
+        confirmed = 'series' in stored or 'tvshow' in stored or bool(isinstance(detail, dict) and detail.get('seasons'))
+        if not confirmed:
+            return 'only_series'
+    return None
+
+
+def _item_playable_now(api, item_id):
+    """Return True when NLZiet hands out a stream manifest for the item, the same request Watch Later playback makes."""
+    try:
+        info = api.get_stream_info(item_id) or {}
+    except Exception:
+        return False
+    return bool(info.get('manifest'))
+
+
+def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None):
     """Add or remove an item from a local list.
 
     ``kind`` is one of 'mylist' (any content), 'watch_later' (episodes and
@@ -3863,6 +3989,7 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
     ok = False
     in_list = False
     stored_group = group
+    notice = None
     try:
         if kind == 'watch_later':
             in_list = api.is_in_watch_later(item_id)
@@ -3890,6 +4017,21 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
             stored_type = resolved_type or detail.get('type') or ''
             if not stored_type and isinstance(detail.get('seasons'), (list, tuple)):
                 stored_type = 'Series'
+            problem = _list_add_problem(kind, detail, stored_type, replay_ok, title)
+            if problem:
+                xbmcgui.Dialog().notification('NLZiet', get_string(problem), xbmcgui.NOTIFICATION_INFO)
+                return
+            if kind == 'watch_later' and replay_ok is not None:
+                if aired:
+                    if not _item_playable_now(api, item_id):
+                        xbmcgui.Dialog().notification('NLZiet', get_string('list_item_not_playable'), xbmcgui.NOTIFICATION_INFO)
+                        return
+                elif started:
+                    notice = 'list_item_airing'
+                elif _item_playable_now(api, item_id):
+                    notice = 'list_item_repeat_playable'
+                else:
+                    notice = 'list_item_not_aired'
             itm = {
                 'id': item_id,
                 'title': title or detail.get('title') or '',
@@ -3917,6 +4059,8 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
             get_string(ok_key if ok else fail_key),
             xbmcgui.NOTIFICATION_INFO if ok else xbmcgui.NOTIFICATION_ERROR,
         )
+        if ok and notice:
+            xbmcgui.Dialog().notification('NLZiet', get_string(notice), xbmcgui.NOTIFICATION_INFO)
     except Exception:
         xbmcgui.Dialog().notification('NLZiet', get_string('list_action_failed'), xbmcgui.NOTIFICATION_ERROR)
 
@@ -3992,8 +4136,8 @@ def toggle_mylist(item_id=None, title=None, type=None, thumb=None, group=None):
     _toggle_local_list('mylist', item_id, title, type, thumb, group)
 
 
-def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None):
-    _toggle_local_list('watch_later', item_id, title, type, thumb, group)
+def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None):
+    _toggle_local_list('watch_later', item_id, title, type, thumb, group, replay_ok=replay_ok, aired=aired, started=started)
 
 
 def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None):
@@ -4827,61 +4971,84 @@ _playback_monitor = None
 EPG_DAY_COUNT = 4
 
 
-EPG_CACHE = {'rows': None, 'ts': 0}
-EPG_CACHE_TTL = 300  # seconds
 _epg_playback_active = False
 _epg_selected_channel = None
 EPG_DAY_BACK = 7
 EPG_DAY_FWD = 7
 
 
-def _epg_rows():
-    """Return one EPG row per channel for today and the next few days."""
-    import time
+EPG_CACHE_FILE = 'epg_cache.json'
+EPG_CHANNELS_TTL = 6 * 3600
+EPG_DAY_MAX_AGE = 6 * 3600
+EPG_KEEP_DAYS = 4
+
+
+def _epg_cache_path():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), EPG_CACHE_FILE)
+
+
+def _epg_read_cache():
+    try:
+        with open(_epg_cache_path(), 'r', encoding='utf-8') as cache_file:
+            cache = json.load(cache_file)
+        return cache if isinstance(cache, dict) else {}
+    except Exception:
+        return {}
+
+
+def _epg_write_cache(cache):
+    try:
+        os.makedirs(os.path.dirname(_epg_cache_path()), exist_ok=True)
+        with open(_epg_cache_path(), 'w', encoding='utf-8') as cache_file:
+            json.dump(cache, cache_file)
+    except Exception as exc:
+        xbmc.log('NLZiet EPG cache write failed: {0}'.format(exc), xbmc.LOGWARNING)
+
+
+def _epg_channels():
+    """Return the channel list, served from the disk cache while it is fresh."""
     now_ts = time.time()
-    if EPG_CACHE['rows'] is not None and (now_ts - EPG_CACHE['ts']) < EPG_CACHE_TTL:
-        return EPG_CACHE['rows']
-    username = ADDON.getSetting('username')
-    password = ADDON.getSetting('password')
-    try:
-        api = get_api_instance()
-    except Exception:
-        api = NLZietAPI(username=username, password=password)
+    cache = _epg_read_cache()
+    entry = cache.get('channels')
+    if isinstance(entry, dict) and entry.get('data') and (now_ts - entry.get('ts', 0)) < EPG_CHANNELS_TTL:
+        return entry['data']
+    channels = get_api_instance().get_channels() or []
+    if channels:
+        cache['channels'] = {'ts': now_ts, 'data': channels}
+        _epg_write_cache(cache)
+    return channels
 
+
+def _epg_day_programs(channel_ids, day_iso, force=False):
+    """Return channel_id -> programmes for one day.
+
+    A cached day is used without waiting on the server unless it is older than
+    EPG_DAY_MAX_AGE or `force` is set; a failed fetch falls back to the cache.
+    """
+    now_ts = time.time()
+    cache = _epg_read_cache()
+    entry = cache.get(day_iso)
+    has_entry = isinstance(entry, dict) and bool(entry.get('data'))
+    if not force and has_entry and (now_ts - entry.get('ts', 0)) < EPG_DAY_MAX_AGE:
+        return entry['data']
+    data = get_api_instance().get_current_programs(channel_ids, date=day_iso) or {}
+    if not data:
+        return entry.get('data') or {} if has_entry else {}
+    cache[day_iso] = {'ts': now_ts, 'data': data}
+    days = sorted(key for key in cache if key != 'channels')
+    for key in days[:-EPG_KEEP_DAYS]:
+        del cache[key]
+    _epg_write_cache(cache)
+    return data
+
+
+def _epg_rows():
+    """Return one row per channel. Programmes are loaded per day by the dialog."""
     try:
-        channels = api.get_channels() or []
-    except Exception:
+        channels = _epg_channels()
+    except Exception as exc:
+        xbmc.log('NLZiet EPG channel load failed: {0}'.format(exc), xbmc.LOGWARNING)
         channels = []
-    channel_ids = [c.get('id') for c in channels if isinstance(c, dict) and c.get('id')]
-
-    try:
-        _tz = ZoneInfo('Europe/Amsterdam')
-    except Exception:
-        _tz = timezone.utc
-    now = datetime.now(tz=_tz)
-
-    epg_map = {}
-    seen = set()
-    for offset in range(-EPG_DAY_BACK, EPG_DAY_FWD + 1):
-        day = (now.date() + timedelta(days=offset)).isoformat()
-        try:
-            day_map = api.get_current_programs(channel_ids, date=day) if channel_ids else {}
-        except Exception:
-            day_map = {}
-        for cid, programs in (day_map or {}).items():
-            bucket = epg_map.setdefault(cid, [])
-            for pgm in programs or []:
-                key = (
-                    cid,
-                    pgm.get('id'),
-                    pgm.get('start'),
-                    pgm.get('stop'),
-                    pgm.get('title'),
-                )
-                if key in seen:
-                    continue
-                seen.add(key)
-                bucket.append(pgm)
 
     rows = []
     for channel in channels:
@@ -4890,201 +5057,440 @@ def _epg_rows():
         cid = channel.get('id')
         if not cid:
             continue
-        entries = []
-        for pgm in epg_map.get(cid) or []:
-            try:
-                start = datetime.fromisoformat(pgm['start'])
-                end = datetime.fromisoformat(pgm['stop'])
-            except Exception:
-                continue
-            entries.append((start, end, pgm, start <= now <= end))
-        entries.sort(key=lambda item: item[0])
-        lines = []
-        future = [e for e in entries if e[1] >= now]
-        to_show = future[:2] if future else entries[:2]
-        for start, end, pgm, is_now in to_show:
-            prefix = '● NU ' if is_now else ''
-            lines.append('{0}{1}-{2}  {3}'.format(
-                prefix,
-                start.strftime('%H:%M'),
-                end.strftime('%H:%M'),
-                pgm.get('title') or '',
-            ))
-        current_title = ''
-        for start, end, pgm, is_now in entries:
-            if is_now:
-                current_title = pgm.get('title') or ''
-                break
         rows.append({
             'id': cid,
             'title': channel.get('title') or str(cid),
             'thumb': channel.get('thumb'),
-            'entries': entries,
-            'programs': '\n'.join(lines) if lines else 'Geen EPG beschikbaar',
-            'current_title': current_title or 'Geen EPG beschikbaar',
+            'entries': [],
         })
-    EPG_CACHE['rows'] = rows
-    EPG_CACHE['ts'] = time.time()
     return rows
 
 
+EPG_CHANNEL_ROWS = 8
+EPG_ROW_TOP = 210
+EPG_ROW_HEIGHT = 58
+EPG_GRID_X = 440
+EPG_PX_PER_MIN = 9
+EPG_WINDOW_MIN = 150
+EPG_BLOCK_SLOTS = 30
+EPG_RULER_SLOTS = 7
+EPG_MIN_LABEL_WIDTH = 30
+EPG_NOW_LINE_WIDTH = 4
+EPG_COLOR_PAST = 'FF4A5260'
+EPG_COLOR_LIVE = 'FF3366CC'
+EPG_COLOR_FUTURE = 'FF2A7F62'
+
+
+def _epg_now():
+    try:
+        tz = ZoneInfo('Europe/Amsterdam')
+    except Exception:
+        tz = timezone.utc
+    return datetime.now(tz=tz)
+
+
+_EPG_DESCRIPTION_CACHE = {}
+
+
+def _epg_program_description(pgm):
+    text = pgm.get('description') or ''
+    if text:
+        return text
+    pid = str(pgm.get('id') or '')
+    if not pid:
+        return ''
+    if pid not in _EPG_DESCRIPTION_CACHE:
+        desc = ''
+        try:
+            detail = get_api_instance().get_content_detail(pid) or {}
+            desc = detail.get('description') or ''
+        except Exception as exc:
+            xbmc.log('NLZiet EPG description lookup failed: {0}'.format(exc), xbmc.LOGWARNING)
+        _EPG_DESCRIPTION_CACHE[pid] = desc
+    return _EPG_DESCRIPTION_CACHE[pid]
+
+
+def _epg_full_date(moment):
+    try:
+        lang = (xbmc.getLanguage(xbmc.ISO_639_1) or '').lower()
+    except Exception:
+        lang = ''
+    if lang.startswith('en'):
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                  'August', 'September', 'October', 'November', 'December']
+    else:
+        days = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+        months = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli',
+                  'augustus', 'september', 'oktober', 'november', 'december']
+    return '{0} {1} {2}'.format(days[moment.weekday()], moment.day, months[moment.month - 1])
+
+
+def _epg_block_color(start, end, now):
+    if end <= now:
+        return EPG_COLOR_PAST
+    if start <= now:
+        return EPG_COLOR_LIVE
+    return EPG_COLOR_FUTURE
+
+
+def _epg_floor_half_hour(moment):
+    return moment.replace(minute=30 if moment.minute >= 30 else 0, second=0, microsecond=0)
+
+
 class _EPGDialog(xbmcgui.WindowXMLDialog):
-    """EPG window: channels on the left, programmes scrolling horizontally."""
+    """EPG window: channels down the left, programmes on a horizontal timeline."""
 
     def __init__(self, *args, **kwargs):
-        self._rows = kwargs.pop('rows', [])
+        self._rows = kwargs.pop('rows', None) or []
         self._selected_day = 0
+        self._row_index = 0
+        self._top = 0
+        self._prog_index = 0
+        self._window_start = None
+        self._resume = kwargs.pop('resume', None)
+        self._loaded_days = set()
+        self._last_position = None
+        self._grid_controls = []
+        self._layout_key = None
+        self._focus_parts = []
         super().__init__(*args, **kwargs)
 
-    def onInit(self):
-        try:
-            try:
-                self.getControl(202).setLabel(get_string('epg_title'))
-            except Exception:
-                pass
-            try:
-                self.getControl(300).setLabel('Dag: Vandaag')
-            except Exception:
-                pass
-            control = self.getControl(100)
-            for row in self._rows:
-                item = xbmcgui.ListItem(label=row.get('title') or '')
-                thumb = row.get('thumb')
-                if thumb:
-                    item.setArt({'icon': thumb, 'thumb': thumb})
-                item.setProperty('current_title', row.get('current_title') or '')
-                item.setProperty('channel_id', str(row.get('id') or ''))
-                control.addItem(item)
-            # Restore previously selected channel.
-            global _epg_selected_channel
-            idx = 0
-            if _epg_selected_channel:
-                for i, row in enumerate(self._rows):
-                    if str(row.get('id') or '') == str(_epg_selected_channel):
-                        idx = i
-                        break
-            try:
-                control.selectItem(idx)
-            except Exception:
-                pass
-            self._load_programs(idx)
-        except Exception as exc:
-            xbmc.log('NLZiet EPG dialog populate failed: {0}'.format(exc), xbmc.LOGERROR)
+    @property
+    def rows(self):
+        return self._rows
 
-    def _load_programs(self, index):
-        try:
-            program_control = self.getControl(200)
-        except Exception:
-            return
-        program_control.reset()
-        if not self._rows:
-            return
-        index = max(0, min(index, len(self._rows) - 1))
-        row = self._rows[index]
-        channel_id = str(row.get('id') or '')
+    def onInit(self):
         global _epg_selected_channel
-        _epg_selected_channel = channel_id
         try:
-            self.getControl(201).setLabel(
-                '{0}  —  {1}'.format(row.get('title') or '', get_string('programs'))
-            )
+            self.getControl(202).setLabel(get_string('epg_title'))
         except Exception:
             pass
-        entries = row.get('entries') or []
-        # Filter to the selected day.
-        if entries:
-            from datetime import datetime as _dt, timedelta as _td
+        if not self._rows:
             try:
-                _tzinfo = ZoneInfo('Europe/Amsterdam')
+                self.getControl(204).setLabel('Laden...')
             except Exception:
-                from datetime import timezone as _tz
-                _tzinfo = _tz.utc
-            target = (_dt.now(_tzinfo).date() + _td(days=self._selected_day))
-            filtered = [e for e in entries if (hasattr(e[0], 'date') and e[0].date() == target)]
-            xbmc.log('NLZiet EPG filter: selected_day={0} target={1} total={2} filtered={3}'.format(self._selected_day, target, len(entries), len(filtered)), xbmc.LOGINFO)
-            if filtered:
-                entries = filtered
-        if not entries:
-            item = xbmcgui.ListItem(label='Geen EPG beschikbaar')
-            item.setLabel2('Voor dit kanaal zijn geen programma\'s gevonden.')
-            program_control.addItem(item)
+                pass
+            try:
+                self._rows = _epg_rows()
+            except Exception as exc:
+                xbmc.log('NLZiet EPG rows failed: {0}'.format(exc), xbmc.LOGWARNING)
+        try:
+            self.getControl(203).setLabel('Kanalen: {0}'.format(len(self._rows)))
+        except Exception:
+            pass
+        resume = self._resume
+        self._resume = None
+        if resume:
+            self._selected_day = resume['selected_day']
+            self._window_start = resume['window_start']
+            self._top = resume['top']
+            for i, row in enumerate(self._rows):
+                if str(row.get('id') or '') == resume['row_id']:
+                    self._row_index = i
+                    break
+            self._set_day_label()
+            self._ensure_day_loaded()
+            self._prog_index = self._prog_index_for_key(resume['prog_key'])
+        else:
+            for i, row in enumerate(self._rows):
+                if _epg_selected_channel and str(row.get('id') or '') == str(_epg_selected_channel):
+                    self._row_index = i
+                    break
+            self._reset_window()
+            self._ensure_day_loaded()
+            self._prog_index = self._default_prog_index()
+        self._set_day_label()
+        self._render()
+
+    def _ensure_day_loaded(self, force=False):
+        target = self._target_day()
+        day_iso = target.isoformat()
+        if not self._rows or (not force and day_iso in self._loaded_days):
             return
-        for start, end, pgm, is_now in entries:
-            title = pgm.get('title') or ''
-            display_title = ('[COLOR FFE50914]● NU[/COLOR] ' + title) if is_now else title
-            item = xbmcgui.ListItem(label=display_title)
-            image = pgm.get('image')
-            if image:
-                item.setArt({'icon': image, 'thumb': image})
-            when_date = _localized_weekday(start)
-            when_time = '{0} - {1}'.format(start.strftime('%H:%M'), end.strftime('%H:%M'))
-            when = '{0}  {1}'.format(when_date, when_time)
-            try:
-                item.setLabel2(when)
-            except Exception:
-                item.setProperty('time', when)
-            item.setProperty('epg_date', when_date)
-            item.setProperty('epg_time', when_time)
-            item.setProperty('channel_id', channel_id)
-            item.setProperty('epg_id', str(pgm.get('id') or ''))
-            item.setProperty('epg_asset_id', str(pgm.get('asset_id') or ''))
-            item.setProperty('epg_mode', 'epg' if pgm.get('is_replay') else ('vod' if pgm.get('is_vod') else 'live'))
-            item.setProperty('now_playing', 'true' if is_now else 'false')
-            item.setProperty('epg_title', title)
-            item.setProperty('epg_thumb', image or '')
-            menu = []
-            pid = str(pgm.get('id') or '')
-            mode = 'epg' if pgm.get('is_replay') else ('vod' if pgm.get('is_vod') else 'live')
-            if mode == 'live' and channel_id:
-                play_query = {'mode': 'play', 'id': channel_id, 'fmt': 'live'}
-            elif mode == 'epg' and pid:
-                play_query = {
-                    'mode': 'play',
-                    'id': pid,
-                    'fmt': 'epg',
-                    'asset_id': str(pgm.get('asset_id') or ''),
-                    'channel': channel_id,
-                    'thumb': image or '',
-                    'title': title,
-                }
-            elif pid:
-                play_query = {'mode': 'play', 'id': pid}
+        data = {}
+        try:
+            channel_ids = [row['id'] for row in self._rows]
+            data = _epg_day_programs(channel_ids, day_iso, force=force)
+        except Exception as exc:
+            xbmc.log('NLZiet EPG day load failed: {0}'.format(exc), xbmc.LOGWARNING)
+        if not data:
+            return
+        self._loaded_days.add(day_iso)
+        tzinfo = _epg_now().tzinfo
+        for row in self._rows:
+            kept = [entry for entry in row['entries'] if entry[0].astimezone(tzinfo).date() != target]
+            seen = set((entry[2].get('id'), entry[2].get('start'), entry[2].get('stop')) for entry in kept)
+            for pgm in data.get(row['id']) or []:
+                try:
+                    start = datetime.fromisoformat(pgm['start'])
+                    end = datetime.fromisoformat(pgm['stop'])
+                except Exception:
+                    continue
+                key = (pgm.get('id'), pgm.get('start'), pgm.get('stop'))
+                if key in seen:
+                    continue
+                seen.add(key)
+                kept.append((start, end, pgm, False))
+            kept.sort(key=lambda entry: entry[0])
+            row['entries'] = kept
+
+    def _set_day_label(self):
+        if self._selected_day == 0:
+            text = 'Dag: Vandaag'
+        else:
+            text = 'Dag: {0}'.format(_epg_full_date(self._target_day()))
+        try:
+            self.getControl(300).setLabel('{0}   (I)'.format(text))
+        except Exception:
+            pass
+
+
+    def _prog_index_for_key(self, key):
+        for i, (start, _end, pgm, _is_now) in enumerate(self._row_programs()):
+            if (str(pgm.get('id') or ''), start.isoformat()) == key:
+                return i
+        return self._default_prog_index()
+
+    def position(self):
+        return self._last_position
+
+    def _target_day(self):
+        return _epg_now().date() + timedelta(days=self._selected_day)
+
+    def _reset_window(self):
+        now = _epg_now()
+        if self._selected_day == 0:
+            self._window_start = _epg_floor_half_hour(now)
+        else:
+            target = self._target_day()
+            self._window_start = datetime(target.year, target.month, target.day, 18, 0, tzinfo=now.tzinfo)
+
+    def _row_programs(self, index=None):
+        if index is None:
+            index = self._row_index
+        if not self._rows:
+            return []
+        target = self._target_day()
+        tzinfo = _epg_now().tzinfo
+        return [
+            entry for entry in (self._rows[index].get('entries') or [])
+            if entry[0].astimezone(tzinfo).date() == target
+        ]
+
+    def _default_prog_index(self):
+        progs = self._row_programs()
+        now = _epg_now()
+        for i, (start, end, _pgm, _is_now) in enumerate(progs):
+            if start <= now <= end:
+                return i
+        for i, (_start, end, _pgm, _is_now) in enumerate(progs):
+            if end > self._window_start:
+                return i
+        return 0
+
+    def _add(self, control):
+        self._grid_controls.append(control)
+        return control
+
+    def _x_at(self, moment):
+        return EPG_GRID_X + int((moment - self._window_start).total_seconds() / 60 * EPG_PX_PER_MIN)
+
+    def _block_geometry(self, start, end):
+        window_start = self._window_start
+        window_end = window_start + timedelta(minutes=EPG_WINDOW_MIN)
+        x = self._x_at(max(start, window_start))
+        x_end = self._x_at(min(end, window_end))
+        return x, max(4, x_end - x - 3)
+
+    def _create_pool(self):
+        self._ruler = []
+        self._names = []
+        self._separators = []
+        self._blocks = []
+        for _ in range(EPG_RULER_SLOTS):
+            self._ruler.append(self._add(xbmcgui.ControlLabel(
+                0, 170, 120, 30, '', font='font12', textColor='FF3366CC',
+            )))
+        for _ in range(EPG_CHANNEL_ROWS):
+            self._names.append(self._add(xbmcgui.ControlLabel(
+                110, 0, 300, 30, '', font='font12', textColor='FFFFFFFF',
+            )))
+            self._separators.append(self._add(xbmcgui.ControlImage(
+                110, 0, 1700, 1, 'white.png', colorDiffuse='22FFFFFF',
+            )))
+            row_blocks = []
+            for _ in range(EPG_BLOCK_SLOTS):
+                image = self._add(xbmcgui.ControlImage(0, 0, 1, 1, 'white.png', colorDiffuse='FF3366CC'))
+                label = self._add(xbmcgui.ControlLabel(0, 0, 1, 1, '', font='font12', textColor='FFFFFFFF'))
+                row_blocks.append((image, label))
+            self._blocks.append(row_blocks)
+        self._now_marker = self._add(xbmcgui.ControlImage(0, 0, EPG_NOW_LINE_WIDTH, 1, 'white.png', colorDiffuse='FFFFFFFF'))
+        self._focus_parts = [
+            self._add(xbmcgui.ControlImage(0, 0, 1, 1, 'white.png', colorDiffuse='FFFFFFFF'))
+            for _ in range(4)
+        ]
+        self.addControls(self._grid_controls)
+        for control in self._grid_controls:
+            control.setVisible(False)
+
+    def _apply_layout(self):
+        window_start = self._window_start
+        window_end = window_start + timedelta(minutes=EPG_WINDOW_MIN)
+        now = _epg_now()
+
+        try:
+            date_label = _localized_weekday(window_start)
+            if self._selected_day == 0:
+                date_label = 'Vandaag  {0}'.format(date_label)
+            self.getControl(201).setLabel(date_label)
+        except Exception:
+            pass
+
+        for k, label in enumerate(self._ruler):
+            mark = window_start + timedelta(minutes=30 * k)
+            if mark < window_end:
+                label.setPosition(self._x_at(mark) + 4, 170)
+                label.setLabel(mark.strftime('%H:%M'))
+                label.setVisible(True)
             else:
-                play_query = None
-            if play_query:
-                menu.append((
-                    'Nu live kijken' if play_query.get('fmt') == 'live' else 'Play',
-                    'PlayMedia({0}{1})'.format(
-                        build_url(play_query),
-                        ',noresume' if play_query.get('fmt') in ('live', 'epg') else '',
-                    ),
-                ))
-            if pid:
-                menu.append((
-                    get_string('add_to_watch_later'),
-                    'RunPlugin({0})'.format(build_url({
-                        'mode': 'toggle_watch_later',
-                        'id': pid,
-                        'title': title,
-                        'type': 'episode',
-                        'group': 'episodes',
-                        'thumb': image or '',
-                    })),
-                ))
-                menu.append((
-                    get_string('add_to_my_series'),
-                    'RunPlugin({0})'.format(build_url({
-                        'mode': 'toggle_my_series',
-                        'id': pid,
-                        'title': title,
-                        'type': 'series',
-                        'group': 'series',
-                        'thumb': image or '',
-                    })),
-                ))
-            if menu:
-                item.addContextMenuItems(menu)
-            program_control.addItem(item)
+                label.setVisible(False)
+
+        visible_count = min(EPG_CHANNEL_ROWS, max(0, len(self._rows) - self._top))
+        for slot in range(EPG_CHANNEL_ROWS):
+            y = EPG_ROW_TOP + slot * EPG_ROW_HEIGHT
+            name = self._names[slot]
+            separator = self._separators[slot]
+            entries = []
+            if slot < visible_count:
+                i = self._top + slot
+                name.setPosition(110, y + 16)
+                name.setLabel(self._rows[i].get('title') or '')
+                name.setVisible(True)
+                separator.setPosition(110, y + EPG_ROW_HEIGHT - 2)
+                separator.setVisible(True)
+                entries = [
+                    entry for entry in self._row_programs(i)
+                    if entry[1] > window_start and entry[0] < window_end
+                ]
+            else:
+                name.setVisible(False)
+                separator.setVisible(False)
+
+            for k, (image, label) in enumerate(self._blocks[slot]):
+                if k >= len(entries):
+                    image.setVisible(False)
+                    label.setVisible(False)
+                    continue
+                start, end, pgm, _is_now = entries[k]
+                title = pgm.get('title') or ''
+                x, w = self._block_geometry(start, end)
+                color = _epg_block_color(start, end, now)
+                image.setPosition(x, y + 3)
+                image.setWidth(w)
+                image.setHeight(EPG_ROW_HEIGHT - 6)
+                image.setColorDiffuse(color)
+                image.setVisible(True)
+                if w >= EPG_MIN_LABEL_WIDTH:
+                    label.setPosition(x + 8, y + 3)
+                    label.setWidth(w - 12)
+                    label.setHeight(EPG_ROW_HEIGHT - 6)
+                    label.setLabel(title)
+                    label.setVisible(True)
+                else:
+                    label.setVisible(False)
+
+        if window_start <= now < window_end:
+            self._now_marker.setPosition(self._x_at(now) - EPG_NOW_LINE_WIDTH // 2, EPG_ROW_TOP - 10)
+            self._now_marker.setHeight(EPG_CHANNEL_ROWS * EPG_ROW_HEIGHT + 10)
+            self._now_marker.setVisible(True)
+        else:
+            self._now_marker.setVisible(False)
+
+    def _update_focus(self, progs):
+        window_start = self._window_start
+        window_end = window_start + timedelta(minutes=EPG_WINDOW_MIN)
+        visible = False
+        if progs and self._focus_parts:
+            start, end, _pgm, _is_now = progs[self._prog_index]
+            if end > window_start and start < window_end:
+                x, w = self._block_geometry(start, end)
+                y = EPG_ROW_TOP + (self._row_index - self._top) * EPG_ROW_HEIGHT
+                left, top = x - 2, y + 1
+                width, height = w + 4, EPG_ROW_HEIGHT - 2
+                bar = 3
+                rects = [
+                    (left, top, width, bar),
+                    (left, top + height - bar, width, bar),
+                    (left, top, bar, height),
+                    (left + width - bar, top, bar, height),
+                ]
+                for part, (px, py, pw, ph) in zip(self._focus_parts, rects):
+                    part.setPosition(px, py)
+                    part.setWidth(pw)
+                    part.setHeight(ph)
+                    part.setVisible(True)
+                visible = True
+        if not visible:
+            for part in self._focus_parts:
+                part.setVisible(False)
+
+    def _update_details(self, progs):
+        if progs:
+            start, end, pgm, _is_now = progs[self._prog_index]
+            channel_title = self._rows[self._row_index].get('title') or ''
+            header = '{0} - {1}  {2}  ({3})'.format(
+                start.strftime('%H:%M'), end.strftime('%H:%M'), pgm.get('title') or '', channel_title,
+            )
+            description = _epg_program_description(pgm) or 'Geen beschrijving beschikbaar.'
+        else:
+            header = 'Geen EPG beschikbaar'
+            description = 'Voor dit kanaal zijn geen programma\'s gevonden.'
+        try:
+            self.getControl(204).setLabel(header)
+            self.getControl(205).setText(description)
+        except Exception:
+            pass
+
+    def _render(self):
+        if not self._rows:
+            return
+        self._row_index = max(0, min(self._row_index, len(self._rows) - 1))
+        if self._row_index < self._top:
+            self._top = self._row_index
+        if self._row_index >= self._top + EPG_CHANNEL_ROWS:
+            self._top = self._row_index - EPG_CHANNEL_ROWS + 1
+        progs = self._row_programs()
+        self._prog_index = max(0, min(self._prog_index, len(progs) - 1)) if progs else 0
+        global _epg_selected_channel
+        _epg_selected_channel = str(self._rows[self._row_index].get('id') or '')
+
+        if not self._grid_controls:
+            self._create_pool()
+        layout_key = (self._window_start, self._top, self._selected_day)
+        if layout_key != self._layout_key:
+            self._apply_layout()
+            self._layout_key = layout_key
+        self._update_focus(progs)
+        self._update_details(progs)
+
+    def _move_row(self, delta):
+        if not self._rows:
+            return
+        self._row_index = max(0, min(self._row_index + delta, len(self._rows) - 1))
+        self._prog_index = self._default_prog_index()
+        self._render()
+
+    def _move_prog(self, delta):
+        progs = self._row_programs()
+        if not progs:
+            return
+        self._prog_index = max(0, min(self._prog_index + delta, len(progs) - 1))
+        start, end, _pgm, _is_now = progs[self._prog_index]
+        window_end = self._window_start + timedelta(minutes=EPG_WINDOW_MIN)
+        if start < self._window_start or end > window_end:
+            self._window_start = _epg_floor_half_hour(start)
+        self._render()
 
     def onAction(self, action):
         action_id = action.getId()
@@ -5093,76 +5499,62 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             button_code = 0
         xbmc.log('NLZiet EPG action_id={0} button_code={1}'.format(action_id, button_code), xbmc.LOGINFO)
-        # 'D' key (or info) opens the day selector.
         if action_id in (11, 192, 18) or button_code in (61508, 0x44, 68):
             self._select_day()
             return
         if action_id in (9, 10, 92):
-            try:
-                if self.getFocusId() == 200:
-                    self.setFocus(self.getControl(100))
-                    return
-            except Exception:
-                pass
             self.close()
             return
-        try:
-            focus_id = self.getFocusId()
-        except Exception:
-            focus_id = None
-        if focus_id == 100 and action_id in (3, 4):
-            try:
-                position = self.getControl(100).getSelectedPosition()
-                self._load_programs(position)
-            except Exception:
-                pass
+        if action_id == 7:
+            self._activate()
+        elif action_id == 1:
+            self._move_prog(-1)
+        elif action_id == 2:
+            self._move_prog(1)
+        elif action_id == 3:
+            self._move_row(-1)
+        elif action_id == 4:
+            self._move_row(1)
+        elif action_id == 5:
+            self._move_row(-EPG_CHANNEL_ROWS)
+        elif action_id == 6:
+            self._move_row(EPG_CHANNEL_ROWS)
 
-    def onClick(self, controlId):
-        if controlId == 300:
-            self._select_day()
+    def _activate(self):
+        progs = self._row_programs()
+        if not progs:
             return
-        if controlId == 200:
-            try:
-                item = self.getControl(200).getSelectedItem()
-                channel_id = item.getProperty('channel_id') if item else ''
-                program_id = item.getProperty('epg_id') if item else ''
-                mode = item.getProperty('epg_mode') if item else 'live'
-                asset_id = item.getProperty('epg_asset_id') if item else ''
-                title = item.getProperty('epg_title') if item else ''
-                thumb = item.getProperty('epg_thumb') if item else ''
-                is_now = (item.getProperty('now_playing') == 'true') if item else False
-            except Exception:
-                channel_id = program_id = asset_id = title = thumb = ''
-                mode = 'live'
-                is_now = False
-            self._show_program_menu(
-                channel_id, program_id, asset_id, mode, title, thumb, is_now
-            )
-            return
-        if controlId == 100:
-            try:
-                index = self.getControl(100).getSelectedPosition()
-            except Exception:
-                index = 0
-            self._load_programs(index)
-            # Move focus to the programme list so horizontal browsing requires Enter.
-            try:
-                self.setFocus(self.getControl(200))
-            except Exception:
-                pass
+        start, end, pgm, is_now = progs[self._prog_index]
+        channel_id = str(self._rows[self._row_index].get('id') or '')
+        image = pgm.get('image') or ''
+        mode = 'epg' if pgm.get('is_replay') else ('vod' if pgm.get('is_vod') else 'live')
+        self._last_position = {
+            'row_id': channel_id,
+            'top': self._top,
+            'selected_day': self._selected_day,
+            'window_start': self._window_start,
+            'prog_key': (str(pgm.get('id') or ''), start.isoformat()),
+        }
+        self._show_program_menu(
+            channel_id,
+            str(pgm.get('id') or ''),
+            str(pgm.get('asset_id') or ''),
+            mode,
+            pgm.get('title') or '',
+            image,
+            start <= _epg_now() <= end,
+            start > _epg_now(),
+            bool(pgm.get('is_vod')),
+            end <= _epg_now(),
+            start <= _epg_now(),
+        )
 
     def _select_day(self):
         try:
-            from datetime import datetime as _dt, timedelta as _td
-            try:
-                _tzinfo = ZoneInfo('Europe/Amsterdam')
-            except Exception:
-                from datetime import timezone as _tz
-                _tzinfo = _tz.utc
-            now = _dt.now(_tzinfo).date()
+            now = _epg_now().date()
             options = []
             for i in range(-EPG_DAY_BACK, EPG_DAY_FWD + 1):
-                d = now + _td(days=i)
+                d = now + timedelta(days=i)
                 if i == 0:
                     options.append('Vandaag ({0})'.format(d.strftime('%d-%m')))
                 elif i == 1:
@@ -5176,27 +5568,22 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             if choice < 0:
                 return
             self._selected_day = choice - EPG_DAY_BACK
-            try:
-                self.getControl(300).setLabel(options[choice])
-            except Exception:
-                pass
-            index = 0
-            try:
-                index = self.getControl(100).getSelectedPosition()
-            except Exception:
-                index = 0
-            self._load_programs(index)
+            self._reset_window()
+            self._set_day_label()
+            self._ensure_day_loaded(force=True)
+            self._prog_index = self._default_prog_index()
+            self._render()
         except Exception:
             pass
 
-    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False):
+    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False, is_future=False, watch_later_vod=False, aired=False, started=False):
         options = []
         actions = []
         if is_now and channel_id:
             options.append('Nu live kijken')
             actions.append('play_live')
-        if mode == 'epg' and program_id:
-            options.append('Afspelen (terugkijken)')
+        if mode == 'epg' and program_id and not is_future:
+            options.append('Speel vanaf begin' if is_now else 'Afspelen (terugkijken)')
             actions.append('play_replay')
         elif mode == 'vod' and program_id:
             options.append('Afspelen')
@@ -5206,9 +5593,6 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             actions.append('my_series')
             options.append(get_string('add_to_watch_later'))
             actions.append('watch_later')
-        if not is_now and channel_id:
-            options.append('Nu live kijken')
-            actions.append('play_live')
         options.append('Annuleren')
         actions.append('cancel')
         choice = xbmcgui.Dialog().select(title or 'Programma', options)
@@ -5218,7 +5602,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
         if action == 'cancel':
             return
         global _epg_playback_active
-        _epg_playback_active = True
+        _epg_playback_active = action.startswith('play')
         self.close()
         xbmc.executebuiltin('Dialog.Close(all,true)')
         import time
@@ -5245,17 +5629,31 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
                 'fmt': 'live',
             }), noresume=True)
         if action == 'my_series':
-            toggle_my_series(program_id, title, 'series', thumb, 'series')
+            toggle_my_series(program_id, title, None, thumb, 'series')
             return
         elif action == 'watch_later':
-            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes')
+            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes', replay_ok=watch_later_vod, aired=aired, started=started)
             return
 
 
+
+
+def _epg_wait_for_playback_end():
+    """Block until playback started from the EPG has finished. Returns False if it never started."""
+    waited = 0.0
+    while not xbmc.Player().isPlaying():
+        if waited >= 20:
+            return False
+        xbmc.sleep(500)
+        waited += 0.5
+    while xbmc.Player().isPlaying():
+        xbmc.sleep(1000)
+    return True
 
 
 def browse_epg():
     """Show the custom EPG window, falling back to a directory list."""
+    global _epg_playback_active
     # Install the 'D' hotkey keymap for the EPG day selector (best-effort).
     try:
         import shutil
@@ -5267,49 +5665,33 @@ def browse_epg():
             shutil.copyfile(src, dst)
     except Exception:
         pass
-    # Set up a monitor to reopen EPG when playback stops (only if played from EPG).
     try:
-        if not getattr(_EPGDialog, '_monitor_started', False):
-            _EPGDialog._monitor_started = True
-            xbmc.log('NLZiet EPG: starting playback monitor', xbmc.LOGINFO)
-            import threading
-            def _epg_monitor():
-                was_playing = False
-                while True:
-                    try:
-                        playing = xbmc.Player().isPlaying()
-                    except Exception:
-                        playing = False
-                    if playing:
-                        was_playing = True
-                    elif was_playing:
-                        # Playback just stopped.
-                        was_playing = False
-                        global _epg_playback_active
-                        xbmc.log('NLZiet EPG: playback stopped, active={0}'.format(_epg_playback_active), xbmc.LOGINFO)
-                        if _epg_playback_active:
-                            _epg_playback_active = False
-                            xbmc.sleep(1000)
-                            try:
-                                browse_epg()
-                            except Exception as exc:
-                                xbmc.log('NLZiet EPG: reopen failed {0}'.format(exc), xbmc.LOGWARNING)
-                    time.sleep(1)
-            import time
-            threading.Thread(target=_epg_monitor, daemon=True).start()
-    except Exception as exc:
-        xbmc.log('NLZiet EPG: monitor setup failed {0}'.format(exc), xbmc.LOGWARNING)
-    try:
-        rows = _epg_rows()
         dialog = _EPGDialog(
             'epg.xml',
             ADDON.getAddonInfo('path'),
             'Default',
             '1080i',
-            rows=rows,
         )
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
         dialog.doModal()
+        rows = dialog.rows
+        resume = dialog.position()
         del dialog
+        while _epg_playback_active:
+            _epg_playback_active = False
+            if not _epg_wait_for_playback_end():
+                break
+            dialog = _EPGDialog(
+                'epg.xml',
+                ADDON.getAddonInfo('path'),
+                'Default',
+                '1080i',
+                rows=rows,
+                resume=resume,
+            )
+            dialog.doModal()
+            resume = dialog.position()
+            del dialog
         return
     except Exception as exc:
         xbmc.log('NLZiet EPG dialog failed, using list: {0}'.format(exc), xbmc.LOGWARNING)
@@ -5829,6 +6211,7 @@ def get_route_handlers():
         'refresh_account_info': refresh_account_info,
         'export_diagnostics': export_diagnostics,
         'clear_subtitle_cache': clear_subtitle_cache,
+        'clear_all_cache': clear_all_cache,
         'search_group': search_group,
         'show_series_detail': show_series_detail,
         'show_series_season': show_series_season,

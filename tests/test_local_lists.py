@@ -95,7 +95,7 @@ def test_toggle_my_series_adds_then_removes(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_my_series(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
@@ -126,7 +126,7 @@ def test_toggle_watch_later_adds_then_removes(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
@@ -157,7 +157,7 @@ def test_toggle_watch_later_rejects_series(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return False
@@ -182,7 +182,7 @@ def test_toggle_watch_later_accepts_non_series_movies(monkeypatch, kodi_recorder
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
@@ -269,7 +269,7 @@ def test_toggle_my_series_resolves_series_without_type(monkeypatch, kodi_recorde
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def get_series_detail(self, item_id):
             return {'title': 'Ghosts', 'description': 'Een serie', 'seasons': [{'id': '1'}]}
@@ -380,7 +380,7 @@ def test_toggle_mylist_accepts_any_content(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_my_list(self, item_id):
             return any(item['id'] == item_id for item in state['items'])
@@ -1177,3 +1177,202 @@ def test_expiry_notifies_once_for_items_inside_the_window(monkeypatch, tmp_path,
     api = FakeApi()
     assert default._expiry_due_names(api) == ['Shetland']
     assert default._expiry_due_names(api) == []
+
+
+def test_add_refuses_item_not_found_on_nlziet(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def get_series_detail(self, item_id):
+            return {}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', None, 'episode', 'img', 'episodes')
+
+    assert state['items'] == []
+    assert 'niet gevonden' in kodi_recorder.notifications[-1][1]
+
+
+def test_watch_later_refuses_programme_that_cannot_be_replayed(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {'title': item_id}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Programma', 'episode', 'img', 'episodes', replay_ok=False)
+
+    assert state['items'] == []
+    assert 'niet terug te kijken' in kodi_recorder.notifications[-1][1]
+
+
+def test_my_series_refuses_non_series_item(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {'title': item_id, 'type': 'Episode'}
+
+        def is_in_my_series(self, item_id):
+            return False
+
+        def add_to_my_series(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_my_series('e1', 'Aflevering', None, 'img', 'series')
+
+    assert state['items'] == []
+    assert kodi_recorder.notifications[-1][1] == default.get_string('only_series')
+
+
+def test_watch_later_accepts_future_vod_programme_and_warns(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def get_stream_info(self, item_id):
+            return {'manifest': None}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Programma', 'episode', 'img', 'episodes', replay_ok=True, aired=False)
+
+    assert [item['id'] for item in state['items']] == ['p1']
+    assert kodi_recorder.notifications[-1][1] == default.get_string('list_item_not_aired')
+
+
+def test_watch_later_refuses_aired_programme_that_cannot_play(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def get_stream_info(self, item_id):
+            return {'manifest': None}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Programma', 'episode', 'img', 'episodes', replay_ok=True, aired=True)
+
+    assert state['items'] == []
+    assert kodi_recorder.notifications[-1][1] == default.get_string('list_item_not_playable')
+
+
+def test_watch_later_adds_aired_programme_that_can_play(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def get_stream_info(self, item_id):
+            return {'manifest': 'https://example.test/manifest.mpd'}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Programma', 'episode', 'img', 'episodes', replay_ok=True, aired=True)
+
+    assert [item['id'] for item in state['items']] == ['p1']
+    assert kodi_recorder.notifications[-1][1] == default.get_string('added_to_watch_later')
+
+
+def test_watch_later_marks_future_playable_programme_as_repeat(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def get_stream_info(self, item_id):
+            return {'manifest': 'https://example.test/manifest.mpd'}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Ivo op zondag', 'episode', 'img', 'episodes', replay_ok=True, aired=False, started=False)
+
+    assert [item['id'] for item in state['items']] == ['p1']
+    assert kodi_recorder.notifications[-1][1] == default.get_string('list_item_repeat_playable')
+
+
+def test_watch_later_marks_airing_programme_as_airing(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    state = {'items': []}
+
+    class FakeApi:
+        def get_content_detail(self, item_id):
+            return {}
+
+        def is_in_watch_later(self, item_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            state['items'].append(item)
+            return True
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.toggle_watch_later('p1', 'Live nu', 'episode', 'img', 'episodes', replay_ok=True, aired=False, started=True)
+
+    assert [item['id'] for item in state['items']] == ['p1']
+    assert kodi_recorder.notifications[-1][1] == default.get_string('list_item_airing')

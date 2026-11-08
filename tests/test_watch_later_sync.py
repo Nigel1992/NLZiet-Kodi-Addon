@@ -443,7 +443,7 @@ def test_toggle_propagates_to_cloud_when_sync_enabled(monkeypatch, kodi_recorder
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return any(i['id'] == item_id for i in state['items'])
@@ -476,7 +476,7 @@ def test_toggle_my_series_propagates_to_cloud(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_series_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_my_series(self, item_id):
             return any(i['id'] == item_id for i in state['items'])
@@ -508,7 +508,7 @@ def test_toggle_watch_later_rejects_series(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return False
@@ -532,7 +532,7 @@ def test_toggle_propagates_using_legacy_api(monkeypatch, kodi_recorder):
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return any(i['id'] == item_id for i in state['items'])
@@ -575,7 +575,7 @@ def test_toggle_does_not_touch_cloud_when_sync_disabled(monkeypatch, kodi_record
 
     class FakeApi:
         def get_content_detail(self, item_id):
-            return {}
+            return {'title': item_id}
 
         def is_in_watch_later(self, item_id):
             return any(i['id'] == item_id for i in state['items'])

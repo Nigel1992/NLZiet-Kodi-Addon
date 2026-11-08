@@ -1,6 +1,31 @@
 # Changelog
 
-> **Latest Version:** v1.5.0 (November 8, 2026)
+> **Latest Version:** v1.6.0 (November 8, 2026)
+
+## [1.6.0] - 2026-11-08
+
+### Added
+- **TV Gids timeline**: the EPG is now a timeline grid with a time ruler, one row per channel, and programme blocks sized to their duration. Past programmes are grey, live programmes blue, and future programmes green. The current time is shown as a white line.
+- **Programme description**: the selected programme's description is shown at the bottom and scrolls automatically when it is long.
+- **Clock and date**: the current time and date are shown in the top right of the EPG.
+- **Footer bar**: the day selector (press I / Info) is on the left and the channel count on the right.
+- **Return to position**: after playback started from the EPG stops, the EPG reopens on the same channel, programme, day and time window.
+- **Clear all cache**: a new settings button clears the EPG, TVmaze and episode caches and the subtitle cache.
+- **Automatic cache clearing**: optional periodic clearing of all caches, with a configurable number of hours (off by default).
+- **Speel vanaf begin**: on a programme that is live now, the Enter menu offers "Speel vanaf begin" instead of "Afspelen (terugkijken)".
+
+### Changed
+- **Menu name**: the main menu entry "EPG" is now "TV Gids", and the EPG title is "NLZiet TV Gids".
+- **Faster EPG opening**: the window opens immediately and the channel list is cached for 6 hours, so the EPG no longer waits for the server on every open. Day data is cached for 6 hours and refreshed when you pick a day.
+- **Live programme menu**: "Nu live kijken" is only offered for programmes that are on now.
+
+### Fixed
+- **EPG hang on close** (issue #36): closing the EPG no longer leaves Kodi's loading spinner running, and the plugin no longer keeps running in the background.
+- **Missing programme blocks**: rows with more than 12 programmes in the visible window now show all of them.
+- **Blocks missing after changing day**: switching to another day now shows its programmes straight away.
+- **Text outside blocks**: text on very short programmes no longer spills outside its block.
+- **Day dialog on Enter**: pressing Enter on a programme opens its menu instead of the day picker.
+- **Placeholder text**: the grid no longer briefly shows "Vandaag" before the date.
 
 ## [1.5.0] - 2026-11-08
 

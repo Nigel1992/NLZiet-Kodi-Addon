@@ -90,6 +90,8 @@ class Router:
             self.handlers['export_diagnostics']()
         elif mode == 'clear_subtitle_cache':
             self.handlers['clear_subtitle_cache']()
+        elif mode == 'clear_all_cache':
+            self.handlers['clear_all_cache']()
         elif mode == 'browse_epg':
             self.handlers['browse_epg']()
         elif mode == 'search_group':
