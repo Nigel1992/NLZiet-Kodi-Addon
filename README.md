@@ -24,6 +24,10 @@
 
 ---
 
+<details open>
+<summary><b>English</b></summary>
+
+
 ## ✨ Features
 
 - **Live TV**: Stream all supported NLZiet channels with EPG info. Includes a custom full-screen EPG with channel logos, current programme indicator, and 7-day browse.
@@ -295,3 +299,63 @@ MIT. See [LICENSE](LICENSE).
 ## ⚠️ Disclaimer
 
 This project is not affiliated with or endorsed by NLZiet. Use at your own risk. For personal, non-commercial use only.
+
+</details>
+
+<details>
+<summary><b>Nederlands</b></summary>
+
+## ✨ Functies
+
+- **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info. Bevat een aangepaste volledig-scherm EPG met zenderlogo's, huidige-programma-indicator en 7 dagen bladeren.
+- **Series**: Blader, zoek en speel series af met volledige seizoen/aflevering-navigatie.
+- **Films**: Ontdek en kijk films uit de NLZiet-catalogus.
+- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**. **Kijk Later** bevat afleveringen en films, terwijl **Mijn Series** hele series volgt — elk item toont de bijpassende actie in het contextmenu. Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
+- **Profielbeheer**: Schakel tussen gebruikersprofielen vanuit de Kodi-UI.
+- **Lokalisatie**: Alle gebruikerstekst wordt opgelost via Kodi's taalsysteem (Nederlands en Engels inbegrepen); Engels is de fallback voor talen zonder vertaalbestand.
+- **DRM-ondersteuning**: Widevine-beschermde streams via `inputstream.adaptive` met automatische `inputstreamhelper`-verificatie.
+- **Placement Rows**: Home-schermrijen spiegelen de officiële NLZiet-app (bijv. "Aanbevolen", "Populaire series").
+- **Afleveringsnummering**: Nauwkeurige SxxExx- en Nederlandse soap (Afl. N)-parsing, met seizoensmapping. **Kijk Later** toont daarnaast het afleveringsnummer en de resterende beschikbaarheid als compacte, subtiel gekleurde regels in de itembeschrijving.
+- **Zoeken**: Vind series, films en afleveringen op titel.
+- **Trakt Scrobbling**: Films en afleveringen tonen afspeelmetadata aan de officiële Kodi `script.trakt`-add-on, met film titel/jaar-resolutie, benoemde-aflevering-matching, herstel van gecachte URL's en expliciete live-TV-uitsluiting. De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.
+- **Robuuste Handshake**: Automatische manifest/license-extractie en fallback-logica.
+- **Schone ondertitels**: NPO's teletekst-afgeleide ondertitels worden vóór afspelen opgeschoond, zodat Kodi zijn normale ondertiteloverlay toont in plaats van het teletekst-paginanummer ("888") en gele/witte teletekstkleuren.
+- **Zoekgeschiedenis**: recente zoekopdrachten kunnen worden hergebruikt of selectief verwijderd.
+- **Nieuwe-aflevering-tracking**: Mijn Series markeert series met nieuwe afleveringen, en Kijk Later kan alleen afleveringen volgen die vanaf nu worden uitgezonden.
+- **Responsieve navigatie**: achtergrond-sync en onderhoud blokkeert geen menunavigatie of terugkeer vanaf afspelen.
+- **Debug Logging**: Eenvoudige logverzameling voor probleemoplossing.
+
+Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) voor de volledige versiegeschiedenis.
+
+---
+
+## 🚀 Installatie
+
+1. Download de nieuwste release van [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+2. In Kodi: **Add-ons > Install from zip file** en selecteer de gedownloade zip.
+3. Open de add-on en gebruik **Inloggen** om je te authenticeren bij NLZiet.
+4. Installeer en autoriseer de officiële Kodi **Trakt**-add-on als je film- en aflevering-scrobbling wilt.
+5. Installeer `inputstream.adaptive` voor DRM-afspelen. De add-on verifieert het automatisch via `inputstreamhelper`.
+
+---
+
+## ⚙️ Instellingen
+
+Zie `resources/settings.xml` voor alle beschikbare instellingen (account, synchronisatie, ondertitels, cache, meldingen, debug).
+
+---
+
+## 🛠️ Ontwikkeling
+
+- Python 3 (Kodi 19+).
+- Tests: `python -m pytest` (155 tests).
+- Addon-check: `bash scripts/run-addon-check-local.sh`.
+
+---
+
+## 📄 Licentie
+
+MIT — zie [LICENSE](LICENSE).
+
+
+</details>
