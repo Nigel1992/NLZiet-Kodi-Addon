@@ -24,8 +24,8 @@
 
 ---
 
-<details open>
-<summary><b>English</b></summary>
+<details>
+<summary>🇬🇧 <b>English</b> — click to expand</summary>
 
 
 ## ✨ Features
@@ -128,7 +128,7 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 </details>
 
 <details>
-<summary><b>Nederlands</b></summary>
+<summary>🇳🇱 <b>Nederlands</b> — klik om uit te klappen</summary>
 
 
 ## ✨ Functies
