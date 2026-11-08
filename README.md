@@ -12,7 +12,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nigel1992/NLZiet-Kodi-Addon?style=social)](https://github.com/Nigel1992/NLZiet-Kodi-Addon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Latest release:** v1.4.5 — 2026-11-06. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+**Latest release:** v1.5.0 — 2026-11-08. See the [Changelog](CHANGELOG.md) or [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 
 <sub>Unofficial NLZiet Kodi Addon - Watch live TV, series, movies, and more from NLZiet directly in Kodi. Supports profiles, DRM, and a modern UI.</sub>
 
@@ -26,7 +26,7 @@
 
 ## ✨ Features
 
-- **Live TV**: Stream all supported NLZiet channels with EPG info.
+- **Live TV**: Stream all supported NLZiet channels with EPG info. Includes a custom full-screen EPG with channel logos, current programme indicator, and 7-day browse.
 - **Series**: Browse, search, and play series with full season/episode navigation.
 - **Movies**: Discover and watch movies from the NLZiet catalog.
 - **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**. **Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu. Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions.
@@ -44,6 +44,18 @@
 - **Responsive navigation**: background sync and maintenance work does not block menu transitions or returning from playback.
 - **Debug Logging**: Easy log collection for troubleshooting.
 ---
+
+### New in v1.5.0
+
+- **Custom EPG**: full-screen EPG dialog with channels on the left and horizontally scrolling programmes on the right. Shows channel logos, current programme (● NU), and date/time per programme. Browse today + 7 days back/forward via a day selector (press I / Info).
+- **Live TV restart/replay**: "Afspelen (terugkijken)" on live programmes now starts from the beginning instead of jumping to realtime.
+- **Context menu**: long-press Enter on any programme for Play / Add to My Series / Add to Watch Later.
+- **Auto subtitle cache clearing**: optional periodic clearing of the subtitle cache (configurable hours).
+- **Menu icons**: refreshed premium icon set.
+- **Live TV resume prompt**: live streams no longer offer "Resume from …"; always start at the live edge.
+- **EPG day filtering**: selecting a day now correctly filters programmes to that day.
+- **EPG channel highlight**: selected channel stays highlighted while browsing programmes.
+- **Subtitle cache settings**: spinner now has min/max/step so a duration can be selected.
 
 ### New in v1.4.4.1 (hotfix)
 
