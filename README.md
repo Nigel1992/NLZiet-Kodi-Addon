@@ -47,7 +47,7 @@
 - **New episode tracking**: My Series highlights series with new episodes, and Kijk Later can follow only episodes released from now on.
 - **Responsive navigation**: background sync and maintenance work does not block menu transitions or returning from playback.
 - **Debug Logging**: Easy log collection for troubleshooting.
-
+---
 ---
 
 See the [Changelog](CHANGELOG.md) for the full version history.
@@ -130,20 +130,25 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 <details>
 <summary>🇳🇱 <b>Nederlands</b> — klik om uit te klappen</summary>
 
-
 ## ✨ Functies
 
-- **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info. Bevat een aangepaste volledig-scherm EPG (TV Gids) met zendernamen, huidige-programma-indicator en 7 dagen bladeren.
+- **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info.
+Bevat een aangepaste volledig-scherm EPG (TV Gids) met zendernamen, huidige-programma-indicator en 7 dagen bladeren.
 - **Series**: Blader, zoek en speel series af met volledige seizoen/aflevering-navigatie.
 - **Films**: Ontdek en kijk films uit de NLZiet-catalogus.
-- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**. **Kijk Later** (Watch Later) bevat afleveringen en films, terwijl **Mijn Series** (My Series) hele series volgt — elk item toont de bijpassende actie in het contextmenu. Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
+- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**.
+**Kijk Later** bevat afleveringen en films, terwijl **Mijn Series** hele series volgt — elk item toont de bijpassende actie in het contextmenu.
+Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**.
 - **Profielbeheer**: Schakel tussen gebruikersprofielen vanuit de Kodi-UI.
 - **Lokalisatie**: Alle gebruikerstekst wordt opgelost via Kodi's taalsysteem (Nederlands en Engels inbegrepen); Engels is de fallback voor talen zonder vertaalbestand.
 - **DRM-ondersteuning**: Widevine-beschermde streams via `inputstream.adaptive` met automatische `inputstreamhelper`-verificatie.
 - **Placement Rows**: Home-schermrijen spiegelen de officiële NLZiet-app (bijv. "Aanbevolen", "Populaire series").
-- **Afleveringsnummering**: Nauwkeurige SxxExx- en Nederlandse soap (Afl. N)-parsing, met seizoensmapping. **Kijk Later** toont daarnaast het afleveringsnummer en de resterende beschikbaarheid als compacte, subtiel gekleurde regels in de itembeschrijving.
+- **Afleveringsnummering**: Nauwkeurige SxxExx- en Nederlandse soap (Afl.
+N)-parsing, met seizoensmapping.
+**Kijk Later** toont daarnaast het afleveringsnummer en de resterende beschikbaarheid als compacte, subtiel gekleurde regels in de itembeschrijving.
 - **Zoeken**: Vind series, films en afleveringen op titel.
-- **Trakt Scrobbling**: Films en afleveringen tonen afspeelmetadata aan de officiële Kodi `script.trakt`-add-on, met film titel/jaar-resolutie, benoemde-aflevering-matching, herstel van gecachte URL's en expliciete live-TV-uitsluiting. De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.
+- **Trakt Scrobbling**: Films en afleveringen tonen afspeelmetadata aan de officiële Kodi `script.trakt`-add-on, met film titel/jaar-resolutie, benoemde-aflevering-matching, herstel van gecachte URL's en expliciete live-TV-uitsluiting.
+De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.
 - **Robuuste Handshake**: Automatische manifest/license-extractie en fallback-logica.
 - **Schone ondertitels**: NPO's teletekst-afgeleide ondertitels worden vóór afspelen opgeschoond, zodat Kodi zijn normale ondertiteloverlay toont in plaats van het teletekst-paginanummer ("888") en gele/witte teletekstkleuren.
 - **Zoekgeschiedenis**: recente zoekopdrachten kunnen worden hergebruikt of selectief verwijderd.
@@ -151,9 +156,9 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 - **Responsieve navigatie**: achtergrond-sync en onderhoud blokkeert geen menunavigatie of terugkeer vanaf afspelen.
 - **Debug Logging**: Eenvoudige logverzameling voor probleemoplossing.
 
----
+Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) voor de volledige versiegeschiedenis.
 
-Zie de [Changelog](CHANGELOG.md) voor de volledige versiegeschiedenis.
+---
 
 ## 🚀 Installatie
 
@@ -184,3 +189,4 @@ Zie `resources/settings.xml` voor alle beschikbare instellingen (account, synchr
 MIT — zie [LICENSE](LICENSE).
 
 
+</details>
