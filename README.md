@@ -100,7 +100,6 @@ scripts/run-addon-check-local.sh --branch omega
 N when possible)  
 - [X] **Fix subfolders in series option** (better season/episode navigation)  
 - [ ] **Improve error messages and user feedback**  
-- [ ] **Add Dutch/English language toggle**  
 - [ ] **Better artwork and fanart for all content**  
 - [X] **Settings: allow custom API endpoint for advanced users**  
 - [ ] **Add more debug and diagnostic tools**  
