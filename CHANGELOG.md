@@ -1,6 +1,13 @@
 # Changelog
 
-> **Latest Version:** v1.6.1 (November 8, 2026)
+> **Latest Version:** v1.6.2 (November 9, 2026)
+
+## [1.6.2] - 2026-11-09
+
+### Changed
+- **Settings**: cache clearing (subtitle cache and all cache) moved into a new dedicated "Cache" category.
+- **Settings**: removed the "Advanced" (API base URL) and "Profiles" categories; the API base URL is now built into the addon.
+- **Settings**: Debugging category now only contains debug HTTP and diagnostics export.
 
 ## [1.6.1] - 2026-11-08
 

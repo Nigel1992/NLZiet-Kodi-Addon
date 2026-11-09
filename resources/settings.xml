@@ -47,48 +47,6 @@
       </group>
     </category>
 
-    <category id="category_profiles" label="30004" help="">
-      <group id="1" label="">
-        <setting id="profile_id" type="string" label="30107" help="">
-          <level>0</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <enable>false</enable>
-          <control type="edit" format="string">
-            <heading>30107</heading>
-          </control>
-        </setting>
-        <setting id="profile_name" type="string" label="30108" help="">
-          <level>0</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <enable>false</enable>
-          <control type="edit" format="string">
-            <heading>30108</heading>
-          </control>
-        </setting>
-      </group>
-    </category>
-
-    <category id="category_advanced" label="30005" help="">
-      <group id="1" label="">
-        <setting id="api_base_url" type="string" label="30109" help="">
-          <level>1</level>
-          <default>https://api.nlziet.nl</default>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>30109</heading>
-          </control>
-        </setting>
-      </group>
-    </category>
-
     <category id="category_playback" label="30006" help="">
       <group id="1" label="">
         <setting id="subtitles_default" type="boolean" label="30110" help="">
@@ -174,6 +132,11 @@
             <close>false</close>
           </control>
         </setting>
+      </group>
+    </category>
+
+    <category id="category_cache" label="30009" help="">
+      <group id="1" label="">
         <setting id="clear_subtitle_cache" type="action" label="33158" help="">
           <level>0</level>
           <data>RunPlugin(plugin://$ID?mode=clear_subtitle_cache)</data>

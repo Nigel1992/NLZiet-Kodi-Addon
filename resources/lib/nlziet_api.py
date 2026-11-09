@@ -52,7 +52,7 @@ class NLZietAPI:
         self.addon = xbmcaddon.Addon()
         self.username = username or self.addon.getSetting('username')
         self.password = password or self.addon.getSetting('password')
-        self.base_url = base_url or self.addon.getSetting('api_base_url') or 'https://api.nlziet.nl'
+        self.base_url = base_url or 'https://api.nlziet.nl'
         self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36'
 
         self.addon_id = self.addon.getAddonInfo('id')
