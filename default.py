@@ -423,7 +423,7 @@ STRING_IDS = {
     'added_to_my_series': 33120,
     'removed_from_my_series': 33121,
     'my_series_empty': 33122,
-    'sync_now': 33184,
+    'sync_now': 33185,
     'missing_id_my_series': 33123,
     'myseries_action_failed': 33124,
     'myseries_sync_done': 33125,

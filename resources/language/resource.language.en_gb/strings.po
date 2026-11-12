@@ -833,3 +833,7 @@ msgstr "Added. This programme is airing now and can only be played after the bro
 msgctxt "#33184"
 msgid "Auto-sync interval (minutes, 0 = disabled)"
 msgstr "Auto-sync interval (minutes, 0 = disabled)"
+
+msgctxt "#33185"
+msgid "Sync now"
+msgstr "Sync now"
