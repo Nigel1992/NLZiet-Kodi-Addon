@@ -79,6 +79,7 @@ jobs:
             --exclude 'package_build/' \
             --exclude 'package_clean/' \
             --exclude '*.zip' \
+            --exclude '*.sha256' \
             --exclude '.gitignore'
           echo "addon_path=${TARGET_DIR}" >> "${GITHUB_OUTPUT}"
 

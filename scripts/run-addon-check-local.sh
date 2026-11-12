@@ -87,6 +87,7 @@ rsync -a "${REPO_ROOT}/" "${TARGET_DIR}/" \
   --exclude 'package_build/' \
   --exclude 'package_clean/' \
   --exclude '*.zip' \
+  --exclude '*.sha256' \
   --exclude '.gitignore'
 
 # Ensure third-party dependencies are available to the checker/runtime by
