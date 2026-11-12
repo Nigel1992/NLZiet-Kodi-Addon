@@ -240,6 +240,13 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
             li.addContextMenuItems(context_items)
     except Exception:
         pass
+    # Fallback: ensure caller-supplied context items are applied even if the
+    # (content-id based) block above raised or skipped them.
+    try:
+        if extra_context_items:
+            li.addContextMenuItems(list(extra_context_items))
+    except Exception:
+        pass
     xbmcplugin.addDirectoryItem(handle, url, li, isFolder=is_folder)
 
 
