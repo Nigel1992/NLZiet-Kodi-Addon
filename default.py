@@ -3684,6 +3684,8 @@ def browse_watch_later():
         api.migrate_series_from_watch_later()
     except Exception:
         pass
+    if _watch_later_sync_enabled():
+        add_directory_item(get_string('sync_now'), {'mode': 'sync_watch_later'}, thumb=None, is_folder=False, is_playable=False)
     try:
         items = api.get_watch_later() or []
     except Exception:
@@ -3840,6 +3842,8 @@ def _save_my_series_state(api, state):
 def browse_my_series():
     """Show the followed-series list; the cloud sync runs after the list is shown."""
     api = _get_list_api()
+    if _my_series_sync_enabled():
+        add_directory_item(get_string('sync_now'), {'mode': 'sync_my_series'}, thumb=None, is_folder=False, is_playable=False)
     try:
         items = api.get_my_series() or []
     except Exception:
