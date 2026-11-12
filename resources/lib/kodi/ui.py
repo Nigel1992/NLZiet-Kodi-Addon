@@ -120,6 +120,7 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
     # determine a content id. All entries are collected and applied in a single
     # call: Kodi's addContextMenuItems replaces the list on each call, so
     # calling it repeatedly would discard earlier items.
+    context_items = []
     try:
         content_id = None
         content_type = None
@@ -234,19 +235,15 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
             except Exception:
                 pass
 
-        if extra_context_items:
-            context_items = list(context_items or []) + list(extra_context_items)
-        if context_items:
+    except Exception:
+        pass
+    if extra_context_items:
+        context_items = list(context_items) + list(extra_context_items)
+    if context_items:
+        try:
             li.addContextMenuItems(context_items)
-    except Exception:
-        pass
-    # Fallback: ensure caller-supplied context items are applied even if the
-    # (content-id based) block above raised or skipped them.
-    try:
-        if extra_context_items:
-            li.addContextMenuItems(list(extra_context_items))
-    except Exception:
-        pass
+        except Exception:
+            pass
     xbmcplugin.addDirectoryItem(handle, url, li, isFolder=is_folder)
 
 

@@ -5,7 +5,7 @@
 ## [1.6.3] - 2026-11-12
 
 ### Added
-- **Sync**: added a "Sync Now" context-menu action on the Kijk Later and Mijn Series home menu items for manual cloud sync.
+- **Sync**: added a "Sync Now" context-menu action on each item in Kijk Later and Mijn Series for manual cloud sync (the manual sync buttons in Settings → Synchronization already existed).
 - **Sync**: added an auto-sync interval setting (background service) to sync Kijk Later and Mijn Series every X minutes.
 
 ## [1.6.2.1] - 2026-11-12 (hotfix)
