@@ -1254,10 +1254,22 @@ def main_menu():
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'),
-                           extra_context_items=[(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': 'sync_watch_later'})))])
-        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'),
-                           extra_context_items=[(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': 'sync_my_series'})))])
+        for _title_key, _mode, _sync_mode, _png in (
+            ('watch_later', 'watch_later', 'sync_watch_later', 'watchlater'),
+            ('my_series', 'my_series', 'sync_my_series', 'myseries'),
+        ):
+            _li = xbmcgui.ListItem(label=get_string(_title_key), offscreen=True)
+            _thumb = _pick_png(_png)
+            if _thumb:
+                try:
+                    _li.setArt({'icon': _thumb, 'thumb': _thumb})
+                except Exception:
+                    pass
+            try:
+                _li.addContextMenuItems([(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': _sync_mode})))])
+            except Exception:
+                pass
+            xbmcplugin.addDirectoryItem(HANDLE, build_url({'mode': _mode}), _li, isFolder=True)
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
