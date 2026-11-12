@@ -3094,7 +3094,7 @@ def _order_watch_later(items):
 
 def _render_list_items(
     items, enrich=False, api=None, episode_label_only=False, episode_numbers=None,
-    highlight_ids=None, sync_mode=None,
+    highlight_ids=None,
 ):
     """Render stored list items, linking series to their detail page.
 
@@ -3180,14 +3180,13 @@ def _render_list_items(
                         info['season'] = season_episode[0]
                         info['episode'] = season_episode[1]
             group = _content_group(itm)
-            _extra_ctx = [(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': sync_mode})))] if sync_mode else None
             if group in ('series', 'tvshows', 'documentary'):
-                add_directory_item(label, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content, extra_context_items=_extra_ctx)
+                add_directory_item(label, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content)
             else:
                 play_query = {'mode': 'play', 'id': itm.get('id')}
                 if group == 'channels':
                     play_query['fmt'] = 'live'
-                add_directory_item(label, play_query, is_folder=False, thumb=thumb, info=info, content=content, extra_context_items=_extra_ctx)
+                add_directory_item(label, play_query, is_folder=False, thumb=thumb, info=info, content=content)
         except Exception:
             continue
 
@@ -3669,7 +3668,7 @@ def _render_watch_later_top(items, api):
         add_directory_item(
             label, {'mode': 'watch_later_collection', 'collection_id': cid},
             is_folder=True, thumb=_pick_landscape_thumb(members[0]))
-    _render_list_items(standalone, enrich=True, api=api, sync_mode='sync_watch_later' if _watch_later_sync_enabled() else None)
+    _render_list_items(standalone, enrich=True, api=api)
 
 
 def browse_watch_later():
@@ -3850,7 +3849,7 @@ def browse_my_series():
         # Detecting newly added episodes requires fetching every series' episodes,
         # which is slow. Do it in the background so the list renders immediately;
         # highlight/refresh happen after the directory has been shown.
-        _render_list_items(items, sync_mode='sync_my_series' if _my_series_sync_enabled() else None)
+        _render_list_items(items)
     xbmcplugin.endOfDirectory(HANDLE)
 
     _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
