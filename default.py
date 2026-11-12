@@ -249,6 +249,7 @@ TRANSLATIONS = {
     'added_to_my_series': {'nl': 'Toegevoegd aan Mijn Series', 'en': 'Added to My Series'},
     'removed_from_my_series': {'nl': 'Verwijderd uit Mijn Series', 'en': 'Removed from My Series'},
     'my_series_empty': {'nl': 'Mijn Series is leeg', 'en': 'My Series is empty'},
+    'sync_now': {'nl': 'Nu synchroniseren', 'en': 'Sync Now'},
     'missing_id_my_series': {'nl': 'ID ontbreekt voor Mijn Series-actie', 'en': 'Missing id for My Series action'},
     'myseries_action_failed': {'nl': 'Mijn Series-actie mislukt', 'en': 'My Series action failed'},
     'myseries_sync_done': {'nl': 'Mijn Series gesynchroniseerd ({} wijzigingen)', 'en': 'My Series synced ({} changes)'},
@@ -422,6 +423,7 @@ STRING_IDS = {
     'added_to_my_series': 33120,
     'removed_from_my_series': 33121,
     'my_series_empty': 33122,
+    'sync_now': 33184,
     'missing_id_my_series': 33123,
     'myseries_action_failed': 33124,
     'myseries_sync_done': 33125,
@@ -1065,7 +1067,7 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
             list_item.setProperty('TotalTime', '3600')
 
 
-def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None):
+def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None, extra_context_items=None):
     query = _add_trakt_metadata_to_query(query, title, info, content)
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
 
@@ -1100,6 +1102,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         playback_state=playback_state,
         is_live=is_live,
         group=group,
+        extra_context_items=extra_context_items,
         add_to_library_label=get_string('add_to_library'),
         mylist_add_label=get_string('add_to_mylist'),
         mylist_remove_label=get_string('remove_from_mylist'),
@@ -1251,8 +1254,10 @@ def main_menu():
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
-        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
+        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'),
+                           extra_context_items=[(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': 'sync_watch_later'})))])
+        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'),
+                           extra_context_items=[(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': 'sync_my_series'})))])
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
@@ -3923,7 +3928,7 @@ def _my_series_sync_enabled():
     return _watch_later_sync_enabled()
 
 
-def _list_add_problem(kind, detail, stored_type, replay_ok=None, title=None):
+def _list_add_problem(kind, detail, stored_type, replay_ok=None, title=None, group=None):
     """Return a string key describing why an item cannot be saved to a list, or None.
 
     The detail endpoint does not return data for every id, so a missing detail
@@ -4022,7 +4027,7 @@ def _toggle_local_list(kind, item_id=None, title=None, type=None, thumb=None, gr
             stored_type = resolved_type or detail.get('type') or ''
             if not stored_type and isinstance(detail.get('seasons'), (list, tuple)):
                 stored_type = 'Series'
-            problem = _list_add_problem(kind, detail, stored_type, replay_ok, title)
+            problem = _list_add_problem(kind, detail, stored_type, replay_ok, title, group)
             if problem:
                 xbmcgui.Dialog().notification('NLZiet', get_string(problem), xbmcgui.NOTIFICATION_INFO)
                 return
@@ -4147,8 +4152,8 @@ def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=No
     _toggle_local_list('watch_later', item_id, title, type, thumb, group, replay_ok=replay_ok, aired=aired, started=started, description=description)
 
 
-def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None):
-    _toggle_local_list('my_series', item_id, title, type, thumb, group)
+def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None, description=None):
+    _toggle_local_list('my_series', item_id, title, type, thumb, group, description=description)
 
 
 def sync_watch_later(notify=True):
@@ -5554,6 +5559,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             bool(pgm.get('is_vod')),
             end <= _epg_now(),
             start <= _epg_now(),
+            pgm.get('description') or pgm.get('plot') or '',
         )
 
     def _select_day(self):
@@ -5583,7 +5589,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             pass
 
-    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False, is_future=False, watch_later_vod=False, aired=False, started=False):
+    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False, is_future=False, watch_later_vod=False, aired=False, started=False, description=''):
         options = []
         actions = []
         if is_now and channel_id:
@@ -5636,10 +5642,10 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
                 'fmt': 'live',
             }), noresume=True)
         if action == 'my_series':
-            toggle_my_series(program_id, title, None, thumb, 'series')
+            toggle_my_series(program_id, title, None, thumb, 'series', description=description)
             return
         elif action == 'watch_later':
-            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes', replay_ok=watch_later_vod, aired=aired, started=started, description=pgm.get('description') or pgm.get('plot') or '')
+            toggle_watch_later(program_id, title, 'episode', thumb, 'episodes', replay_ok=watch_later_vod, aired=aired, started=started, description=description or '')
             return
 
 

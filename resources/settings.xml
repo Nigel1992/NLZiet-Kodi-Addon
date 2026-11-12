@@ -83,6 +83,19 @@
             <close>false</close>
           </control>
         </setting>
+        <setting id="auto_sync_interval" type="integer" label="33184" help="">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <minimum>0</minimum>
+            <maximum>1440</maximum>
+            <step>5</step>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="watch_later_sync">true</dependency>
+          </dependencies>
+          <control type="spinner" format="integer"/>
+        </setting>
       </group>
     </category>
 

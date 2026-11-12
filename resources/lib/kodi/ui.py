@@ -56,7 +56,8 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        watch_later_remove_label='Remove from Watch Later',
                        my_series_add_label='Add to My Series',
                        my_series_remove_label='Remove from My Series',
-                       add_series_watch_later_label=None):
+                       add_series_watch_later_label=None,
+                        extra_context_items=None):
     url = build_url_func(query)
     li = xbmcgui.ListItem(label=title, offscreen=True)
 
@@ -233,6 +234,8 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
             except Exception:
                 pass
 
+        if extra_context_items:
+            context_items = list(context_items or []) + list(extra_context_items)
         if context_items:
             li.addContextMenuItems(context_items)
     except Exception:

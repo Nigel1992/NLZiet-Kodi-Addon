@@ -829,3 +829,7 @@ msgstr "Added. This is a repeat and can be played right away."
 msgctxt "#33183"
 msgid "Added. This programme is airing now and can only be played after the broadcast."
 msgstr "Added. This programme is airing now and can only be played after the broadcast."
+
+msgctxt "#33184"
+msgid "Auto-sync interval (minutes, 0 = disabled)"
+msgstr "Auto-sync interval (minutes, 0 = disabled)"

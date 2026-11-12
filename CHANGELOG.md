@@ -1,6 +1,17 @@
 # Changelog
 
-> **Latest Version:** v1.6.2 (November 9, 2026)
+> **Latest Version:** v1.6.3 (November 12, 2026)
+
+## [1.6.3] - 2026-11-12
+
+### Added
+- **Sync**: added a "Sync Now" context-menu action on the Kijk Later and Mijn Series home menu items for manual cloud sync.
+- **Sync**: added an auto-sync interval setting (background service) to sync Kijk Later and Mijn Series every X minutes.
+
+## [1.6.2.1] - 2026-11-12 (hotfix)
+
+### Fixed
+- **EPG**: adding/removing items to/from "Kijk Later" and "Mijn Series" via the EPG program menu no longer fails with a `NameError` (`pgm` not defined); list actions now work again.
 
 ## [1.6.2] - 2026-11-09
 

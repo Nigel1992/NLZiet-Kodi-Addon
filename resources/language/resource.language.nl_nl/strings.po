@@ -846,3 +846,7 @@ msgstr "Toegevoegd. Dit is een herhaling en kan direct worden afgespeeld."
 msgctxt "#33183"
 msgid "Added. This programme is airing now and can only be played after the broadcast."
 msgstr "Toegevoegd. Dit programma is nu bezig en kan pas na de uitzending worden afgespeeld."
+
+msgctxt "#33184"
+msgid "Auto-sync interval (minutes, 0 = disabled)"
+msgstr "Auto-sync interval (minuten, 0 = uitgeschakeld)"
