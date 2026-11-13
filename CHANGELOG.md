@@ -1,6 +1,15 @@
 # Changelog
 
-> **Latest Version:** v1.6.3 (November 12, 2026)
+> **Latest Version:** v1.6.4 (November 13, 2026)
+
+## [1.6.4] - 2026-11-13
+
+### Added
+- **Sync**: new setting "Show notification after automatic sync" (Settings → Synchronization, on by default). Turn it off to stop the automatic background sync from showing any notification.
+
+### Changed
+- **Automatic sync notifications**: the background sync only shows a notification when something actually changed, and never while video or music is playing.
+- **Manual sync**: "Sync now" and the other manual sync actions always show their result, also during playback.
 
 ## [1.6.3] - 2026-11-12
 

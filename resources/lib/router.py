@@ -10,6 +10,10 @@ class Router:
         self.context = context
         self.handlers = handlers
 
+    @staticmethod
+    def _sync_options(params):
+        return {'background': True} if params.get('background') == '1' else {}
+
     def dispatch(self, paramstring=None):
         params = dict(urllib.parse.parse_qsl(
             self.context.paramstring if paramstring is None else paramstring
@@ -45,9 +49,9 @@ class Router:
         elif mode == 'my_series':
             self.handlers['browse_my_series']()
         elif mode == 'sync_watch_later':
-            self.handlers['sync_watch_later']()
+            self.handlers['sync_watch_later'](**self._sync_options(params))
         elif mode == 'sync_my_series':
-            self.handlers['sync_my_series']()
+            self.handlers['sync_my_series'](**self._sync_options(params))
         elif mode == 'toggle_mylist':
             self.handlers['toggle_mylist'](
                 params.get('id'),

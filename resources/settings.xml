@@ -96,6 +96,14 @@
           </dependencies>
           <control type="spinner" format="integer"/>
         </setting>
+        <setting id="background_sync_notify" type="boolean" label="33186" help="">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="watch_later_sync">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
 

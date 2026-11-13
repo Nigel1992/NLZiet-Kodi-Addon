@@ -854,3 +854,7 @@ msgstr "Auto-sync interval (minuten, 0 = uitgeschakeld)"
 msgctxt "#33185"
 msgid "Sync now"
 msgstr "Nu synchroniseren"
+
+msgctxt "#33186"
+msgid "Show notification after automatic sync"
+msgstr "Melding tonen na automatische synchronisatie"

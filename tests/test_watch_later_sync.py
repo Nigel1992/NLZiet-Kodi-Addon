@@ -617,3 +617,56 @@ def test_cloud_list_paginates_past_default_page(tmp_path):
     assert len(items) == total
     assert seen[0].get('limit') == 500
     assert seen[-1].get('offset') == 1000
+
+
+def _fake_watch_later_api(monkeypatch, default, changes):
+    class FakeApi:
+        def sync_watch_later(self):
+            return {'ok': True, 'added_local': changes, 'added_cloud': 0, 'removed_local': 0, 'removed_cloud': 0}
+
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+
+def test_background_sync_silent_without_changes(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    _fake_watch_later_api(monkeypatch, default, 0)
+
+    assert default.sync_watch_later(notify=True, background=True) is True
+    assert kodi_recorder.notifications == []
+
+
+def test_background_sync_notifies_on_changes(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    default.ADDON.settings['background_sync_notify'] = 'true'
+    _fake_watch_later_api(monkeypatch, default, 2)
+
+    default.sync_watch_later(notify=True, background=True)
+    assert len(kodi_recorder.notifications) == 1
+
+
+def test_background_sync_respects_setting(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    default.ADDON.settings['background_sync_notify'] = 'false'
+    _fake_watch_later_api(monkeypatch, default, 2)
+
+    default.sync_watch_later(notify=True, background=True)
+    assert kodi_recorder.notifications == []
+
+
+def test_background_sync_suppressed_while_playing(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    default.ADDON.settings['background_sync_notify'] = 'true'
+    monkeypatch.setattr(default.xbmc, 'Player', type('Player', (), {'isPlaying': lambda self: True}))
+    _fake_watch_later_api(monkeypatch, default, 2)
+
+    default.sync_watch_later(notify=True, background=True)
+    assert kodi_recorder.notifications == []
+
+
+def test_manual_sync_shows_while_playing(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    monkeypatch.setattr(default.xbmc, 'Player', type('Player', (), {'isPlaying': lambda self: True}))
+    _fake_watch_later_api(monkeypatch, default, 0)
+
+    default.sync_watch_later(notify=True, background=False)
+    assert len(kodi_recorder.notifications) == 1

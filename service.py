@@ -10,12 +10,12 @@ def _sync_now():
     """Trigger both cloud syncs through the plugin (runs in its own process)."""
     try:
         if ADDON.getSetting('watch_later_sync') in ('true', '1', 'yes', True):
-            xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=sync_watch_later)')
+            xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=sync_watch_later&background=1)')
     except Exception as exc:
         xbmc.log('NLZiet service: watch-later sync trigger failed: {}'.format(exc), xbmc.LOGWARNING)
     try:
         if ADDON.getSetting('watch_later_sync') in ('true', '1', 'yes', True):
-            xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=sync_my_series)')
+            xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=sync_my_series&background=1)')
     except Exception as exc:
         xbmc.log('NLZiet service: my-series sync trigger failed: {}'.format(exc), xbmc.LOGWARNING)
 

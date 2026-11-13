@@ -126,7 +126,7 @@ def _install_kodi_stubs():
     xbmc.translatePath = lambda path: path
     xbmc.log = lambda *args, **kwargs: None
     xbmc.executebuiltin = lambda *args, **kwargs: None
-    xbmc.Player = type('Player', (), {})
+    xbmc.Player = type('Player', (), {'isPlaying': lambda self: False})
 
     xbmcgui = types.ModuleType('xbmcgui')
     xbmcgui.NOTIFICATION_INFO = 'info'

@@ -4155,7 +4155,18 @@ def toggle_my_series(item_id=None, title=None, type=None, thumb=None, group=None
     _toggle_local_list('my_series', item_id, title, type, thumb, group, description=description)
 
 
-def sync_watch_later(notify=True):
+def _show_sync_notice(message, icon, background=False, changed=False):
+    """Show a sync result. Manual runs always show. Background runs show only when
+    something changed, the setting allows it, and nothing is playing."""
+    if background:
+        if not changed or ADDON.getSetting('background_sync_notify') not in ('true', '1', 'yes', True):
+            return
+        if xbmc.Player().isPlaying():
+            return
+    xbmcgui.Dialog().notification('NLZiet', message, icon)
+
+
+def sync_watch_later(notify=True, background=False):
     """Synchronise the local Watch Later queue with /v9/watchlist.
 
     Adds and removals performed in the Kodi addon or in the NLZiet app are
@@ -4165,7 +4176,7 @@ def sync_watch_later(notify=True):
     fn = getattr(api, 'sync_watch_later', None)
     if not callable(fn):
         if notify:
-            xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+            _show_sync_notice(get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR, background)
         return False
     try:
         result = fn() or {}
@@ -4175,14 +4186,14 @@ def sync_watch_later(notify=True):
     if not result.get('ok'):
         if result.get('reason') == 'not_logged_in':
             if notify:
-                xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO)
+                _show_sync_notice(get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO, background)
         elif notify:
-            xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+            _show_sync_notice(get_string('watchlater_sync_failed'), xbmcgui.NOTIFICATION_ERROR, background)
         return False
 
+    changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
+               + result.get('removed_local', 0) + result.get('removed_cloud', 0))
     if notify:
-        changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
-                   + result.get('removed_local', 0) + result.get('removed_cloud', 0))
         message = get_string('watchlater_sync_done', changes)
         try:
             detail = get_string(
@@ -4195,17 +4206,17 @@ def sync_watch_later(notify=True):
             message = message + '\n' + detail
         except Exception:
             pass
-        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
+        _show_sync_notice(message, xbmcgui.NOTIFICATION_INFO, background, changed=changes > 0)
     return True
 
 
-def sync_my_series(notify=True):
+def sync_my_series(notify=True, background=False):
     """Synchronise the local My Series list with /v9/trackedseries."""
     api = _get_list_api()
     fn = getattr(api, 'sync_my_series', None)
     if not callable(fn):
         if notify:
-            xbmcgui.Dialog().notification('NLZiet', get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+            _show_sync_notice(get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR, background)
         return False
     try:
         result = fn() or {}
@@ -4215,14 +4226,14 @@ def sync_my_series(notify=True):
     if not result.get('ok'):
         if result.get('reason') == 'not_logged_in':
             if notify:
-                xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO)
+                _show_sync_notice(get_string('watchlater_sync_not_logged_in'), xbmcgui.NOTIFICATION_INFO, background)
         elif notify:
-            xbmcgui.Dialog().notification('NLZiet', get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR)
+            _show_sync_notice(get_string('myseries_sync_failed'), xbmcgui.NOTIFICATION_ERROR, background)
         return False
 
+    changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
+               + result.get('removed_local', 0) + result.get('removed_cloud', 0))
     if notify:
-        changes = (result.get('added_local', 0) + result.get('added_cloud', 0)
-                   + result.get('removed_local', 0) + result.get('removed_cloud', 0))
         message = get_string('myseries_sync_done', changes)
         try:
             detail = get_string(
@@ -4235,7 +4246,7 @@ def sync_my_series(notify=True):
             message = message + '\n' + detail
         except Exception:
             pass
-        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
+        _show_sync_notice(message, xbmcgui.NOTIFICATION_INFO, background, changed=changes > 0)
     return True
 
 
