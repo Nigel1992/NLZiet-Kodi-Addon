@@ -74,15 +74,16 @@ jobs:
                   return json.loads(r.read() or b"null")
 
           def find_marker(repo, number):
+              found = None
               page = 1
               while True:
                   comments = github("GET", f"/repos/{repo}/issues/{number}/comments?per_page=100&page={page}")
                   for c in comments:
                       m = MARKER.search(c.get("body") or "")
                       if m:
-                          return m.group(1), m.group(2)
+                          found = (m.group(1), m.group(2))
                   if len(comments) < 100:
-                      return None
+                      return found
                   page += 1
 
           def field(name, value, inline=False):
@@ -102,7 +103,7 @@ jobs:
               channel = "suggestions" if suggestions else "issues"
               color = {"opened": 0x3498DB, "closed": 0x57F287, "reopened": 0xE67E22}.get(action, 0x95A5A6)
               payload = {"embeds": [{
-                  "title": f"[{action.upper()}] #{issue['number']} {issue['title']}",
+                  "title": f"[{action.upper()}] #{issue['number']} {issue['title']}"[:256],
                   "url": issue["html_url"],
                   "color": color,
                   "description": (issue.get("body") or "")[:1500],
@@ -125,8 +126,7 @@ jobs:
                       print("Edited Discord message", marker[1])
                       raise SystemExit(0)
                   except urllib.error.HTTPError as e:
-                      if e.code != 404:
-                          raise
+                      print("Could not edit Discord message", marker[1], "-", e.code, e.read().decode(errors="replace")[:500])
               if not webhooks[channel]:
                   print("Discord webhook secret missing; skipping")
                   raise SystemExit(0)
