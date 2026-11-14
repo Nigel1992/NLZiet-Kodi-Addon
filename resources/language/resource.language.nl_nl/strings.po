@@ -1522,3 +1522,11 @@ msgstr "Verder kijken"
 msgctxt "#33352"
 msgid "From the start"
 msgstr "Vanaf het begin"
+
+msgctxt "#33353"
+msgid "Add new episodes to the library automatically"
+msgstr "Nieuwe afleveringen automatisch aan de bibliotheek toevoegen"
+
+msgctxt "#33354"
+msgid "When a series you follow gets a new episode, update the library so the episode is placed with the others right away."
+msgstr "Als een serie die je volgt een nieuwe aflevering krijgt, werk de bibliotheek bij zodat de aflevering meteen bij de rest komt te staan."

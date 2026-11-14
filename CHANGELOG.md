@@ -1,7 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.3.1 (November 14, 2026)
+> **Latest Version:** v2.3.2 (November 14, 2026)
 
+## [2.3.2] - 2026-11-14
+
+### Added
+- **Nieuwe afleveringen automatisch in de bibliotheek.** Als een serie die je volgt een nieuwe aflevering krijgt, werkt de addon de bibliotheek bij zodat die aflevering meteen bij de rest van de serie komt te staan (Instellingen → Bibliotheek → Automatisch; standaard aan). De controle draait op de achtergrond.
 ## [2.3.1] - 2026-11-14
 
 ### Fixed

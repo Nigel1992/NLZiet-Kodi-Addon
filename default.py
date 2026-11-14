@@ -7123,6 +7123,14 @@ def notify_new(background=True):
         name = titles.get(str(series_id)) or ''
         xbmcgui.Dialog().notification('NLZiet', get_string('new_episode_notice', name),
                                       xbmcgui.NOTIFICATION_INFO, 7000)
+    # Place the new episodes in the Kodi library right away (for library series).
+    if new_ids and _setting_on('auto_add_library', True):
+        try:
+            has_library = bool(_get_library().store.section('series'))
+        except Exception:
+            has_library = False
+        if has_library:
+            xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=library_update&background=1)')
     try:
         _save_my_series_state(api, state)
     except Exception:

@@ -1505,3 +1505,11 @@ msgstr ""
 msgctxt "#33352"
 msgid "From the start"
 msgstr ""
+
+msgctxt "#33353"
+msgid "Add new episodes to the library automatically"
+msgstr ""
+
+msgctxt "#33354"
+msgid "When a series you follow gets a new episode, update the library so the episode is placed with the others right away."
+msgstr ""

@@ -98,6 +98,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="auto_add_library" type="boolean" label="33353" help="33354">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="library_update_hours" type="integer" label="33202" help="">
           <level>0</level>
           <default>12</default>
