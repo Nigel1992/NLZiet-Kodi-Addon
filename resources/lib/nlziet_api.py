@@ -1833,6 +1833,61 @@ class NLZietAPI:
                 pass
             return None
 
+    def _api_call(self, method, path, params=None):
+        """Small authorised call to the NLZiet API. Returns (ok, json_or_None)."""
+        try:
+            url = urllib.parse.urljoin(self.base_url, path)
+            if params:
+                url = url + '?' + urllib.parse.urlencode(params)
+            data = b'' if method.upper() in ('POST', 'DELETE', 'PUT') else None
+            req = urllib.request.Request(url, data=data, headers=self._watchlist_headers(),
+                                         method=method.upper())
+            with self._open_with_opener(self.opener, req, timeout=15) as r:
+                raw = r.read()
+            if not raw:
+                return True, None
+            try:
+                return True, json.loads(raw.decode('utf-8'))
+            except Exception:
+                return True, None
+        except Exception as exc:
+            try:
+                self._append_debug(f"{method} {path} failed: {exc}")
+            except Exception:
+                pass
+            return False, None
+
+    def set_watched(self, content_id, watched=True):
+        """Mark an episode/film as watched (or not) at NLZiet, like the
+        "Markeer als bekeken" button in the NLZiet app."""
+        if not content_id:
+            return False
+        path = '/v7/content/watched/' + urllib.parse.quote(str(content_id), safe='')
+        ok, _ = self._api_call('POST' if watched else 'DELETE', path)
+        return ok
+
+    def get_chapters(self, content_id):
+        """Chapter list of a video (used for "Skip intro"), or []."""
+        if not content_id:
+            return []
+        ok, data = self._api_call('GET', '/v7/chapters/' + urllib.parse.quote(str(content_id), safe=''))
+        if not ok or not isinstance(data, dict):
+            return []
+        chapters = data.get('chapters')
+        return chapters if isinstance(chapters, list) else []
+
+    def get_surrounding_episodes(self, content_id):
+        """NLZiet's previous/next episode answer for an episode (raw), or None."""
+        if not content_id:
+            return None
+        ok, data = self._api_call(
+            'GET', '/v9/series/surroundingepisodes/' + urllib.parse.quote(str(content_id), safe=''))
+        return data if ok else None
+
+    def get_continue_watching(self):
+        """NLZiet's own "Verder kijken" row, normalised like the cloud lists."""
+        return self._cloud_list('/v9/continuewatching')
+
     def _normalize_cloud_item(self, entry):
         """Convert a cloud watchlist entry into the local list item format."""
         if not isinstance(entry, dict):
@@ -3182,7 +3237,7 @@ class NLZietAPI:
                                 else:
                                     minutes = max(1, secs // 60)
                                     expires_in = f'Expires in {minutes}m'
-                    results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+                    results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in, 'year': self._extract_year(src), 'raw': src if isinstance(src, dict) else {}})
                 return results
         except Exception as e:
             try:

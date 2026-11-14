@@ -20,6 +20,13 @@ EXPECTED_HANDLER_NAMES = {
     'browse_movie_categories', 'browse_movie_genre', 'browse_category',
     'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
     'clear_all_cache', 'browse_epg',
+    'library_toggle', 'library_remove', 'library_update', 'browse_library',
+    'check_tmdb_key', 'repair_library_art', 'run_diagnostics', 'search_filter',
+    'parental_set_pin', 'parental_clear_pin', 'toggle_profile_lock', 'library_from_lists', 'choose_tmdb',
+    'widgets_menu', 'widget_list', 'backup_lists', 'restore_lists', 'daily_check', 'remote_watched',
+    'play_next', 'toggle_stop_after', 'shuffle_series', 'browse_history', 'clear_history', 'record_history',
+    'mark_series_watched_route', 'notify_new',
+    'browse_expiring', 'both_continue', 'favourite_channels', 'check_reminders', 'import_trakt_watchlist',
 }
 
 
@@ -178,4 +185,23 @@ def test_play_route_does_not_forward_mode_keyword():
             'channel': 'npo1',
         }),
         ('play_item', ('npo1',), {'fmt': 'live'}),
+    ]
+
+
+def test_library_routes_dispatch():
+    calls = []
+    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
+
+    router.dispatch('mode=library_toggle&kind=movie&id=m1&title=Film')
+    router.dispatch('mode=library_remove&kind=series&id=s1&title=Show')
+    router.dispatch('mode=library_update&background=1')
+    router.dispatch('mode=library_update')
+    router.dispatch('mode=browse_library')
+
+    assert calls == [
+        ('library_toggle', ('movie', 'm1', 'Film', None, None), {}),
+        ('library_remove', ('series', 's1', 'Show'), {}),
+        ('library_update', (), {'background': True}),
+        ('library_update', (), {}),
+        ('browse_library', (), {}),
     ]

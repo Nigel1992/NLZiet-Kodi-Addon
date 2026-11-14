@@ -26,7 +26,51 @@ class Router:
         elif mode == 'login':
             self.handlers['do_login']()
         elif mode == 'search':
-            self.handlers['do_search']()
+            if params.get('q'):
+                self.handlers['do_search'](params.get('q'))
+            else:
+                self.handlers['do_search']()
+        elif mode == 'widgets':
+            self.handlers['widgets_menu']()
+        elif mode == 'widget':
+            self.handlers['widget_list'](params.get('list'))
+        elif mode == 'backup_lists':
+            self.handlers['backup_lists']()
+        elif mode == 'restore_lists':
+            self.handlers['restore_lists']()
+        elif mode == 'daily_check':
+            self.handlers['daily_check']()
+        elif mode == 'remote_watched':
+            self.handlers['remote_watched'](params.get('id'), params.get('watched', '1'),
+                                            params.get('background') == '1')
+        elif mode == 'play_next':
+            self.handlers['play_next'](params.get('id'), params.get('background') == '1')
+        elif mode == 'toggle_stop_after':
+            self.handlers['toggle_stop_after']()
+        elif mode == 'shuffle':
+            self.handlers['shuffle_series'](params.get('series_id'))
+        elif mode == 'history':
+            self.handlers['browse_history']()
+        elif mode == 'clear_history':
+            self.handlers['clear_history']()
+        elif mode == 'record_history':
+            self.handlers['record_history'](params.get('id'), params.get('title', ''),
+                                            params.get('subtitle', ''), params.get('thumb', ''),
+                                            params.get('media_type', ''), params.get('background') == '1')
+        elif mode == 'mark_series_watched':
+            self.handlers['mark_series_watched_route'](params.get('series_id'))
+        elif mode == 'notify_new':
+            self.handlers['notify_new'](params.get('background') == '1')
+        elif mode == 'expiring':
+            self.handlers['browse_expiring']()
+        elif mode == 'both_continue':
+            self.handlers['both_continue']()
+        elif mode == 'favourite_channels':
+            self.handlers['favourite_channels']()
+        elif mode == 'check_reminders':
+            self.handlers['check_reminders'](params.get('background') == '1')
+        elif mode == 'import_trakt':
+            self.handlers['import_trakt_watchlist'](params.get('background') == '1')
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
         elif mode == 'my_list':
@@ -90,6 +134,18 @@ class Router:
             self.handlers['confirm_logout']()
         elif mode == 'account_summary':
             self.handlers['refresh_account_info']()
+        elif mode == 'parental_set_pin':
+            self.handlers['parental_set_pin']()
+        elif mode == 'parental_clear_pin':
+            self.handlers['parental_clear_pin']()
+        elif mode == 'toggle_profile_lock':
+            self.handlers['toggle_profile_lock'](params.get('profile_id'))
+        elif mode == 'choose_tmdb':
+            self.handlers['choose_tmdb'](params.get('kind'), params.get('id'))
+        elif mode == 'library_from_lists':
+            self.handlers['library_from_lists'](**self._sync_options(params))
+        elif mode == 'diagnostics':
+            self.handlers['run_diagnostics']()
         elif mode == 'export_diagnostics':
             self.handlers['export_diagnostics']()
         elif mode == 'clear_subtitle_cache':
@@ -99,7 +155,14 @@ class Router:
         elif mode == 'browse_epg':
             self.handlers['browse_epg']()
         elif mode == 'search_group':
-            self.handlers['search_group'](params.get('q'), params.get('group'))
+            if params.get('period') or params.get('genre'):
+                self.handlers['search_group'](params.get('q'), params.get('group'),
+                                              params.get('period'), params.get('genre'))
+            else:
+                self.handlers['search_group'](params.get('q'), params.get('group'))
+        elif mode == 'search_filter':
+            self.handlers['search_filter'](params.get('q'), params.get('group') or 'all',
+                                           params.get('period'), params.get('genre'))
         elif mode == 'series_detail':
             self.handlers['show_series_detail'](params.get('series_id'))
         elif mode == 'series_season':
@@ -112,6 +175,19 @@ class Router:
             )
         elif mode == 'export_series_library':
             self.handlers['export_series_library'](params.get('series_id'))
+        elif mode == 'library_toggle':
+            self.handlers['library_toggle'](params.get('kind'), params.get('id'), params.get('title'),
+                                            params.get('poster'), params.get('fanart'))
+        elif mode == 'library_remove':
+            self.handlers['library_remove'](params.get('kind'), params.get('id'), params.get('title'))
+        elif mode == 'library_update':
+            self.handlers['library_update'](**self._sync_options(params))
+        elif mode == 'browse_library':
+            self.handlers['browse_library']()
+        elif mode == 'repair_library_art':
+            self.handlers['repair_library_art'](background=params.get('background') == '1')
+        elif mode == 'check_tmdb_key':
+            self.handlers['check_tmdb_key']()
         elif mode == 'placement_row':
             self.handlers['browse_placement_row'](
                 params.get('items_url'),

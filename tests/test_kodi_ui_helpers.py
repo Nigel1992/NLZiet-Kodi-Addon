@@ -214,7 +214,7 @@ def test_context_menu_reflects_watch_later_membership(monkeypatch):
     )
 
     labels = [label for label, _ in items[0].context_menu]
-    assert labels == ['Add to My List', 'Remove from Watch Later']
+    assert labels == ['Add to My List', 'Remove from Watch Later', 'Add to library']
 
 
 def test_context_menu_offers_my_series_for_series(monkeypatch):
@@ -293,3 +293,10 @@ def test_context_menu_includes_group_in_toggle_queries(monkeypatch):
     actions = [action for _, action in items[0].context_menu]
     assert any('mode=toggle_mylist' in a and 'group=tvshows' in a for a in actions)
     assert any('mode=toggle_my_series' in a and 'group=tvshows' in a for a in actions)
+
+
+def test_menu_png_prefers_new_icon_folder(monkeypatch):
+    existing = {'C:/addon/resources/media/menu/series.png'.replace('/', ui.os.sep),
+                'C:/addon/resources/media/menu_series.png'.replace('/', ui.os.sep)}
+    monkeypatch.setattr(ui.os.path, 'exists', lambda path: path.replace('/', ui.os.sep) in existing)
+    assert ui.pick_menu_png('C:/addon', 'series').replace(ui.os.sep, '/').endswith('media/menu/series.png')

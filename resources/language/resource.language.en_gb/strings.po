@@ -841,3 +841,639 @@ msgstr "Sync now"
 msgctxt "#33186"
 msgid "Show notification after automatic sync"
 msgstr "Show notification after automatic sync"
+
+msgctxt "#33187"
+msgid "Remove from library"
+msgstr "Remove from library"
+
+msgctxt "#33188"
+msgid "{} added to library"
+msgstr "{} added to library"
+
+msgctxt "#33189"
+msgid "{} removed from library"
+msgstr "{} removed from library"
+
+msgctxt "#33190"
+msgid "This is not in the library"
+msgstr "This is not in the library"
+
+msgctxt "#33191"
+msgid "Updating library..."
+msgstr "Updating library..."
+
+msgctxt "#33192"
+msgid "Library updated: {} new, {} removed"
+msgstr "Library updated: {} new, {} removed"
+
+msgctxt "#33193"
+msgid "Library update failed"
+msgstr "Library update failed"
+
+msgctxt "#33194"
+msgid "Update library now"
+msgstr "Update library now"
+
+msgctxt "#33195"
+msgid "The library is empty"
+msgstr "The library is empty"
+
+msgctxt "#33196"
+msgid "Library"
+msgstr "Library"
+
+msgctxt "#33197"
+msgid "Adding to library: {}"
+msgstr "Adding to library: {}"
+
+msgctxt "#33198"
+msgid "Library"
+msgstr "Library"
+
+msgctxt "#33199"
+msgid "Folder for TV shows"
+msgstr "Folder for TV shows"
+
+msgctxt "#33200"
+msgid "Folder for movies"
+msgstr "Folder for movies"
+
+msgctxt "#33201"
+msgid "Update library automatically"
+msgstr "Update library automatically"
+
+msgctxt "#33202"
+msgid "Update every (hours)"
+msgstr "Update every (hours)"
+
+msgctxt "#33203"
+msgid "Scan Kodi library after a change"
+msgstr "Scan Kodi library after a change"
+
+msgctxt "#33204"
+msgid "Clean expired titles from the Kodi library"
+msgstr "Clean expired titles from the Kodi library"
+
+msgctxt "#33205"
+msgid "Add this folder in Kodi as a video source (type TV shows, scraper \"Local information only\") so Kodi finds the episodes."
+msgstr "Add this folder in Kodi as a video source (type TV shows, scraper \"Local information only\") so Kodi finds the episodes."
+
+msgctxt "#33206"
+msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
+msgstr "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
+
+msgctxt "#33210"
+msgid "TMDb key works"
+msgstr "TMDb key works"
+
+msgctxt "#33211"
+msgid "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
+msgstr "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
+
+msgctxt "#33212"
+msgid "Extra metadata"
+msgstr "Extra metadata"
+
+msgctxt "#33213"
+msgid "Fill in missing data from TMDb / TVmaze"
+msgstr "Fill in missing data from TMDb / TVmaze"
+
+msgctxt "#33214"
+msgid "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+msgstr "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+
+msgctxt "#33215"
+msgid "TMDb API key (optional)"
+msgstr "TMDb API key (optional)"
+
+msgctxt "#33216"
+msgid "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+msgstr "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+
+msgctxt "#33217"
+msgid "Test TMDb key"
+msgstr "Test TMDb key"
+
+msgctxt "#33207"
+msgid "{} series moved to the NLZiet folder. Add that folder as a source in Kodi."
+msgstr "{} series moved to the NLZiet folder. Add that folder as a source in Kodi."
+
+msgctxt "#33208"
+msgid "Artwork updated for {} titles"
+msgstr "Artwork updated for {} titles"
+
+msgctxt "#33209"
+msgid "Repair artwork in the Kodi library"
+msgstr "Repair artwork in the Kodi library"
+
+msgctxt "#33218"
+msgid "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+msgstr "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+
+msgctxt "#33219"
+msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+msgstr "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+
+msgctxt "#33220"
+msgid "Run diagnostics"
+msgstr "Run diagnostics"
+
+msgctxt "#33221"
+msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+msgstr "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+
+msgctxt "#33238"
+msgid "Parental control"
+msgstr "Parental control"
+
+msgctxt "#33239"
+msgid "Set or change PIN"
+msgstr "Set or change PIN"
+
+msgctxt "#33240"
+msgid "Remove PIN"
+msgstr "Remove PIN"
+
+msgctxt "#33241"
+msgid "Live tv and TV guide only with PIN"
+msgstr "Live tv and TV guide only with PIN"
+
+msgctxt "#33242"
+msgid "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+msgstr "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+
+msgctxt "#33243"
+msgid "Show Trakt watched status in menus"
+msgstr "Show Trakt watched status in menus"
+
+msgctxt "#33244"
+msgid "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+msgstr "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+
+msgctxt "#33222"
+msgid "Enter the PIN"
+msgstr "Enter the PIN"
+
+msgctxt "#33223"
+msgid "Enter the current PIN"
+msgstr "Enter the current PIN"
+
+msgctxt "#33224"
+msgid "Choose a new PIN (at least 4 digits)"
+msgstr "Choose a new PIN (at least 4 digits)"
+
+msgctxt "#33225"
+msgid "Repeat the new PIN"
+msgstr "Repeat the new PIN"
+
+msgctxt "#33226"
+msgid "The PIN needs at least 4 digits."
+msgstr "The PIN needs at least 4 digits."
+
+msgctxt "#33227"
+msgid "The two PINs are not the same. Please try again."
+msgstr "The two PINs are not the same. Please try again."
+
+msgctxt "#33228"
+msgid "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+msgstr "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+
+msgctxt "#33229"
+msgid "PIN removed"
+msgstr "PIN removed"
+
+msgctxt "#33230"
+msgid "Wrong PIN"
+msgstr "Wrong PIN"
+
+msgctxt "#33231"
+msgid "Set a PIN first."
+msgstr "Set a PIN first."
+
+msgctxt "#33232"
+msgid "Require the PIN for this profile"
+msgstr "Require the PIN for this profile"
+
+msgctxt "#33233"
+msgid "No longer require the PIN for this profile"
+msgstr "No longer require the PIN for this profile"
+
+msgctxt "#33234"
+msgid "This profile now asks for the PIN"
+msgstr "This profile now asks for the PIN"
+
+msgctxt "#33235"
+msgid "This profile no longer asks for the PIN"
+msgstr "This profile no longer asks for the PIN"
+
+msgctxt "#33236"
+msgid "Kids"
+msgstr "Kids"
+
+msgctxt "#33237"
+msgid "PIN"
+msgstr "PIN"
+
+msgctxt "#33248"
+msgid "Keep My Series and Watch Later in the library automatically"
+msgstr "Keep My Series and Watch Later in the library automatically"
+
+msgctxt "#33249"
+msgid "Every series in My Series and every film in Watch Later is added to the Kodi library; an episode in Watch Later adds its series. New titles are added at every automatic update."
+msgstr "Every series in My Series and every film in Watch Later is added to the Kodi library; an episode in Watch Later adds its series. New titles are added at every automatic update."
+
+msgctxt "#33250"
+msgid "Remove titles that left these lists"
+msgstr "Remove titles that left these lists"
+
+msgctxt "#33251"
+msgid "Only titles added from these lists are removed; titles you added yourself stay."
+msgstr "Only titles added from these lists are removed; titles you added yourself stay."
+
+msgctxt "#33245"
+msgid "Adding My Series and Watch Later to the library..."
+msgstr "Adding My Series and Watch Later to the library..."
+
+msgctxt "#33246"
+msgid "Lists: {} added, {} removed, {} failed"
+msgstr "Lists: {} added, {} removed, {} failed"
+
+msgctxt "#33247"
+msgid "Add My Series and Watch Later to the library now"
+msgstr "Add My Series and Watch Later to the library now"
+
+msgctxt "#33252"
+msgid "Show logos in the menus too"
+msgstr "Show logos in the menus too"
+
+msgctxt "#33253"
+msgid "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+msgstr "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+
+msgctxt "#33254"
+msgid "Posters and backgrounds: TMDb first"
+msgstr "Posters and backgrounds: TMDb first"
+
+msgctxt "#33255"
+msgid "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+msgstr "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+
+msgctxt "#33256"
+msgid "Choose the right TMDb title"
+msgstr "Choose the right TMDb title"
+
+msgctxt "#33257"
+msgid "Other search term..."
+msgstr "Other search term..."
+
+msgctxt "#33258"
+msgid "TMDb title set; details and artwork are updated"
+msgstr "TMDb title set; details and artwork are updated"
+
+msgctxt "#33259"
+msgid "Folders"
+msgstr ""
+
+msgctxt "#33260"
+msgid "Lists to the library"
+msgstr ""
+
+msgctxt "#33261"
+msgid "Automatic updates"
+msgstr ""
+
+msgctxt "#33262"
+msgid "Maintenance"
+msgstr ""
+
+msgctxt "#33263"
+msgid "Send watched status to NLZiet"
+msgstr ""
+
+msgctxt "#33264"
+msgid "When you watch something (almost) to the end, or mark it as watched or unwatched in the Kodi library, NLZiet gets the same status."
+msgstr ""
+
+msgctxt "#33265"
+msgid "Next episode (Up Next)"
+msgstr ""
+
+msgctxt "#33266"
+msgid "Shortly before the end, shows the next episode so it starts by itself. Needs the Up Next add-on."
+msgstr ""
+
+msgctxt "#33267"
+msgid "Install the Up Next add-on"
+msgstr ""
+
+msgctxt "#33268"
+msgid "Offer to skip intro and recap"
+msgstr ""
+
+msgctxt "#33269"
+msgid "While watching, asks if you want to skip the intro or recap, when NLZiet sends those times."
+msgstr ""
+
+msgctxt "#33270"
+msgid "Skip the intro?"
+msgstr ""
+
+msgctxt "#33271"
+msgid "Skip the recap?"
+msgstr ""
+
+msgctxt "#33272"
+msgid "Widgets for the home screen"
+msgstr ""
+
+msgctxt "#33273"
+msgid "Continue watching"
+msgstr ""
+
+msgctxt "#33274"
+msgid "Pick these lists as a widget in your skin settings."
+msgstr ""
+
+msgctxt "#33275"
+msgid "Save my lists (backup)"
+msgstr ""
+
+msgctxt "#33276"
+msgid "Restore my lists"
+msgstr ""
+
+msgctxt "#33277"
+msgid "Backup saved: {0}"
+msgstr ""
+
+msgctxt "#33278"
+msgid "Restored: {0}. Restart Kodi to be sure everything is reloaded."
+msgstr ""
+
+msgctxt "#33279"
+msgid "Choose a backup"
+msgstr ""
+
+msgctxt "#33280"
+msgid "No backup found in the backup folder."
+msgstr ""
+
+msgctxt "#33281"
+msgid "Daily automatic check"
+msgstr ""
+
+msgctxt "#33282"
+msgid "Once a day the add-on checks in the background whether everything works, and tells you if something needs attention."
+msgstr ""
+
+msgctxt "#33283"
+msgid "Needs attention: {0}. Open Settings > Library > Maintenance: Run diagnostics."
+msgstr ""
+
+msgctxt "#33284"
+msgid "Also search in Videoland"
+msgstr ""
+
+msgctxt "#33285"
+msgid "While watching"
+msgstr ""
+
+msgctxt "#33286"
+msgid "Backup and restore"
+msgstr ""
+
+msgctxt "#33287"
+msgid "The backup contains My list, Watch later, My series, the library list and your settings (without password). It is saved in the add-on folder under 'backups'."
+msgstr ""
+
+msgctxt "#33288"
+msgid "Replace your current lists with this backup?"
+msgstr ""
+
+msgctxt "#33289"
+msgid "Episode {0}"
+msgstr ""
+
+msgctxt "#33290"
+msgid "Watched status sent to NLZiet"
+msgstr ""
+
+msgctxt "#33291"
+msgid "Automatically play the next episode (binge)"
+msgstr ""
+
+msgctxt "#33292"
+msgid "When an episode from your library ends, the next one starts by itself. With the Up Next add-on installed, leave this off and let Up Next do it."
+msgstr ""
+
+msgctxt "#33293"
+msgid "Stop after this episode"
+msgstr ""
+
+msgctxt "#33294"
+msgid "Keep playing after this episode"
+msgstr ""
+
+msgctxt "#33295"
+msgid "The next episode will not start automatically"
+msgstr ""
+
+msgctxt "#33296"
+msgid "Automatic next episode is on again"
+msgstr ""
+
+msgctxt "#33297"
+msgid "Play a random episode"
+msgstr ""
+
+msgctxt "#33298"
+msgid "No episodes found to pick from"
+msgstr ""
+
+msgctxt "#33299"
+msgid "Watch history"
+msgstr ""
+
+msgctxt "#33300"
+msgid "Nothing watched yet"
+msgstr ""
+
+msgctxt "#33301"
+msgid "Clear watch history"
+msgstr ""
+
+msgctxt "#33302"
+msgid "Watch history cleared"
+msgstr ""
+
+msgctxt "#33303"
+msgid "Preferred audio language"
+msgstr ""
+
+msgctxt "#33304"
+msgid "Automatically choose this spoken language when a video starts, if it is available."
+msgstr ""
+
+msgctxt "#33305"
+msgid "Preferred subtitle language"
+msgstr ""
+
+msgctxt "#33306"
+msgid "Automatically turn on subtitles in this language when a video starts, if available."
+msgstr ""
+
+msgctxt "#33307"
+msgid "Off"
+msgstr ""
+
+msgctxt "#33308"
+msgid "Dutch"
+msgstr ""
+
+msgctxt "#33309"
+msgid "English"
+msgstr ""
+
+msgctxt "#33310"
+msgid "Original"
+msgstr ""
+
+msgctxt "#33311"
+msgid "Mark whole series as watched"
+msgstr ""
+
+msgctxt "#33312"
+msgid "{0} episodes marked as watched"
+msgstr ""
+
+msgctxt "#33313"
+msgid "Marking as watched..."
+msgstr ""
+
+msgctxt "#33314"
+msgid "New episode: {0}"
+msgstr ""
+
+msgctxt "#33315"
+msgid "New season of {0}"
+msgstr ""
+
+msgctxt "#33316"
+msgid "Notify about new episodes"
+msgstr ""
+
+msgctxt "#33317"
+msgid "Show a Kodi notification when a series you follow gets a new episode or season."
+msgstr ""
+
+msgctxt "#33318"
+msgid "Recommended for you"
+msgstr ""
+
+msgctxt "#33319"
+msgid "New on NLZiet"
+msgstr ""
+
+msgctxt "#33320"
+msgid "Leaving soon"
+msgstr ""
+
+msgctxt "#33321"
+msgid "{0} days left"
+msgstr ""
+
+msgctxt "#33322"
+msgid "Leaves tomorrow"
+msgstr ""
+
+msgctxt "#33323"
+msgid "Leaves today"
+msgstr ""
+
+msgctxt "#33324"
+msgid "Nothing is leaving the service soon"
+msgstr ""
+
+msgctxt "#33325"
+msgid "Favourite channels"
+msgstr ""
+
+msgctxt "#33326"
+msgid "Continue watching (both services)"
+msgstr ""
+
+msgctxt "#33327"
+msgid "Open Videoland: Continue watching"
+msgstr ""
+
+msgctxt "#33328"
+msgid "Counts as watched at"
+msgstr ""
+
+msgctxt "#33329"
+msgid "How much of a video you must see before it is sent to NLZiet as watched."
+msgstr ""
+
+msgctxt "#33330"
+msgid "Live Trakt scrobbling"
+msgstr ""
+
+msgctxt "#33331"
+msgid "Tell Trakt in real time what you are watching (needs the Trakt add-on signed in)."
+msgstr ""
+
+msgctxt "#33332"
+msgid "Set a reminder"
+msgstr ""
+
+msgctxt "#33333"
+msgid "Remove reminder"
+msgstr ""
+
+msgctxt "#33334"
+msgid "Reminder set for {0}"
+msgstr ""
+
+msgctxt "#33335"
+msgid "Reminder removed"
+msgstr ""
+
+msgctxt "#33336"
+msgid "Starting now: {0}"
+msgstr ""
+
+msgctxt "#33337"
+msgid "Soon on {1}: {0}"
+msgstr ""
+
+msgctxt "#33338"
+msgid "Import Trakt watchlist to library"
+msgstr ""
+
+msgctxt "#33339"
+msgid "Look up the shows and films on your Trakt watchlist in NLZiet and add the matches to your library."
+msgstr ""
+
+msgctxt "#33340"
+msgid "Sign in with the Trakt add-on first"
+msgstr ""
+
+msgctxt "#33341"
+msgid "Your Trakt watchlist is empty"
+msgstr ""
+
+msgctxt "#33342"
+msgid "Importing from Trakt..."
+msgstr ""
+
+msgctxt "#33343"
+msgid "Added {0} titles, {1} not found on NLZiet"
+msgstr ""
+
+msgctxt "#33344"
+msgid "Find subtitles if the stream has none"
+msgstr ""
+
+msgctxt "#33345"
+msgid "When a video has no subtitles of its own, open Kodi's subtitle search so your subtitle add-on (e.g. OpenSubtitles) can find one."
+msgstr ""
