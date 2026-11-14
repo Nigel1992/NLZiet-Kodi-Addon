@@ -280,6 +280,11 @@
           </constraints>
           <control type="spinner" format="string"/>
         </setting>
+        <setting id="auto_subtitle_search" type="boolean" label="33344" help="33345">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
 
@@ -326,6 +331,14 @@
             <dependency type="visible" on="property" name="infobool">System.HasAddon(script.trakt)</dependency>
           </dependencies>
           <control type="toggle"/>
+        </setting>
+        <setting id="import_trakt" type="action" label="33338" help="33339">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=import_trakt)</data>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool">System.HasAddon(script.trakt)</dependency>
+          </dependencies>
+          <control type="button" format="action"><close>true</close></control>
         </setting>
         <setting id="auto_add_new_episodes" type="boolean" label="33148" help="33155">
           <level>0</level>

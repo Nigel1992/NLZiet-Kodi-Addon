@@ -252,6 +252,15 @@ def apply_language(rpc, audio_lang=None, subtitle_lang=None):
     return ', '.join(done) or 'no match'
 
 
+def subtitles_present(rpc):
+    """True when the running player already has one or more subtitle tracks."""
+    try:
+        props = rpc('Player.GetProperties', {'playerid': 1, 'properties': ['subtitles']}) or {}
+        return bool(props.get('subtitles'))
+    except Exception:
+        return True   # on doubt, assume present and do nothing
+
+
 def wait_for_playback(player, timeout=30, monitor=None):
     end = time.time() + timeout
     while time.time() < end:

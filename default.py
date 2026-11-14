@@ -36,6 +36,7 @@ from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import playback_extras
 from resources.lib import watch_sync
 from resources.lib import watch_history
+from resources.lib import reminders as reminders_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -378,6 +379,16 @@ TRANSLATIONS = {
     'favourite_channels': {'nl': 'Favoriete kanalen', 'en': 'Favourite channels'},
     'both_continue': {'nl': 'Verder kijken (beide diensten)', 'en': 'Continue watching (both services)'},
     'open_videoland_continue': {'nl': 'Open Videoland: Verder kijken', 'en': 'Open Videoland: Continue watching'},
+    'set_reminder': {'nl': 'Herinnering instellen', 'en': 'Set a reminder'},
+    'remove_reminder': {'nl': 'Herinnering verwijderen', 'en': 'Remove reminder'},
+    'reminder_set': {'nl': 'Herinnering ingesteld voor {0}', 'en': 'Reminder set for {0}'},
+    'reminder_removed': {'nl': 'Herinnering verwijderd', 'en': 'Reminder removed'},
+    'reminder_due': {'nl': 'Begint nu: {0}', 'en': 'Starting now: {0}'},
+    'reminder_soon': {'nl': 'Zo op {1}: {0}', 'en': 'Soon on {1}: {0}'},
+    'trakt_import_no_trakt': {'nl': 'Meld je eerst aan met de Trakt-addon', 'en': 'Sign in with the Trakt add-on first'},
+    'trakt_import_empty': {'nl': 'Je Trakt-kijklijst is leeg', 'en': 'Your Trakt watchlist is empty'},
+    'trakt_import_busy': {'nl': 'Bezig met importeren van Trakt...', 'en': 'Importing from Trakt...'},
+    'trakt_import_done': {'nl': '{0} titels toegevoegd, {1} niet gevonden op NLZiet', 'en': 'Added {0} titles, {1} not found on NLZiet'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -628,6 +639,16 @@ STRING_IDS = {
     'favourite_channels': 33325,
     'both_continue': 33326,
     'open_videoland_continue': 33327,
+    'set_reminder': 33332,
+    'remove_reminder': 33333,
+    'reminder_set': 33334,
+    'reminder_removed': 33335,
+    'reminder_due': 33336,
+    'reminder_soon': 33337,
+    'trakt_import_no_trakt': 33340,
+    'trakt_import_empty': 33341,
+    'trakt_import_busy': 33342,
+    'trakt_import_done': 33343,
 }
 
 
@@ -2158,6 +2179,94 @@ def library_from_lists(background=False):
                                       xbmcgui.NOTIFICATION_INFO)
     if not background:
         xbmc.executebuiltin('Container.Refresh')
+
+
+def _trakt_watchlist(token, client_id):
+    """The user's Trakt watchlist as [(kind, title, year)] (kind: series/movie)."""
+    import urllib.request, urllib.error
+    out = []
+    for path, kind, key in (('/sync/watchlist/shows', 'series', 'show'),
+                            ('/sync/watchlist/movies', 'movie', 'movie')):
+        try:
+            request = urllib.request.Request('https://api.trakt.tv' + path, headers={
+                'Accept': 'application/json', 'Authorization': 'Bearer ' + token,
+                'trakt-api-version': '2', 'trakt-api-key': client_id})
+            with urllib.request.urlopen(request, timeout=15) as response:
+                data = json.load(response)
+        except Exception as exc:
+            xbmc.log('NLZiet Trakt watchlist {} failed: {}'.format(path, exc), xbmc.LOGWARNING)
+            continue
+        for entry in data or []:
+            media = entry.get(key) or {}
+            if media.get('title'):
+                out.append((kind, media.get('title'), media.get('year')))
+    return out
+
+
+def _match_nlziet_title(api, kind, title):
+    """Find an NLZiet series/movie whose title matches ``title``. Returns the
+    item dict or None."""
+    want = metadata_mod.clean_title(title)
+    group = 'series' if kind == 'series' else 'movies'
+    try:
+        hits = api.search(title, group) or api.search(title) or []
+    except Exception:
+        hits = []
+    for hit in hits:
+        if not isinstance(hit, dict) or not hit.get('id'):
+            continue
+        if metadata_mod.clean_title(hit.get('title') or '') == want:
+            return hit
+    return None
+
+
+def import_trakt_watchlist(background=False):
+    """Add titles from your Trakt watchlist to the Kodi library."""
+    if not _is_logged_in():
+        return
+    try:
+        trakt_addon = xbmcaddon.Addon('script.trakt')
+    except Exception:
+        xbmcgui.Dialog().notification('NLZiet', get_string('trakt_import_no_trakt'), xbmcgui.NOTIFICATION_WARNING, 5000)
+        return
+    token = trakt_status.access_token(trakt_addon)
+    client_id = _official_trakt_client_id()
+    if not token or not client_id:
+        xbmcgui.Dialog().notification('NLZiet', get_string('trakt_import_no_trakt'), xbmcgui.NOTIFICATION_WARNING, 5000)
+        return
+    wanted = _trakt_watchlist(token, client_id)
+    if not wanted:
+        xbmcgui.Dialog().notification('NLZiet', get_string('trakt_import_empty'), xbmcgui.NOTIFICATION_INFO, 5000)
+        return
+    api = get_api_instance()
+    lib = _get_library()
+    dialog = xbmcgui.DialogProgressBG() if not background else None
+    if dialog:
+        dialog.create('NLZiet', get_string('trakt_import_busy'))
+    added, missing = 0, 0
+    for index, (kind, title, _year) in enumerate(wanted):
+        if dialog:
+            dialog.update(int((index + 1) * 100 / len(wanted)), 'NLZiet', title or '')
+        match = _match_nlziet_title(api, kind, title)
+        if not match:
+            missing += 1
+            continue
+        try:
+            if kind == 'series':
+                result = lib.add_series(match['id'], title=match.get('title'),
+                                        poster=_pick_portrait_thumb(match))
+            else:
+                result = lib.add_movie(match['id'], title=match.get('title'))
+            if result:
+                added += 1
+        except Exception as exc:
+            xbmc.log('NLZiet Trakt import add failed: {}'.format(exc), xbmc.LOGWARNING)
+    if dialog:
+        dialog.close()
+    if added:
+        library_mod.run_library_jobs(scan=True)
+    xbmcgui.Dialog().ok('NLZiet', get_string('trakt_import_done', added, missing))
+
 
 
 def library_update(background=False):
@@ -6397,6 +6506,8 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             end <= _epg_now(),
             start <= _epg_now(),
             pgm.get('description') or pgm.get('plot') or '',
+            start_epoch=start.timestamp() if hasattr(start, 'timestamp') else None,
+            channel_name=str(self._rows[self._row_index].get('title') or self._rows[self._row_index].get('name') or ''),
         )
 
     def _select_day(self):
@@ -6426,7 +6537,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             pass
 
-    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False, is_future=False, watch_later_vod=False, aired=False, started=False, description=''):
+    def _show_program_menu(self, channel_id, program_id, asset_id, mode, title, thumb, is_now=False, is_future=False, watch_later_vod=False, aired=False, started=False, description='', start_epoch=None, channel_name=''):
         options = []
         actions = []
         if is_now and channel_id:
@@ -6443,6 +6554,13 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             actions.append('my_series')
             options.append(get_string('add_to_watch_later'))
             actions.append('watch_later')
+        if is_future and program_id and start_epoch:
+            if reminders_mod.has(_reminders_path(), program_id):
+                options.append(get_string('remove_reminder'))
+                actions.append('reminder_off')
+            else:
+                options.append(get_string('set_reminder'))
+                actions.append('reminder_on')
         options.append('Annuleren')
         actions.append('cancel')
         choice = xbmcgui.Dialog().select(title or 'Programma', options)
@@ -6450,6 +6568,14 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             return
         action = actions[choice]
         if action == 'cancel':
+            return
+        if action == 'reminder_on':
+            reminders_mod.add(_reminders_path(), program_id, title, channel_id, start_epoch, channel_name)
+            xbmcgui.Dialog().notification('NLZiet', get_string('reminder_set', title or ''), xbmcgui.NOTIFICATION_INFO, 3000)
+            return
+        if action == 'reminder_off':
+            reminders_mod.remove(_reminders_path(), program_id)
+            xbmcgui.Dialog().notification('NLZiet', get_string('reminder_removed'), xbmcgui.NOTIFICATION_INFO, 3000)
             return
         global _epg_playback_active
         _epg_playback_active = action.startswith('play')
@@ -6784,6 +6910,22 @@ STOP_AFTER_PROPERTY = 'nlziet.stop_after'
 
 def _history_path():
     return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'watch_history.json')
+
+
+def _reminders_path():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'epg_reminders.json')
+
+
+def check_reminders(background=True):
+    """Show a notification for any EPG reminder about to start (service)."""
+    try:
+        for row in reminders_mod.due(_reminders_path()):
+            name = row.get('title') or ''
+            channel = row.get('channel_name') or ''
+            text = get_string('reminder_soon', name, channel) if channel else get_string('reminder_due', name)
+            xbmcgui.Dialog().notification('NLZiet', text, xbmcgui.NOTIFICATION_INFO, 9000)
+    except Exception as exc:
+        xbmc.log('NLZiet: reminder check failed: {}'.format(exc), xbmc.LOGWARNING)
 
 
 def _next_play_query(api, content_id):
@@ -7889,6 +8031,8 @@ def get_route_handlers():
         'browse_expiring': browse_expiring,
         'both_continue': both_continue,
         'favourite_channels': favourite_channels,
+        'check_reminders': check_reminders,
+        'import_trakt_watchlist': import_trakt_watchlist,
         'library_from_lists': library_from_lists,
         'choose_tmdb': choose_tmdb,
         'parental_set_pin': parental_set_pin,

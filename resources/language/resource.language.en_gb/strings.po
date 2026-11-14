@@ -1421,3 +1421,59 @@ msgstr ""
 msgctxt "#33331"
 msgid "Tell Trakt in real time what you are watching (needs the Trakt add-on signed in)."
 msgstr ""
+
+msgctxt "#33332"
+msgid "Set a reminder"
+msgstr ""
+
+msgctxt "#33333"
+msgid "Remove reminder"
+msgstr ""
+
+msgctxt "#33334"
+msgid "Reminder set for {0}"
+msgstr ""
+
+msgctxt "#33335"
+msgid "Reminder removed"
+msgstr ""
+
+msgctxt "#33336"
+msgid "Starting now: {0}"
+msgstr ""
+
+msgctxt "#33337"
+msgid "Soon on {1}: {0}"
+msgstr ""
+
+msgctxt "#33338"
+msgid "Import Trakt watchlist to library"
+msgstr ""
+
+msgctxt "#33339"
+msgid "Look up the shows and films on your Trakt watchlist in NLZiet and add the matches to your library."
+msgstr ""
+
+msgctxt "#33340"
+msgid "Sign in with the Trakt add-on first"
+msgstr ""
+
+msgctxt "#33341"
+msgid "Your Trakt watchlist is empty"
+msgstr ""
+
+msgctxt "#33342"
+msgid "Importing from Trakt..."
+msgstr ""
+
+msgctxt "#33343"
+msgid "Added {0} titles, {1} not found on NLZiet"
+msgstr ""
+
+msgctxt "#33344"
+msgid "Find subtitles if the stream has none"
+msgstr ""
+
+msgctxt "#33345"
+msgid "When a video has no subtitles of its own, open Kodi's subtitle search so your subtitle add-on (e.g. OpenSubtitles) can find one."
+msgstr ""

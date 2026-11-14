@@ -12,6 +12,7 @@ from resources.lib import watch_sync
 from resources.lib import diagnostics as diagnostics_mod
 from resources.lib import playback_extras
 from resources.lib import trakt_status
+from resources.lib import reminders as reminders_mod
 
 ADDON = xbmcaddon.Addon()
 
@@ -112,6 +113,8 @@ class PlaybackFollower(xbmc.Player):
                 xbmc.log('NLZiet service: language {}'.format(result), xbmc.LOGINFO)
             except Exception as exc:
                 xbmc.log('NLZiet service: language select failed: {}'.format(exc), xbmc.LOGWARNING)
+        if _setting_on('auto_subtitle_search', False):
+            self._maybe_find_subtitles()
 
     def sample(self):
         if not self.watch.key:
@@ -140,6 +143,17 @@ class PlaybackFollower(xbmc.Player):
 
     def onPlayBackEnded(self):
         self._done(True)
+
+    def _maybe_find_subtitles(self):
+        """Open Kodi's subtitle search when the video has no subtitles of its own."""
+        try:
+            if MONITOR.waitForAbort(3):
+                return
+            if not self.isPlayingVideo() or playback_extras.subtitles_present(_rpc):
+                return
+            xbmc.executebuiltin('ActivateWindow(subtitlesearch)')
+        except Exception as exc:
+            xbmc.log('NLZiet service: subtitle search skipped: {}'.format(exc), xbmc.LOGWARNING)
 
     def _scrobble(self, action):
         if not _setting_on('trakt_scrobble', False):
@@ -230,6 +244,24 @@ def _library_update_due():
     return (time.time() - last) >= hours * 3600
 
 
+def _reminders_path():
+    return os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'epg_reminders.json')
+
+
+def _check_reminders():
+    import xbmcgui
+
+    def _text(row):
+        name = row.get('title') or ''
+        channel = row.get('channel_name') or ''
+        if channel:
+            return ADDON.getLocalizedString(33337).format(name, channel)
+        return ADDON.getLocalizedString(33336).format(name)
+
+    for row in reminders_mod.due(_reminders_path()):
+        xbmcgui.Dialog().notification('NLZiet', _text(row), xbmcgui.NOTIFICATION_INFO, 9000)
+
+
 def _daily_check_due():
     if not _setting_on('daily_check', True):
         return False
@@ -260,6 +292,12 @@ def main():
         if now - last_minute < 60:
             continue
         last_minute = now
+
+        # EPG reminders about to start (checked here, no plugin round-trip).
+        try:
+            _check_reminders()
+        except Exception as exc:
+            xbmc.log('NLZiet service: reminder check failed: {}'.format(exc), xbmc.LOGWARNING)
 
         if (now - started >= LIBRARY_STARTUP_DELAY + 300 and now - last_daily >= 6 * 3600
                 and not xbmc.Player().isPlaying() and _daily_check_due()):

@@ -1,7 +1,16 @@
 # Changelog
 
-> **Latest Version:** v2.2.0 (November 14, 2026)
+> **Latest Version:** v2.3.0 (November 14, 2026)
 
+## [2.3.0] - 2026-11-14
+
+### Added
+- **EPG-herinnering**: in de tv-gids kun je op een toekomstig programma "Herinnering instellen"; vlak voor het begint krijg je een Kodi-melding. De controle draait op de achtergrond, elke minuut.
+- **Trakt-kijklijst importeren**: een knop (Instellingen → Synchronisatie) die de series en films van je Trakt-kijklijst opzoekt in NLZiet en de gevonden titels aan je bibliotheek toevoegt.
+- **Ondertitels zoeken als de stream er geen heeft**: optioneel opent de addon automatisch de ondertitelzoeker van Kodi, zodat je eigen ondertitel-addon (bijv. OpenSubtitles) er een kan vinden (Instellingen → Afspelen).
+
+### Development
+- Nieuwe module `reminders.py` met tests; Trakt-watchlist-import en `subtitles_present`-helper.
 ## [2.2.0] - 2026-11-14
 
 ### Added
