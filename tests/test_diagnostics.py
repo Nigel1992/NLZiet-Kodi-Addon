@@ -30,7 +30,7 @@ def test_checks_flag_problems_and_missing_titles():
         t, '1.0', False, [('NLZiet', 'https://x'), ('TMDb', 'https://y')], library=lib,
         library_special=('special://tv', 'special://movies'), tmdb_status='invalid',
         probe=lambda url: (url == 'https://x', 42 if url == 'https://x' else 'URLError'),
-        sources=['/data/library/TV Shows/'], widevine='android', kodi_counts=(1, 1))
+        sources=['/data/library/TV Shows/'], widevine='android', kodi_counts=(1, 0))
     by_label = {label: (status, detail) for status, label, detail in checks}
     assert by_label['Aangemeld'][0] == 'fail'
     assert by_label['Verbinding met NLZiet'] == ('ok', 'bereikbaar (42 ms)')
@@ -66,3 +66,13 @@ def test_kodi_counts_matches_our_folders():
         return {'result': {'movies': [{'file': '/data/library/Movies/M0/M0.strm'}]}}
 
     assert library_art.kodi_counts(lib, rpc=rpc) == (1, 1)
+
+
+def test_folder_with_scanned_titles_counts_as_source():
+    t = diagnostics.texts('nl')
+    lib = Lib(Store(series=2, movies=1))
+    checks = diagnostics.run_checks(t, '1.0', True, [], library=lib, sources=[], widevine='found',
+                                    kodi_counts=(2, 0))
+    by_label = {label: status for status, label, _detail in checks}
+    assert by_label['Map TV Shows'] == 'ok'
+    assert by_label['Map Movies'] == 'warn'

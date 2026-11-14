@@ -50,7 +50,8 @@ TEXT = {
         'lib_in_kodi_fix': 'Kies Bibliotheek > Bibliotheek nu bijwerken; dan scant Kodi de rest.',
         'lib': 'Bibliotheek', 'lib_count': '{} series, {} films; laatst bijgewerkt: {}', 'never': 'nog nooit',
         'lib_folder': 'Map {}', 'lib_source_ok': 'staat als bron in Kodi', 'lib_source_missing':
-            'staat nog niet als bron in Kodi: voeg {} toe via Video\'s > Bestanden > Video\'s toevoegen',
+            'staat nog niet als bron in Kodi: voeg {} toe via Video\'s > Bestanden > Video\'s toevoegen '
+            '(inhoud: Series of Films, scraper: Lokale informatie)',
         'report': 'Rapport opgeslagen in:', 'summary_ok': 'Alles ziet er goed uit.',
         'summary_problems': '{} punt(en) hebben aandacht nodig, zie hieronder.',
     },
@@ -70,7 +71,8 @@ TEXT = {
         'lib_in_kodi_fix': 'Choose Library > Update library now so Kodi scans the rest.',
         'lib': 'Library', 'lib_count': '{} series, {} films; last updated: {}', 'never': 'never',
         'lib_folder': 'Folder {}', 'lib_source_ok': 'is a Kodi source', 'lib_source_missing':
-            'is not a Kodi source yet: add {} via Videos > Files > Add videos',
+            'is not a Kodi source yet: add {} via Videos > Files > Add videos '
+            '(content: TV shows or Movies, scraper: Local information only)',
         'report': 'Report saved to:', 'summary_ok': 'Everything looks fine.',
         'summary_problems': '{} item(s) need attention, see below.',
     },
@@ -129,10 +131,20 @@ def _kodi_sources():
     return [str(source.get('file') or '') for source in result.get('sources') or []]
 
 
+def _translate(path):
+    if xbmcvfs is not None and str(path).startswith('special://'):
+        try:
+            return xbmcvfs.translatePath(path)
+        except Exception:
+            pass
+    return path
+
+
 def _is_source(folder, sources, special=None):
-    wanted = [str(p).replace('\\', '/').rstrip('/').lower() for p in (folder, special) if p]
+    wanted = [str(_translate(p)).replace('\\', '/').rstrip('/').lower() for p in (folder, special) if p]
+    wanted += [str(p).replace('\\', '/').rstrip('/').lower() for p in (folder, special) if p]
     for source in sources:
-        source = source.replace('\\', '/').rstrip('/').lower()
+        source = str(_translate(source)).replace('\\', '/').rstrip('/').lower()
         if any(w == source or w.startswith(source + '/') for w in wanted):
             return True
     return False
@@ -181,11 +193,14 @@ def run_checks(t, version, signed_in, endpoints, library=None, library_special=N
                            in_kodi if complete else in_kodi + ' ' + t['lib_in_kodi_fix']))
         source_list = _kodi_sources() if sources is None else sources
         specials = library_special or (None, None)
-        for kind, root, special, count in (('TV Shows', library.tv_root(), specials[0], series),
-                                           ('Movies', library.movies_root(), specials[1], movies)):
+        in_kodi = kodi_counts or (0, 0)
+        for kind, root, special, count, scanned in (('TV Shows', library.tv_root(), specials[0], series, in_kodi[0]),
+                                                    ('Movies', library.movies_root(), specials[1], movies, in_kodi[1])):
             if not count:
                 continue
-            if _is_source(root, source_list, special):
+            # Titles from this folder in Kodi's library prove it is a source,
+            # however the source was added (parent folder, network path...).
+            if scanned or _is_source(root, source_list, special):
                 checks.append((OK, t['lib_folder'].format(kind), t['lib_source_ok']))
             else:
                 checks.append((WARN, t['lib_folder'].format(kind), t['lib_source_missing'].format(special or root)))

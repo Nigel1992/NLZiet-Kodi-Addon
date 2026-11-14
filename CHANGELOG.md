@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v1.8.0 (November 14, 2026)
+> **Latest Version:** v1.8.1 (November 14, 2026)
+
+## [1.8.1] - 2026-11-14
+
+### Fixed
+- **Diagnostics**: a library folder is no longer reported as "not a Kodi source" when Kodi already has titles from it (for example when the parent folder was added as the source). The hint now also says which content type and scraper to choose.
 
 ## [1.8.0] - 2026-11-14
 
