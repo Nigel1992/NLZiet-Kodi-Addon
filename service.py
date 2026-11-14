@@ -5,6 +5,7 @@ import xbmc
 import xbmcaddon
 
 from resources.lib import library as library_mod
+from resources.lib import library_art
 
 ADDON = xbmcaddon.Addon()
 
@@ -90,6 +91,9 @@ def main():
             break
 
         now = time.time()
+        # A scan asked for while Kodi was busy runs as soon as it is free.
+        library_art.run_pending_scan(library_mod.scan_flag_path())
+
         if MONITOR.scan_finished:
             MONITOR.scan_finished = False
             library_file = os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'library.json')

@@ -1,6 +1,14 @@
 # Changelog
 
-> **Latest Version:** v1.7.4 (November 14, 2026)
+> **Latest Version:** v1.7.5 (November 14, 2026)
+
+## [1.7.5] - 2026-11-14
+
+### Fixed
+- **Library titles missing from Kodi**: Kodi ignores a scan request while it is still scanning, so titles added in quick succession were written to the library folder but never scanned. Such a request now waits and runs as soon as Kodi's scan is finished, and **Update library now** always lets Kodi scan, so titles that were skipped before get in too.
+
+### Added
+- **Diagnostics** (Settings): one screen that checks sign-in, InputStream Adaptive, Widevine, the connection to the service, TMDb and TVmaze, the TMDb key, whether the library folders are Kodi sources, and how many library titles Kodi really has. A privacy-safe report with a log excerpt is saved for bug reports.
 
 ## [1.7.4] - 2026-11-14
 

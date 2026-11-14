@@ -990,3 +990,11 @@ msgstr "Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om
 msgctxt "#33219"
 msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
 msgstr "TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest."
+
+msgctxt "#33220"
+msgid "Run diagnostics"
+msgstr "Diagnose uitvoeren"
+
+msgctxt "#33221"
+msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+msgstr "Controleert aanmelding, InputStream Adaptive, Widevine, de verbinding met NLZiet, TMDb en TVmaze, en de bibliotheekmappen. Slaat een rapport zonder privégegevens op dat je bij een foutmelding kunt meesturen."

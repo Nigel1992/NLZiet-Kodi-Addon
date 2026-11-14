@@ -973,3 +973,11 @@ msgstr "No TMDb key is saved yet. Enter the key, press OK to save the settings a
 msgctxt "#33219"
 msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
 msgstr "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+
+msgctxt "#33220"
+msgid "Run diagnostics"
+msgstr "Run diagnostics"
+
+msgctxt "#33221"
+msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+msgstr "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."

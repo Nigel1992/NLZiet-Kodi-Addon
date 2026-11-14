@@ -28,6 +28,7 @@ from resources.lib import library as library_mod
 from resources.lib import metadata as metadata_mod
 from resources.lib import library_art
 from resources.lib import errors as errors_mod
+from resources.lib import diagnostics as diagnostics_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -1862,8 +1863,9 @@ def library_update(background=False):
             except Exception:
                 pass
     changed = bool(totals.get('added') or totals.get('removed'))
-    if changed:
-        _after_library_change(scan=True, clean=bool(totals.get('removed')))
+    if changed or not background:
+        # A manual update always scans, so titles a busy Kodi skipped get in too.
+        library_mod.run_library_jobs(scan=True, clean=bool(totals.get('removed')) and _setting_on('library_clean_after', True))
     repair_library_art()
     if not background or (changed and _setting_on('background_sync_notify', True)):
         xbmcgui.Dialog().notification(
@@ -2532,6 +2534,45 @@ def export_diagnostics():
     except Exception as exc:
         xbmc.log(f'NLZiet diagnostics export failed: {exc}', xbmc.LOGERROR)
         xbmcgui.Dialog().notification('NLZiet', get_string('diagnostics_failed'), xbmcgui.NOTIFICATION_ERROR)
+
+
+def run_diagnostics():
+    """Settings button: check everything playback and the library need."""
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    t = diagnostics_mod.texts(language)
+    progress = xbmcgui.DialogProgress()
+    progress.create('NLZiet', t['title'] + '...')
+    try:
+        try:
+            api = get_api_instance()
+            base_url = getattr(api, 'base_url', '') or 'https://api.nlziet.nl/'
+        except Exception:
+            base_url = 'https://api.nlziet.nl/'
+        endpoints = [('NLZiet', base_url), ('TMDb', 'https://api.themoviedb.org/3/'),
+                     ('TVmaze', 'https://api.tvmaze.com/')]
+        tmdb_status = None
+        if _setting_on('library_enrich', True):
+            tmdb_status = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))[0]
+        try:
+            lib = _get_library()
+        except Exception:
+            lib = None
+        checks = diagnostics_mod.run_checks(
+            t, ADDON.getAddonInfo('version'), _is_logged_in(), endpoints, library=lib,
+            library_special=(library_mod.DEFAULT_TV_PATH, library_mod.DEFAULT_MOVIES_PATH),
+            tmdb_status=tmdb_status,
+            kodi_counts=library_art.kodi_counts(lib, 'plugin.video.nlziet/library') if lib else None)
+        text = diagnostics_mod.render(t, checks)
+        folder = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'diagnostics')
+        log_lines = diagnostics_mod.kodi_log_excerpt(['nlziet'], _redact_diagnostic_text)
+        path = diagnostics_mod.save_report(folder, 'nlziet', _redact_diagnostic_text(text), log_lines)
+        text = diagnostics_mod.render(t, checks, path)
+    finally:
+        progress.close()
+    xbmcgui.Dialog().textviewer('NLZiet - ' + t['title'], text)
 
 
 def clear_subtitle_cache():
@@ -6508,6 +6549,7 @@ def get_route_handlers():
         'browse_library': browse_library,
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
+        'run_diagnostics': run_diagnostics,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,

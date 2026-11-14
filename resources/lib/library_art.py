@@ -179,3 +179,84 @@ def repair_kodi_art(library, marker="", rpc=None):
             _rpc(setter, {id_key: item[id_key], "art": missing}, rpc)
             updated += 1
     return updated
+
+
+# --------------------------------------------------------------------------
+# Library scans
+# --------------------------------------------------------------------------
+# Kodi ignores a scan request while another scan is running, so titles added
+# in quick succession were never scanned. A small flag file remembers a
+# request made during a scan; the service runs it as soon as Kodi is done.
+
+def _rpc_call(method, params):
+    if xbmc is None:
+        return {}
+    try:
+        return json.loads(xbmc.executeJSONRPC(json.dumps(
+            {"jsonrpc": "2.0", "method": method, "params": params, "id": 1})))
+    except Exception:
+        return {}
+
+
+def kodi_is_scanning():
+    if xbmc is None:
+        return False
+    try:
+        return bool(xbmc.getCondVisibility("Library.IsScanningVideo"))
+    except Exception:
+        return False
+
+
+def request_scan(flag_path, scan=True, clean=False, is_scanning=kodi_is_scanning, rpc=_rpc_call):
+    """Clean and/or scan now, or remember the request when Kodi is busy."""
+    if is_scanning():
+        try:
+            folder = os.path.dirname(flag_path)
+            if folder:
+                os.makedirs(folder, exist_ok=True)
+            with open(flag_path, "w", encoding="utf-8") as handle:
+                json.dump({"scan": bool(scan), "clean": bool(clean)}, handle)
+        except Exception:
+            pass
+        return False
+    if clean:
+        rpc("VideoLibrary.Clean", {"showdialogs": False})
+    if scan:
+        rpc("VideoLibrary.Scan", {"showdialogs": False})
+    return True
+
+
+def run_pending_scan(flag_path, is_scanning=kodi_is_scanning, rpc=_rpc_call):
+    """Run a scan that was requested while Kodi was busy. True when one ran."""
+    try:
+        with open(flag_path, "r", encoding="utf-8") as handle:
+            wanted = json.load(handle) or {}
+    except Exception:
+        return False
+    if is_scanning():
+        return False
+    try:
+        os.remove(flag_path)
+    except OSError:
+        pass
+    return request_scan(flag_path, scan=wanted.get("scan", True), clean=wanted.get("clean", False),
+                        is_scanning=lambda: False, rpc=rpc)
+
+
+def kodi_counts(library, marker="", rpc=None):
+    """How many of our series/films Kodi actually has: (series, films)."""
+    counts = []
+    for kind, getter, key, is_file in (("series", "VideoLibrary.GetTVShows", "tvshows", False),
+                                       ("movie", "VideoLibrary.GetMovies", "movies", True)):
+        folders = {e.get("folder") for e in library.store.section(kind).values() if e.get("folder")}
+        root = str(library.tv_root() if kind == "series" else library.movies_root()).replace("\\", "/").lower()
+        result = (_rpc(getter, {"properties": ["file"]}, rpc) or {}).get("result") or {}
+        found = set()
+        for item in result.get(key) or []:
+            path = str(item.get("file") or "").replace("\\", "/")
+            if (root and root.rstrip("/") in path.lower()) or (marker and marker.lower() in path.lower()):
+                folder = _folder_of(path, is_file)
+                if folder in folders:
+                    found.add(folder)
+        counts.append(len(found))
+    return tuple(counts)

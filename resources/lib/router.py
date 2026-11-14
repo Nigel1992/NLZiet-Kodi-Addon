@@ -90,6 +90,8 @@ class Router:
             self.handlers['confirm_logout']()
         elif mode == 'account_summary':
             self.handlers['refresh_account_info']()
+        elif mode == 'diagnostics':
+            self.handlers['run_diagnostics']()
         elif mode == 'export_diagnostics':
             self.handlers['export_diagnostics']()
         elif mode == 'clear_subtitle_cache':

@@ -759,17 +759,11 @@ class Library:
         return (self.now() - last) >= hours * 3600
 
 
+def scan_flag_path():
+    return os.path.join(translate_path("special://profile/addon_data/plugin.video.nlziet") or "", "scan_pending.json")
+
+
 def run_library_jobs(scan=True, clean=False):
-    """Ask Kodi to clean and/or scan the video library without dialogs."""
-    if xbmc is None:
-        return
-    calls = []
-    if clean:
-        calls.append({'jsonrpc': '2.0', 'method': 'VideoLibrary.Clean', 'params': {'showdialogs': False}, 'id': 1})
-    if scan:
-        calls.append({'jsonrpc': '2.0', 'method': 'VideoLibrary.Scan', 'params': {'showdialogs': False}, 'id': 2})
-    for call in calls:
-        try:
-            xbmc.executeJSONRPC(json.dumps(call))
-        except Exception as exc:
-            _log('library job failed: {}'.format(exc))
+    """Ask Kodi to clean and/or scan the video library without dialogs. When
+    Kodi is already scanning, the request waits until that scan is done."""
+    library_art.request_scan(scan_flag_path(), scan=scan, clean=clean)
