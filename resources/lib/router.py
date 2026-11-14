@@ -73,10 +73,6 @@ class Router:
             self.handlers['import_trakt_watchlist'](params.get('background') == '1')
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
-        elif mode == 'my_list':
-            self.handlers['browse_my_list']()
-        elif mode == 'my_list_group':
-            self.handlers['browse_my_list_group'](params.get('group'))
         elif mode == 'watch_later':
             self.handlers['browse_watch_later']()
         elif mode == 'watch_later_collection':
@@ -96,14 +92,6 @@ class Router:
             self.handlers['sync_watch_later'](**self._sync_options(params))
         elif mode == 'sync_my_series':
             self.handlers['sync_my_series'](**self._sync_options(params))
-        elif mode == 'toggle_mylist':
-            self.handlers['toggle_mylist'](
-                params.get('id'),
-                params.get('title'),
-                params.get('type'),
-                params.get('thumb'),
-                params.get('group')
-            )
         elif mode == 'toggle_watch_later':
             self.handlers['toggle_watch_later'](
                 params.get('id'),
@@ -128,8 +116,6 @@ class Router:
             self.handlers['browse_series']()
         elif mode == 'logout':
             self.handlers['do_logout']()
-        elif mode == 'logout_keep_mylist':
-            self.handlers['do_logout'](keep_mylist=True)
         elif mode == 'logout_confirm':
             self.handlers['confirm_logout']()
         elif mode == 'account_summary':

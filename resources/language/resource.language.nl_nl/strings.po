@@ -1530,3 +1530,7 @@ msgstr "Nieuwe afleveringen automatisch aan de bibliotheek toevoegen"
 msgctxt "#33354"
 msgid "When a series you follow gets a new episode, update the library so the episode is placed with the others right away."
 msgstr "Als een serie die je volgt een nieuwe aflevering krijgt, werk de bibliotheek bij zodat de aflevering meteen bij de rest komt te staan."
+
+msgctxt "#33355"
+msgid "My List was moved to Watch Later ({0} titles)"
+msgstr "Mijn lijst is overgezet naar Kijk Later ({0} titels)"

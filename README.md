@@ -34,7 +34,7 @@
 Includes a custom full-screen EPG (TV Gids) with channel names, current programme indicator, and 7-day browse.  
 - **Series**: Browse, search, and play series with full season/episode navigation.  
 - **Movies**: Discover and watch movies from the NLZiet catalog.  
-- **Saved lists**: Add **any** content (Series, TV Shows, Documentaires, Films, Kanalen, episodes) to **My List** via the item context menu; My List groups items into a subsection per category and is stored **locally on this device only (Kodi only)**.  
+- **Saved lists**: Add content to **Watch Later** (kept in sync with your NLZiet account) via the item context menu, or add series and films to the **Kodi library**.  
 **Kijk Later** (Watch Later) holds episodes and movies, while **Mijn Series** (My Series) follows whole series — each item shows the matching action in its context menu.  
 Both Kijk Later and My Series can optionally **synchronise both ways with your NLZiet account** (Settings → Synchronization) through the cloud watchlist and tracked-series list respectively, including manual **Sync Watch Later now** / **Sync My Series now** actions. An optional auto-sync interval runs in the background; its result can be shown as a notification (toggle "Show notification after automatic sync"), which only appears when something changed and never during playback.  
 - **Profile Management**: Switch between user profiles from the Kodi UI.  
@@ -147,7 +147,7 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 Bevat een aangepaste volledig-scherm EPG (TV Gids) met zendernamen, huidige-programma-indicator en 7 dagen bladeren.  
 - **Series**: Blader, zoek en speel series af met volledige seizoen/aflevering-navigatie.  
 - **Films**: Ontdek en kijk films uit de NLZiet-catalogus.  
-- **Opgeslagen lijsten**: Voeg **elke** content (Series, TV Shows, Documentaires, Films, Kanalen, afleveringen) toe aan **Mijn Lijst** via het contextmenu; Mijn Lijst groepeert items per categorie en wordt **alleen lokaal op dit apparaat opgeslagen (alleen Kodi)**.  
+- **Opgeslagen lijsten**: Voeg content toe aan **Kijk Later** (wordt met je NLZiet-account gesynchroniseerd) via het contextmenu, of zet series en films in de **Kodi-bibliotheek**.  
 **Kijk Later** bevat afleveringen en films, terwijl **Mijn Series** hele series volgt — elk item toont de bijpassende actie in het contextmenu.  
 Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren met je NLZiet-account** (Instellingen → Synchronisatie) via de cloud-watchlist en tracked-series-lijst, inclusief handmatige acties **Sync Watch Later now** / **Sync My Series now**. Een optionele automatische synchronisatie draait op de achtergrond; het resultaat kan als melding getoond worden (instelling "Melding tonen na automatische synchronisatie"). Die melding verschijnt alleen als er iets gewijzigd is en nooit tijdens afspelen.  
 - **Profielbeheer**: Schakel tussen gebruikersprofielen vanuit de Kodi-UI.  

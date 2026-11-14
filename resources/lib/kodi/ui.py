@@ -186,21 +186,6 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
             is_series_item = 'series' in ctype_l or 'tvshow' in ctype_l or grp_l == 'series'
             is_channel_item = 'channel' in ctype_l or 'live' in ctype_l or grp_l == 'channels'
 
-            if allow_mylist:
-                mylist_label = mylist_remove_label if _check('is_in_my_list') else mylist_add_label
-
-                mylist_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
-                if content_type:
-                    mylist_query['type'] = content_type
-                if group:
-                    mylist_query['group'] = group
-                if thumb:
-                    mylist_query['thumb'] = thumb
-                try:
-                    context_items.append((mylist_label, f"RunPlugin({build_url_func(mylist_query)})"))
-                except Exception:
-                    pass
-
             if allow_mylist and is_series_item:
                 my_series_label = my_series_remove_label if _check('is_in_my_series') else my_series_add_label
                 my_series_query = {'mode': 'toggle_my_series', 'id': str(content_id), 'title': title}

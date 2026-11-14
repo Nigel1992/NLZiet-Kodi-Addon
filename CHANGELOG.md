@@ -1,7 +1,12 @@
 # Changelog
 
-> **Latest Version:** v2.3.2 (November 14, 2026)
+> **Latest Version:** v2.4.0 (November 14, 2026)
 
+## [2.4.0] - 2026-11-14
+
+### Changed
+- **"Mijn lijst (alleen Kodi)" verwijderd.** Nu er een Kodi-bibliotheek is en Kijk Later met je NLZiet-account wordt gesynchroniseerd, was de lokale lijst "Mijn lijst (alleen Kodi)" overbodig. Weg zijn: de map in het hoofdmenu, de contextmenu-opties, de bijbehorende meldingen en de vraag bij uitloggen. Het contextmenu toont nu alleen nog Kijk Later en Toevoegen aan/uit bibliotheek.
+- **Niets kwijt:** stond er nog iets op Mijn lijst, dan wordt dat bij de eerste keer openen eenmalig overgezet naar **Kijk Later** (dat ook in de NLZiet-app zichtbaar is), met de melding "Mijn lijst is overgezet naar Kijk Later (N titels)". Het oude bestand wordt pas verwijderd als dat gelukt is.
 ## [2.3.2] - 2026-11-14
 
 ### Added

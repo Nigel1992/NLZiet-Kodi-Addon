@@ -393,6 +393,7 @@ TRANSLATIONS = {
     'resume_from': {'nl': 'Verder kijken vanaf {0}?', 'en': 'Continue from {0}?'},
     'resume_yes': {'nl': 'Verder kijken', 'en': 'Continue'},
     'resume_no': {'nl': 'Vanaf het begin', 'en': 'From the start'},
+    'mylist_migrated_notice': {'nl': 'Mijn lijst is overgezet naar Kijk Later ({0} titels)', 'en': 'My List was moved to Watch Later ({0} titles)'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -656,6 +657,7 @@ STRING_IDS = {
     'resume_from': 33350,
     'resume_yes': 33351,
     'resume_no': 33352,
+    'mylist_migrated_notice': 33355,
 }
 
 
@@ -1436,8 +1438,6 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         add_to_library_label=get_string('add_to_library'),
         remove_from_library_label=get_string('remove_from_library'),
         library_check=is_in_library,
-        mylist_add_label=get_string('add_to_mylist'),
-        mylist_remove_label=get_string('remove_from_mylist'),
         watch_later_add_label=get_string('add_to_watch_later'),
         watch_later_remove_label=get_string('remove_from_watch_later'),
         my_series_add_label=get_string('add_to_my_series'),
@@ -1578,6 +1578,10 @@ def main_menu():
         add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'), is_folder=False, is_playable=False)
 
     if logged_in:
+        try:
+            migrate_mylist_to_watch_later()
+        except Exception as exc:
+            xbmc.log('NLZiet: My List migration skipped: {}'.format(exc), xbmc.LOGWARNING)
         # Order: find and browse, the user's own lists, live tv, account last.
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
@@ -1588,7 +1592,6 @@ def main_menu():
         add_directory_item(get_string('favourite_channels'), {'mode': 'favourite_channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
         add_directory_item(get_string('continue_watching'), {'mode': 'widget', 'list': 'continue'}, thumb=_pick_png('continue'))
-        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
         add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
         add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
@@ -2851,12 +2854,9 @@ def refresh_account_info(notify=True):
             xbmc.log('NLZiet: Account info could not be parsed', xbmc.LOGDEBUG)
 
 
-def do_logout(keep_mylist=False):
+def do_logout():
     """Clear persistent addon data (cookies, tokens, profile) and refresh the UI.
 
-    Args:
-        keep_mylist: If True, keep the My List file; if False, delete it
-    
     This removes cookie/token/profile files saved under the addon's
     profile directory, clears the stored profile settings, and replaces the
     current container with the main menu so the addon appears like a fresh
@@ -2873,8 +2873,6 @@ def do_logout(keep_mylist=False):
     # remove persistent files (cookies, profile, tokens)
     # optionally remove mylist based on keep_mylist parameter
     paths = [getattr(api, 'cookie_file', None), getattr(api, 'stream_cookie_file', None), getattr(api, 'profile_file', None), getattr(api, 'token_file', None)]
-    if not keep_mylist:
-        paths.append(getattr(api, 'mylist_file', None))
     
     for p in paths:
         try:
@@ -2949,19 +2947,8 @@ def confirm_logout():
             pass
         return
     
-    # Confirmed logout - now ask about My List
-    keep_mylist = False
-    try:
-        keep = d.yesno('NLZiet', get_string('keep_mylist'), yeslabel=get_string('keep_mylist_btn'), nolabel=get_string('clear_mylist_btn'))
-        keep_mylist = keep
-    except Exception:
-        try:
-            keep = d.yesno('NLZiet', get_string('keep_mylist'))
-            keep_mylist = keep
-        except Exception:
-            pass
-    
-    do_logout(keep_mylist=keep_mylist)
+    # Confirmed logout.
+    do_logout()
 
 
 def _redact_diagnostic_text(text):
@@ -4031,64 +4018,44 @@ def _render_list_items(
             continue
 
 
-def browse_my_list():
-    api = _get_list_api()
-    try:
-        items = api.get_my_list() or []
-    except Exception:
-        items = []
-
-    if not items:
-        xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-        _end_directory()
-        _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
+def migrate_mylist_to_watch_later():
+    """One-off: move anything left on the old "My List (Kodi only)" to Watch
+    Later, then delete the old file. Watch Later is kept in sync with the NLZiet
+    account, so the titles also show up in the NLZiet app. Runs once."""
+    if ADDON.getSetting('mylist_migrated') in ('true', '1', 'yes'):
         return
-    # Group My List items by category so the My List top-level shows one folder
-    # per category (Series, TV Shows, Documentaires, Films, Kanalen, ...).
-    groups = {}
-    for itm in items:
-        groups.setdefault(_content_group(itm), []).append(itm)
-
-    # Present a localized folder for each non-empty group, in a stable order.
-    any_folder = False
-    for g in GROUP_ORDER:
-        lst = groups.get(g) or []
-        if not lst:
-            continue
-        first = lst[0] if lst else None
-        thumb = _pick_landscape_thumb(first) if first else None
-        add_directory_item(_group_folder_label(g, len(lst)), {'mode': 'my_list_group', 'group': g}, is_folder=True, thumb=thumb)
-        any_folder = True
-
-    if not any_folder:
-        xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-    _end_directory()
-    _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
-
-
-def _browse_saved_group(group):
-    """Show items from the user's My List filtered to a single group."""
-    api = _get_list_api()
+    try:
+        api = _get_list_api()
+    except Exception:
+        return
+    mylist_file = getattr(api, 'mylist_file', None)
     try:
         items = api.get_my_list() or []
     except Exception:
         items = []
-
-    filtered = [itm for itm in items if _content_group(itm) == group]
-
-    if not filtered:
-        message = get_string('no_items_for_group', _group_label(group))
-        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
-        _end_directory()
-    else:
-        _render_list_items(filtered)
-        _end_directory()
-    _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
-
-
-def browse_my_list_group(group):
-    """Show items from the user's My List filtered to a single group."""
-    _browse_saved_group(group)
+    if not items:
+        ADDON.setSetting('mylist_migrated', 'true')
+        return
+    moved = 0
+    for item in items:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        try:
+            if api.is_in_watch_later(item['id']) or api.add_to_watch_later(item):
+                moved += 1
+        except Exception:
+            pass
+    # Only drop the old list once everything was carried over.
+    if moved >= sum(1 for it in items if isinstance(it, dict) and it.get('id')):
+        try:
+            if mylist_file and os.path.exists(mylist_file):
+                os.remove(mylist_file)
+        except Exception:
+            pass
+        ADDON.setSetting('mylist_migrated', 'true')
+        if moved:
+            xbmcgui.Dialog().notification('NLZiet', get_string('mylist_migrated_notice', moved),
+                                          xbmcgui.NOTIFICATION_INFO)
 
 
 _LIST_SYNC_INTERVAL = 300
@@ -4980,10 +4947,6 @@ def _propagate_my_series_change(api, item_id, present):
                 api.update_sync_snapshot(item_id, False, getattr(api, 'myseries_sync_file', None))
     except Exception:
         pass
-
-
-def toggle_mylist(item_id=None, title=None, type=None, thumb=None, group=None):
-    _toggle_local_list('mylist', item_id, title, type, thumb, group)
 
 
 def toggle_watch_later(item_id=None, title=None, type=None, thumb=None, group=None, replay_ok=None, aired=None, started=None, description=None):
@@ -8030,11 +7993,8 @@ def get_route_handlers():
         'do_login': do_login,
         'do_search': do_search,
         'manage_profiles': manage_profiles,
-        'browse_my_list': browse_my_list,
-        'browse_my_list_group': browse_my_list_group,
         'browse_watch_later': browse_watch_later,
         'browse_my_series': browse_my_series,
-        'toggle_mylist': toggle_mylist,
         'toggle_watch_later': toggle_watch_later,
         'add_series_watch_later': add_series_watch_later,
         'browse_watch_later_collection': browse_watch_later_collection,

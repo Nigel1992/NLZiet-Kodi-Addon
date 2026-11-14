@@ -16,9 +16,6 @@ def _import_default(monkeypatch):
         ('', 'main_menu', (), False),
         ('mode=search', 'do_search', (), True),
         ('mode=profiles', 'manage_profiles', (), False),
-        ('mode=my_list', 'browse_my_list', (), True),
-        ('mode=my_list_group&group=Movies', 'browse_my_list_group', ('Movies',), True),
-        ('mode=toggle_mylist&id=m1&title=Movie&type=movie&thumb=poster', 'toggle_mylist', ('m1', 'Movie', 'movie', 'poster', None), True),
         ('mode=select_profile&profile_id=p1', 'select_profile', ('p1',), True),
         ('mode=series_season&series_id=s1&season_id=2', 'show_series_season', ('s1', '2', None, None, None), True),
         ('mode=placement_row&items_url=https%3A%2F%2Fexample.test%2Fitems&placement_id=pl&comp_index=3', 'browse_placement_row', ('https://example.test/items', 'pl', '3'), True),
@@ -195,80 +192,5 @@ def test_main_menu_logged_out_adds_login_entry_and_ends_directory(monkeypatch, k
     assert kodi_recorder.ended == [42]
 
 
-def test_browse_my_list_groups_existing_items_by_content_type(monkeypatch, kodi_recorder):
-    default = _import_default(monkeypatch)
-    entries = []
-
-    class FakeApi:
-        def get_my_list(self):
-            return [
-                {'id': 'series-1', 'type': 'series'},
-                {'id': 'movie-1', 'type': 'movie'},
-                {'id': 'clip-1', 'type': 'clip'},
-            ]
-
-    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
-    monkeypatch.setattr(default, '_pick_landscape_thumb', lambda item: 'thumb:' + item['id'])
-    monkeypatch.setattr(
-        default,
-        'add_directory_item',
-        lambda title, query, **kwargs: entries.append((title, query, kwargs)),
-    )
-
-    default.browse_my_list()
-
-    assert [(title, query) for title, query, _ in entries] == [
-        ('Series (1)', {'mode': 'my_list_group', 'group': 'series'}),
-        ('Films (1)', {'mode': 'my_list_group', 'group': 'movies'}),
-        ('Overig (1)', {'mode': 'my_list_group', 'group': 'other'}),
-    ]
-    assert kodi_recorder.ended == [42]
 
 
-def test_browse_my_list_creates_subsection_for_each_category(monkeypatch, kodi_recorder):
-    default = _import_default(monkeypatch)
-    entries = []
-
-    class FakeApi:
-        def get_my_list(self):
-            return [
-                {'id': 's1', 'type': 'Series', 'group': 'series'},
-                {'id': 'tv1', 'type': 'Series', 'group': 'tvshows'},
-                {'id': 'doc1', 'type': 'Series', 'group': 'documentary'},
-                {'id': 'm1', 'type': 'Movie', 'group': 'movies'},
-                {'id': 'c1', 'type': 'channel', 'group': 'channels'},
-            ]
-
-    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
-    monkeypatch.setattr(default, '_pick_landscape_thumb', lambda item: 'thumb:' + item['id'])
-    monkeypatch.setattr(
-        default,
-        'add_directory_item',
-        lambda title, query, **kwargs: entries.append((title, query, kwargs)),
-    )
-
-    default.browse_my_list()
-
-    assert [(title, query) for title, query, _ in entries] == [
-        ('Series (1)', {'mode': 'my_list_group', 'group': 'series'}),
-        ('TV Shows (1)', {'mode': 'my_list_group', 'group': 'tvshows'}),
-        ('Documentaires (1)', {'mode': 'my_list_group', 'group': 'documentary'}),
-        ('Films (1)', {'mode': 'my_list_group', 'group': 'movies'}),
-        ('Kanalen (1)', {'mode': 'my_list_group', 'group': 'channels'}),
-    ]
-    assert kodi_recorder.ended == [42]
-
-
-def test_browse_my_list_empty_result_notifies_and_ends_directory(monkeypatch, kodi_recorder):
-    default = _import_default(monkeypatch)
-
-    class FakeApi:
-        def get_my_list(self):
-            return []
-
-    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
-
-    default.browse_my_list()
-
-    assert kodi_recorder.notifications == [('NLZiet', 'Mijn lijst (alleen Kodi) is leeg', 'info')]
-    assert kodi_recorder.ended == [42]

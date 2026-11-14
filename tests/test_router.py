@@ -7,8 +7,8 @@ from resources.lib.router import Router
 
 EXPECTED_HANDLER_NAMES = {
     'main_menu', 'do_login', 'do_search', 'manage_profiles',
-    'browse_my_list', 'browse_my_list_group',
-    'browse_watch_later', 'toggle_mylist',
+    
+    'browse_watch_later', 
     'toggle_watch_later', 'sync_watch_later',
     'browse_watch_later_collection', 'add_series_watch_later',
     'browse_my_series', 'toggle_my_series', 'sync_my_series',
@@ -83,19 +83,6 @@ def test_profiles_mode_does_not_set_video_content(kodi_recorder):
 
     assert calls == [('manage_profiles', (), {})]
     assert kodi_recorder.set_content == []
-
-
-def test_my_list_routes_preserve_parameters():
-    calls = []
-    router = Router(SimpleNamespace(handle=5, paramstring=''), _handlers(calls))
-
-    router.dispatch('mode=my_list_group&group=Movies')
-    router.dispatch('mode=toggle_mylist&id=1&type=movie&title=T&thumb=img')
-
-    assert calls == [
-        ('browse_my_list_group', ('Movies',), {}),
-        ('toggle_mylist', ('1', 'T', 'movie', 'img', None), {}),
-    ]
 
 
 def test_watch_later_route_dispatches():

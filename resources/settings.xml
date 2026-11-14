@@ -103,6 +103,12 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="mylist_migrated" type="boolean" label="" help="">
+          <level>3</level>
+          <default>false</default>
+          <control type="toggle"/>
+          <visible>false</visible>
+        </setting>
         <setting id="library_update_hours" type="integer" label="33202" help="">
           <level>0</level>
           <default>12</default>

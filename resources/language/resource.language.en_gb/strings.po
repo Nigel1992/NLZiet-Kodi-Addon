@@ -1513,3 +1513,7 @@ msgstr ""
 msgctxt "#33354"
 msgid "When a series you follow gets a new episode, update the library so the episode is placed with the others right away."
 msgstr ""
+
+msgctxt "#33355"
+msgid "My List was moved to Watch Later ({0} titles)"
+msgstr ""

@@ -374,31 +374,6 @@ def test_render_list_items_passes_plot_info(monkeypatch, kodi_recorder):
     assert captured['info']['plot'] == 'Een mooie serie'
 
 
-def test_toggle_mylist_accepts_any_content(monkeypatch, kodi_recorder):
-    default = _load_default(monkeypatch)
-    state = {'items': []}
-
-    class FakeApi:
-        def get_content_detail(self, item_id):
-            return {'title': item_id}
-
-        def is_in_my_list(self, item_id):
-            return any(item['id'] == item_id for item in state['items'])
-
-        def add_to_my_list(self, item):
-            state['items'].append(item)
-            return True
-
-    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
-
-    # My List accepts any content, e.g. a live channel.
-    default.toggle_mylist('c1', 'Kanaal 1', 'channel')
-
-    assert [item['id'] for item in state['items']] == ['c1']
-    assert state['items'][0]['type'] == 'channel'
-    assert kodi_recorder.notifications[-1] == ('NLZiet', 'Toegevoegd aan Mijn lijst (alleen Kodi)', 'info')
-
-
 def test_render_list_items_marks_channels_live(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     captured = {}
@@ -415,7 +390,7 @@ def test_render_list_items_marks_channels_live(monkeypatch, kodi_recorder):
     assert captured['query'] == {'mode': 'play', 'id': 'c1', 'fmt': 'live'}
 
 
-def test_main_menu_lists_my_list_and_watch_later_when_logged_in(monkeypatch, kodi_recorder):
+def test_main_menu_has_watch_later_but_not_my_list(monkeypatch, kodi_recorder):
     default = _load_default(monkeypatch)
     entries = []
 
@@ -430,10 +405,9 @@ def test_main_menu_lists_my_list_and_watch_later_when_logged_in(monkeypatch, kod
     default.main_menu()
 
     modes = [query.get('mode') for _, query in entries]
-    assert 'my_list' in modes
+    assert 'my_list' not in modes          # removed: "My List (Kodi only)"
     assert 'watch_later' in modes
     assert 'my_series' in modes
-    assert 'my_movies' not in modes
 
 
 def test_browse_watch_later_shows_numbering_and_days_in_description(monkeypatch, kodi_recorder):
@@ -544,29 +518,6 @@ def test_browse_watch_later_shows_subtitle_from_raw(monkeypatch, kodi_recorder):
     expected = [numbering_tag, 'Tweede helft', 'Een koppel zoekt een nieuw huis.']
     assert info['plot'].split('\n') == expected
     assert info['plotoutline'].split('\n') == expected
-
-
-def test_my_list_descriptions_stay_plain(monkeypatch, kodi_recorder):
-    default = _load_default(monkeypatch)
-    expiry = int(time.time()) + 5 * 86400
-    entries = []
-
-    class FakeApi:
-        def get_my_list(self):
-            return [{'id': 'm1', 'title': 'Film', 'type': 'movie', 'expires_at': expiry,
-                     'description': 'Gewone beschrijving'}]
-
-    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
-    monkeypatch.setattr(
-        default, 'add_directory_item',
-        lambda title, query, **kwargs: entries.append((title, kwargs.get('info') or {})),
-    )
-
-    default.browse_my_list_group('movies')
-
-    # Only Kijk Later is enriched; My List keeps its plain descriptions.
-    assert entries == [('Film', {'plot': 'Gewone beschrijving',
-                                 'plotoutline': 'Gewone beschrijving'})]
 
 
 def test_render_list_items_exposes_stored_poster_to_artwork(monkeypatch, kodi_recorder):
@@ -1376,3 +1327,45 @@ def test_watch_later_marks_airing_programme_as_airing(monkeypatch, kodi_recorder
 
     assert [item['id'] for item in state['items']] == ['p1']
     assert kodi_recorder.notifications[-1][1] == default.get_string('list_item_airing')
+
+
+def test_migrate_mylist_to_watch_later_moves_and_clears(monkeypatch, kodi_recorder, tmp_path):
+    default = _load_default(monkeypatch)
+    mylist = tmp_path / 'mylist.json'
+    mylist.write_text('[]')
+    settings = {'mylist_migrated': 'false'}
+    monkeypatch.setattr(default.ADDON, 'getSetting', lambda key: settings.get(key, ''))
+    monkeypatch.setattr(default.ADDON, 'setSetting', lambda key, value: settings.__setitem__(key, value))
+
+    moved = []
+
+    class FakeApi:
+        mylist_file = str(mylist)
+
+        def get_my_list(self):
+            return [{'id': 'a', 'title': 'A'}, {'id': 'b', 'title': 'B'}]
+
+        def is_in_watch_later(self, content_id):
+            return False
+
+        def add_to_watch_later(self, item):
+            moved.append(item['id'])
+            return True
+
+    monkeypatch.setattr(default, '_get_list_api', lambda: FakeApi())
+
+    default.migrate_mylist_to_watch_later()
+
+    assert moved == ['a', 'b']
+    assert not mylist.exists()
+    assert settings['mylist_migrated'] == 'true'
+
+
+def test_migrate_mylist_runs_only_once(monkeypatch, kodi_recorder):
+    default = _load_default(monkeypatch)
+    settings = {'mylist_migrated': 'true'}
+    monkeypatch.setattr(default.ADDON, 'getSetting', lambda key: settings.get(key, ''))
+    called = []
+    monkeypatch.setattr(default, '_get_list_api', lambda: called.append(1))
+    default.migrate_mylist_to_watch_later()
+    assert called == []   # already migrated: does nothing
