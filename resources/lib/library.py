@@ -134,7 +134,11 @@ def inject_dateadded(nfo_text, existing_text='', now=None):
     if match:
         value = match.group(1)
     else:
-        value = _time.strftime('%Y-%m-%d %H:%M:%S', _time.localtime(now if now is not None else _time.time()))
+        aired = _re.search(r'<aired>(\d{4}-\d{2}-\d{2})</aired>', nfo_text or '')
+        if aired:
+            value = aired.group(1) + ' 12:00:00'
+        else:
+            value = _time.strftime('%Y-%m-%d %H:%M:%S', _time.localtime(now if now is not None else _time.time()))
     line = '  <dateadded>{}</dateadded>\n'.format(value)
     if '</episodedetails>' in nfo_text:
         return nfo_text.replace('</episodedetails>', line + '</episodedetails>', 1)

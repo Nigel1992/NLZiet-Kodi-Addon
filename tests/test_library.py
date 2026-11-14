@@ -468,3 +468,10 @@ def test_inject_dateadded_new_and_existing():
     # Already present in the generated text: unchanged.
     withdate = "<episodedetails>\n  <dateadded>x</dateadded>\n</episodedetails>\n"
     assert inject_dateadded(withdate, "") == withdate
+
+
+def test_inject_dateadded_uses_aired_date_for_new():
+    from resources.lib.library import inject_dateadded
+    nfo = "<episodedetails>\n  <aired>2026-11-10</aired>\n</episodedetails>\n"
+    out = inject_dateadded(nfo, "", now=0)
+    assert "<dateadded>2026-11-10 12:00:00</dateadded>" in out

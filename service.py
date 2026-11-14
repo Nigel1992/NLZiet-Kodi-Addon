@@ -284,6 +284,41 @@ def _daily_check_due():
     return diagnostics_mod.daily_due(last, time.time())
 
 
+def repair_dateadded_once():
+    """One-off: give existing library episodes a dateadded based on their air
+    date, so "recently added" widgets order by when an episode aired (newest on
+    top) instead of leaving older imports there. Updates Kodi's database
+    directly, so it also fixes episodes that were already scanned."""
+    if _setting_on('dateadded_repaired', False):
+        return
+    marker = 'plugin.video.nlziet/library'
+    try:
+        result = _rpc('VideoLibrary.GetEpisodes',
+                      {'properties': ['file', 'firstaired', 'dateadded']}) or {}
+    except Exception:
+        return
+    changed = 0
+    for ep in result.get('episodes') or []:
+        path = str(ep.get('file') or '')
+        aired = str(ep.get('firstaired') or '')[:10]
+        if marker not in path or len(aired) != 10:
+            continue
+        desired = aired + ' 12:00:00'
+        if str(ep.get('dateadded') or '') == desired:
+            continue
+        try:
+            _rpc('VideoLibrary.SetEpisodeDetails',
+                 {'episodeid': ep.get('episodeid'), 'dateadded': desired})
+            changed += 1
+        except Exception:
+            pass
+    try:
+        ADDON.setSetting('dateadded_repaired', 'true')
+    except Exception:
+        pass
+    xbmc.log('NLZiet service: dateadded repaired for {} episodes'.format(changed), xbmc.LOGINFO)
+
+
 def main():
     xbmc.log('NLZiet service: started', xbmc.LOGINFO)
     started = time.time()
@@ -303,6 +338,12 @@ def main():
         if now - last_minute < 60:
             continue
         last_minute = now
+
+        if now - started >= LIBRARY_STARTUP_DELAY and not _setting_on('dateadded_repaired', False):
+            try:
+                repair_dateadded_once()
+            except Exception as exc:
+                xbmc.log('NLZiet service: dateadded repair failed: {}'.format(exc), xbmc.LOGWARNING)
 
         # EPG reminders about to start (checked here, no plugin round-trip).
         try:

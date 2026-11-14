@@ -1,7 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.4.1 (November 14, 2026)
+> **Latest Version:** v2.4.2 (November 14, 2026)
 
+## [2.4.2] - 2026-11-14
+
+### Changed
+- **"Recent toegevoegd" volgt nu de uitzenddatum, met terugwerkende kracht.** De datum van een aflevering in de bibliotheek volgt nu de uitzenddatum, zodat de nieuwste aflevering vanzelf bovenaan "recent toegevoegde afleveringen" komt en oude content wegzakt. Een eenmalige reparatie op de achtergrond zet dit ook recht voor afleveringen die al in je bibliotheek stonden (direct in de Kodi-database, dus zonder opnieuw toe te voegen).
 ## [2.4.1] - 2026-11-14
 
 ### Fixed
