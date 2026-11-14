@@ -20,6 +20,7 @@ import os
 import re
 import time
 import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -113,10 +114,51 @@ class DiskCache:
             pass
 
 
+def _certifi_context():
+    try:
+        import ssl
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return None
+
+
 def _default_http(url, headers):
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        # Some Kodi builds (Android) ship no system certificates: retry with certifi's.
+        if "CERTIFICATE" not in str(getattr(exc, "reason", exc)).upper():
+            raise
+        context = _certifi_context()
+        if context is None:
+            raise
+        with urllib.request.urlopen(request, timeout=TIMEOUT, context=context) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+
+def test_tmdb_key(key, http=None):
+    """Check a TMDb key directly. Returns (status, detail) where status is
+    "ok", "missing", "invalid" or "offline"."""
+    key = (key or "").strip()
+    if not key:
+        return "missing", ""
+    headers = {"Accept": "application/json", "User-Agent": "Kodi library metadata"}
+    url = TMDB_API + "/configuration"
+    if len(key) > 40:
+        headers["Authorization"] = "Bearer " + key
+    else:
+        url += "?" + urllib.parse.urlencode({"api_key": key})
+    try:
+        (http or _default_http)(url, headers)
+        return "ok", ""
+    except Exception as exc:
+        code = getattr(exc, "code", None)
+        if code in (401, 403):
+            return "invalid", "HTTP {}".format(code)
+        return "offline", "{}: {}".format(type(exc).__name__, exc)
 
 
 class Enricher:

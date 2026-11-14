@@ -18,8 +18,9 @@ def make_color_tag(color_raw, text):
 
 
 def pick_menu_icon(addon_path, name):
-    """Prefer menu_{name}.png, then .svg, then fall back to the addon icon."""
+    """Prefer media/menu/{name}.png, then menu_{name}.png/.svg, then the addon icon."""
     candidates = [
+        os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.svg'),
         os.path.join(addon_path, 'icon.png'),
@@ -34,13 +35,15 @@ def pick_menu_icon(addon_path, name):
 
 
 def pick_menu_png(addon_path, name):
-    """Explicit PNG-first picker (prefer exact menu_{name}.png when available)."""
-    try:
-        png = os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')
-        if png and os.path.exists(png):
-            return png
-    except Exception:
-        pass
+    """Explicit PNG-first picker (media/menu/{name}.png, a new path so Kodi's
+    texture cache never shows the older icons that used the same file names)."""
+    for png in (os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
+                os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')):
+        try:
+            if png and os.path.exists(png):
+                return png
+        except Exception:
+            pass
     return pick_menu_icon(addon_path, name)
 
 

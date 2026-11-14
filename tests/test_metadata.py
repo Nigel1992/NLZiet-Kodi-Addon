@@ -190,3 +190,23 @@ def test_library_nfo_uses_local_first_and_fills_gaps(tmp_path):
     assert '<plot>Eigen beschrijving</plot>' in movie  # local plot wins
     assert '<thumb aspect="poster">https://image.tmdb.org/t/p/original/m.jpg</thumb>' in movie
     assert '<genre>Komedie</genre>' in movie and '<uniqueid type="imdb">tt3</uniqueid>' in movie
+
+
+def test_tmdb_key_check_reports_the_real_problem():
+    def refuse(url, headers):
+        error = Exception('unauthorized')
+        error.code = 401
+        raise error
+
+    def offline(url, headers):
+        raise OSError('network down')
+
+    seen = []
+    assert metadata.test_tmdb_key('') == ('missing', '')
+    assert metadata.test_tmdb_key('  abc  ', http=lambda url, headers: seen.append(url) or {})[0] == 'ok'
+    assert seen[0].endswith('/configuration?api_key=abc')
+    assert metadata.test_tmdb_key('k' * 32, http=refuse)[0] == 'invalid'
+    assert metadata.test_tmdb_key('k' * 32, http=offline)[0] == 'offline'
+    token_headers = []
+    metadata.test_tmdb_key('t' * 200, http=lambda url, headers: token_headers.append(headers) or {})
+    assert token_headers[0]['Authorization'] == 'Bearer ' + 't' * 200

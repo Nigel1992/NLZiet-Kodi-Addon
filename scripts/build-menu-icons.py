@@ -7,7 +7,7 @@ from pathlib import Path
 
 import cairosvg
 
-OUT = Path(__file__).resolve().parents[1] / 'resources' / 'media'
+OUT = Path(__file__).resolve().parents[1] / 'resources' / 'media' / 'menu'
 
 # Menu groups share one colour so related entries are recognisable at a glance.
 GROUP_COLORS = {
@@ -49,7 +49,7 @@ def render(name, group, glyph, size=512):
 <g transform="translate(128 128) scale(1.12) translate(-128 -128)" fill="none" stroke="white" stroke-width="8"
    stroke-linecap="round" stroke-linejoin="round">{glyph}</g>
 </svg>'''
-    cairosvg.svg2png(bytestring=svg.encode(), write_to=str(OUT / f'menu_{name}.png'))
+    cairosvg.svg2png(bytestring=svg.encode(), write_to=str(OUT / f'{name}.png'))
 
 
 if __name__ == '__main__':

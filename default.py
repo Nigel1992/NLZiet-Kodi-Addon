@@ -214,9 +214,11 @@ TRANSLATIONS = {
     'library_empty': {'nl': 'De bibliotheek is nog leeg', 'en': 'The library is empty'},
     'library': {'nl': 'Bibliotheek', 'en': 'Library'},
     'tmdb_check_ok': {'nl': 'TMDb-sleutel werkt', 'en': 'TMDb key works'},
-    'tmdb_check_failed': {'nl': 'TMDb-sleutel werkt niet. Controleer de sleutel.', 'en': 'TMDb key does not work. Check the key.'},
+    'tmdb_check_failed': {'nl': 'TMDb accepteert deze sleutel niet. Controleer of je de API Key (32 tekens) of het API Read Access Token volledig hebt geplakt.', 'en': 'TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token.'},
     'library_moved': {'nl': '{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi.', 'en': '{} series moved to the NLZiet folder. Add that folder as a source in Kodi.'},
     'library_art_fixed': {'nl': 'Posters bijgewerkt voor {} titels', 'en': 'Artwork updated for {} titles'},
+    'tmdb_check_missing': {'nl': 'Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om de instellingen op te slaan en test daarna opnieuw.', 'en': 'No TMDb key is saved yet. Enter the key, press OK to save the settings and test again.'},
+    'tmdb_check_offline': {'nl': 'TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest.', 'en': 'TMDb could not be reached. Check your internet connection; the key itself was not tested.'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -389,6 +391,8 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'tmdb_check_missing': 33218,
+    'tmdb_check_offline': 33219,
     'library_art_fixed': 33208,
     'library_moved': 33207,
     'tmdb_check_ok': 33210,
@@ -1870,12 +1874,17 @@ def library_update(background=False):
 
 
 def check_tmdb_key():
-    """Settings button: try the entered TMDb key once."""
-    key = (ADDON.getSetting('tmdb_api_key') or '').strip()
-    enricher = metadata_mod.Enricher('', tmdb_key=key, user_agent='plugin.video.nlziet')
-    ok = bool(key) and enricher._tmdb('/configuration') is not None
-    xbmcgui.Dialog().notification('NLZiet', get_string('tmdb_check_ok' if ok else 'tmdb_check_failed'),
-                                  xbmcgui.NOTIFICATION_INFO if ok else xbmcgui.NOTIFICATION_ERROR)
+    """Settings button: test the saved TMDb key and say exactly what is wrong."""
+    status, detail = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))
+    if detail:
+        xbmc.log(f"NLZiet TMDb key test: {status} ({detail})", xbmc.LOGINFO)
+    messages = {
+        'ok': 'tmdb_check_ok',
+        'missing': 'tmdb_check_missing',
+        'invalid': 'tmdb_check_failed',
+        'offline': 'tmdb_check_offline',
+    }
+    xbmcgui.Dialog().ok('NLZiet', get_string(messages[status]))
 
 
 def browse_library():

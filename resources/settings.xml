@@ -202,7 +202,7 @@
             <dependency type="enable" setting="library_enrich">true</dependency>
           </dependencies>
           <control type="button" format="action">
-            <close>false</close>
+            <close>true</close>
           </control>
         </setting>
       </group>

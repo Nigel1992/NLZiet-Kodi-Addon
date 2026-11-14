@@ -1,6 +1,17 @@
 # Changelog
 
-> **Latest Version:** v1.7.3 (November 14, 2026)
+> **Latest Version:** v1.7.4 (November 14, 2026)
+
+## [1.7.4] - 2026-11-14
+
+### Added
+- **Sorting**: list pages offer Kodi's sort options (default order, title, year; episode and date inside seasons).
+- **Clear error messages**: unexpected problems show one sentence that says what happened (no internet, slow response, session expired, not in your subscription, no longer available, too many requests, service outage); the details go to the Kodi log.
+- **GitHub Actions**: tests and an installable zip on every push and pull request; pushing a `v*` tag publishes a release with the zip.
+
+### Fixed
+- **TMDb key test**: the button now saves the settings first (Kodi only saves when the settings window closes, so the test used to see an empty key) and says exactly what is wrong: no key saved, key not accepted, or TMDb not reachable. Connections retry with a bundled certificate list on devices without system certificates.
+- **Menu icons not changing**: the new icons now live in `resources/media/menu/`. Kodi caches images by file name, so with the old names it kept showing the previous icons.
 
 ## [1.7.3] - 2026-11-14
 

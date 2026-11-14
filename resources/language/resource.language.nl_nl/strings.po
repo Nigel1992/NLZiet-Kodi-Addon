@@ -944,8 +944,8 @@ msgid "TMDb key works"
 msgstr "TMDb-sleutel werkt"
 
 msgctxt "#33211"
-msgid "TMDb key does not work. Check the key."
-msgstr "TMDb-sleutel werkt niet. Controleer de sleutel."
+msgid "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
+msgstr "TMDb accepteert deze sleutel niet. Controleer of je de API Key (32 tekens) of het API Read Access Token volledig hebt geplakt."
 
 msgctxt "#33212"
 msgid "Extra metadata"
@@ -982,3 +982,11 @@ msgstr "Posters bijgewerkt voor {} titels"
 msgctxt "#33209"
 msgid "Repair artwork in the Kodi library"
 msgstr "Posters in Kodi-bibliotheek herstellen"
+
+msgctxt "#33218"
+msgid "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+msgstr "Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om de instellingen op te slaan en test daarna opnieuw."
+
+msgctxt "#33219"
+msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+msgstr "TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest."

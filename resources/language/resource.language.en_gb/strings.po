@@ -927,8 +927,8 @@ msgid "TMDb key works"
 msgstr "TMDb key works"
 
 msgctxt "#33211"
-msgid "TMDb key does not work. Check the key."
-msgstr "TMDb key does not work. Check the key."
+msgid "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
+msgstr "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
 
 msgctxt "#33212"
 msgid "Extra metadata"
@@ -965,3 +965,11 @@ msgstr "Artwork updated for {} titles"
 msgctxt "#33209"
 msgid "Repair artwork in the Kodi library"
 msgstr "Repair artwork in the Kodi library"
+
+msgctxt "#33218"
+msgid "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+msgstr "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+
+msgctxt "#33219"
+msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+msgstr "TMDb could not be reached. Check your internet connection; the key itself was not tested."
