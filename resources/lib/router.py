@@ -26,7 +26,23 @@ class Router:
         elif mode == 'login':
             self.handlers['do_login']()
         elif mode == 'search':
-            self.handlers['do_search']()
+            if params.get('q'):
+                self.handlers['do_search'](params.get('q'))
+            else:
+                self.handlers['do_search']()
+        elif mode == 'widgets':
+            self.handlers['widgets_menu']()
+        elif mode == 'widget':
+            self.handlers['widget_list'](params.get('list'))
+        elif mode == 'backup_lists':
+            self.handlers['backup_lists']()
+        elif mode == 'restore_lists':
+            self.handlers['restore_lists']()
+        elif mode == 'daily_check':
+            self.handlers['daily_check']()
+        elif mode == 'remote_watched':
+            self.handlers['remote_watched'](params.get('id'), params.get('watched', '1'),
+                                            params.get('background') == '1')
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
         elif mode == 'my_list':

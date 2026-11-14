@@ -37,6 +37,10 @@ GLYPHS = {
     'tv': ('live', '<circle cx="128" cy="128" r="10"/>'
                    '<path d="M100 100a40 40 0 0 0 0 56M156 100a40 40 0 0 1 0 56M80 80a68 68 0 0 0 0 96M176 80a68 68 0 0 1 0 96"/>'),
     'epg': ('live', '<rect x="70" y="78" width="116" height="100" rx="10"/><path d="M70 106h116M98 78v100M112 128h28M112 152h52"/>'),
+    'continue': ('mine', '<circle cx="128" cy="128" r="54"/><path d="m116 106 32 22-32 22z" fill="white" stroke="none"/>'
+                         '<path d="M128 74a54 54 0 0 1 54 54" stroke-width="14"/>'),
+    'widgets': ('mine', '<rect x="72" y="72" width="48" height="48" rx="8"/><rect x="136" y="72" width="48" height="48" rx="8"/>'
+                        '<rect x="72" y="136" width="48" height="48" rx="8"/><rect x="136" y="136" width="48" height="48" rx="8"/>'),
     'profiles': ('account', '<circle cx="128" cy="100" r="25"/><path d="M81 181v-9a47 38 0 0 1 94 0v9"/>'),
     'login': ('account', '<path d="M139 77h36v102h-36M75 128h69m-23-24 24 24-24 24"/>'),
     'logout': ('account', '<path d="M117 77H81v102h36m-5-51h69m-23-24 24 24-24 24"/>'),

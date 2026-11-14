@@ -1,6 +1,21 @@
 # Changelog
 
-> **Latest Version:** v1.9.3 (November 14, 2026)
+> **Latest Version:** v2.0.0 (November 14, 2026)
+
+## [2.0.0] - 2026-11-14
+
+### Added
+- **Watched status back to NLZiet**: when you watch something (almost) to the end, or mark it as watched/unwatched in Kodi's own library, NLZiet gets the same status. Turn it off under Settings → Synchronisation. Uses NLZiet's own "watched" feature.
+- **Next episode (Up Next)**: with the Up Next add-on installed, the next episode is offered near the end of a library episode so it starts by itself (Settings → Playback → While watching; includes an install button).
+- **Skip intro/recap**: during playback "Skip the intro?" or "Skip the recap?" appears when NLZiet sends chapter times for the video. Whether they are present is logged per video ("chapters ... markers found").
+- **Widgets for the home screen**: ready-made lists (Continue watching, Watch later, My series, My list) for your skin's home-screen widgets, under a new "Widgets" menu. "Continue watching" is also added to the main menu.
+- **Backup and restore of your lists**: a button that saves My list, Watch later, My series, the library list and your settings (without password) to one file, and a button to restore them (Settings → Library → Backup and restore).
+- **Daily automatic check**: once a day the add-on checks in the background whether everything still works and notifies you only when something needs attention (Settings → Library → Maintenance).
+- **Search both services**: when Videoland is installed, a search also offers the same search in Videoland at the top of the results.
+
+### Development
+- New shared modules `playback_extras.py` (chapters/markers + Up Next) and `watch_sync.py` (watched-status logic), kept identical with Videoland via `scripts/sync-shared.py`.
+- 39 new unit tests (watch_sync, chapter markers, next-episode selection).
 
 ## [1.9.3] - 2026-11-14
 

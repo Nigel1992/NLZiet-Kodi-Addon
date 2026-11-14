@@ -786,3 +786,75 @@ def run_library_jobs(scan=True, clean=False):
     """Ask Kodi to clean and/or scan the video library without dialogs. When
     Kodi is already scanning, the request waits until that scan is done."""
     library_art.request_scan(scan_flag_path(), scan=scan, clean=clean)
+
+
+def next_library_episode(store, content_id):
+    """Find the episode after ``content_id`` in a library series.
+
+    Returns ``(series_id, entry, (season, episode), next_id, (season, episode))``
+    or ``None`` when the episode is not in the library or is the last one.
+    """
+    content_id = str(content_id or '')
+    if not content_id:
+        return None
+    for series_id, entry in (store.section('series') or {}).items():
+        episodes = entry.get('episodes') or {}
+        if content_id not in episodes:
+            continue
+        numbered = []
+        for ep_id, value in episodes.items():
+            try:
+                numbered.append(((int(value[0]), int(value[1])), str(ep_id)))
+            except (TypeError, ValueError, IndexError):
+                continue
+        numbered.sort()
+        ids = [ep_id for _n, ep_id in numbered]
+        if content_id not in ids:
+            return None
+        index = ids.index(content_id)
+        if index + 1 >= len(numbered):
+            return None
+        current = numbered[index][0]
+        following, next_id = numbered[index + 1]
+        return series_id, entry, current, next_id, following
+    return None
+
+
+def next_from_surrounding(data, content_id):
+    """Pick the next episode from NLZiet's ``surroundingepisodes`` answer.
+
+    The exact shape is not documented, so this accepts a ``next``-like key
+    holding an item, or a list of episodes in order. Returns the item dict
+    (with at least ``id``) or ``None``.
+    """
+    content_id = str(content_id or '')
+
+    def item_id(value):
+        if not isinstance(value, dict):
+            return ''
+        inner = value.get('content') if isinstance(value.get('content'), dict) else value
+        return str(inner.get('id') or '')
+
+    def unwrap(value):
+        return value.get('content') if isinstance(value.get('content'), dict) else value
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if 'next' in str(key).lower():
+                if isinstance(value, list):
+                    value = value[0] if value else None
+                if item_id(value) and item_id(value) != content_id:
+                    return unwrap(value)
+        for key in ('data', 'items', 'episodes', 'surroundingEpisodes'):
+            if isinstance(data.get(key), (list, dict)):
+                found = next_from_surrounding(data[key], content_id)
+                if found:
+                    return found
+        return None
+    if isinstance(data, list):
+        ids = [item_id(value) for value in data]
+        if content_id in ids:
+            index = ids.index(content_id)
+            if index + 1 < len(data) and ids[index + 1]:
+                return unwrap(data[index + 1])
+    return None

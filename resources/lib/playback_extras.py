@@ -22,9 +22,9 @@ except ImportError:  # pragma: no cover - outside Kodi
     xbmc = None
 
 MARKER_WORDS = {
-    'intro': ('intro', 'opening', 'openingcredits', 'skipintro'),
-    'recap': ('recap', 'previously', 'samenvatting'),
-    'credits': ('credits', 'outro', 'endcredits', 'closingcredits', 'aftiteling'),
+    'intro': ('intro', 'opening', 'openingcredits', 'skipintro', 'begingeneriek', 'leader', 'openingstune'),
+    'recap': ('recap', 'previously', 'samenvatting', 'terugblik', 'eerderin', 'vorigeaflevering'),
+    'credits': ('credits', 'outro', 'endcredits', 'closingcredits', 'aftiteling', 'eindgeneriek'),
 }
 START_KEYS = ('start', 'begin', 'from', 'starttime', 'start_time', 'startoffset', 'in', 'offset', 'tcin')
 END_KEYS = ('end', 'stop', 'to', 'endtime', 'end_time', 'endoffset', 'out', 'tcout')
@@ -108,6 +108,42 @@ def find_markers(data, duration=None, depth=0):
             scaled[kind] = (start, end)
         found = scaled
     return found
+
+
+def markers_from_chapters(chapters):
+    """Markers from a chapter list like NLZiet's ``/v7/chapters`` answer:
+    ``[{"startTimeInSeconds": 0, "title": "Intro"}, ...]``. A chapter ends
+    where the next one starts."""
+    if isinstance(chapters, dict):
+        chapters = chapters.get('chapters')
+    if not isinstance(chapters, list):
+        return {}
+    rows = []
+    for chapter in chapters:
+        if not isinstance(chapter, dict):
+            continue
+        start = _number(chapter.get('startTimeInSeconds', chapter.get('start')))
+        if start is None:
+            continue
+        rows.append((start, chapter.get('title') or chapter.get('name') or chapter.get('type') or ''))
+    rows.sort(key=lambda row: row[0])
+    found = {}
+    for index, (start, title) in enumerate(rows):
+        kind = _kind_of(title)
+        if not kind or kind in found:
+            continue
+        end = rows[index + 1][0] if index + 1 < len(rows) else None
+        found[kind] = (start, end)
+    return found
+
+
+def chapter_titles(chapters):
+    """The chapter titles, for the log (shows what a service calls them)."""
+    if isinstance(chapters, dict):
+        chapters = chapters.get('chapters')
+    if not isinstance(chapters, list):
+        return []
+    return [str(c.get('title') or '') for c in chapters if isinstance(c, dict)]
 
 
 def marker_summary(markers):
@@ -215,7 +251,15 @@ def start_skip_watcher(markers, ask, player=None, monitor=None):
             if len(offered) == len(spans) or monitor.waitForAbort(1):
                 return
 
-    thread = threading.Thread(target=run, name='SkipMarkers')
-    thread.daemon = True
+    return start_background(run, 'SkipMarkers')
+
+
+def start_background(target, name):
+    """Run ``target`` next to playback. Not a daemon thread: a plugin call
+    ends right after it hands Kodi the stream, and Python would then stop
+    daemon threads before they did anything. These threads end by themselves
+    when playback stops."""
+    thread = threading.Thread(target=target, name=name)
+    thread.daemon = False
     thread.start()
     return thread

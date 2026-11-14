@@ -33,6 +33,8 @@ from resources.lib import search_filters
 from resources.lib import parental as parental_mod
 from resources.lib import trakt_status
 from resources.lib import logo_cache as logo_cache_mod
+from resources.lib import playback_extras
+from resources.lib import watch_sync
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -334,6 +336,22 @@ TRANSLATIONS = {
     'group_count': {'nl': '{} ({})', 'en': '{} ({})'},
     'group_result_title': {'nl': '{}: {}', 'en': '{}: {}'},
     'not_allowed': {'nl': 'Niet toegestaan', 'en': 'Not allowed'},
+    'skip_intro_question': {'nl': 'Intro overslaan?', 'en': 'Skip the intro?'},
+    'skip_recap_question': {'nl': 'Samenvatting overslaan?', 'en': 'Skip the recap?'},
+    'widgets': {'nl': 'Widgets voor je startscherm', 'en': 'Widgets for the home screen'},
+    'continue_watching': {'nl': 'Verder kijken', 'en': 'Continue watching'},
+    'widgets_help': {'nl': 'Kies deze lijsten als widget in de instellingen van je skin.', 'en': 'Pick these lists as a widget in your skin settings.'},
+    'backup_lists': {'nl': 'Mijn lijsten bewaren (back-up)', 'en': 'Save my lists (backup)'},
+    'restore_lists': {'nl': 'Mijn lijsten terugzetten', 'en': 'Restore my lists'},
+    'backup_saved': {'nl': 'Back-up opgeslagen: {0}', 'en': 'Backup saved: {0}'},
+    'restore_done': {'nl': 'Teruggezet: {0}. Herstart Kodi voor de zekerheid, dan is alles opnieuw geladen.', 'en': 'Restored: {0}. Restart Kodi to be sure everything is reloaded.'},
+    'restore_choose': {'nl': 'Kies een back-up', 'en': 'Choose a backup'},
+    'restore_none': {'nl': 'Geen back-up gevonden in de back-upmap.', 'en': 'No backup found in the backup folder.'},
+    'daily_check_problem': {'nl': 'Let op: {0}. Kies bij Instellingen > Bibliotheek > Onderhoud: Diagnose uitvoeren.', 'en': 'Needs attention: {0}. Open Settings > Library > Maintenance: Run diagnostics.'},
+    'search_other_service': {'nl': 'Ook zoeken in Videoland', 'en': 'Also search in Videoland'},
+    'restore_confirm': {'nl': 'Je huidige lijsten vervangen door deze back-up?', 'en': 'Replace your current lists with this backup?'},
+    'episode_label': {'nl': 'Aflevering {0}', 'en': 'Episode {0}'},
+    'watched_sent': {'nl': 'Kijkstatus naar NLZiet gestuurd', 'en': 'Watched status sent to NLZiet'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -543,6 +561,22 @@ STRING_IDS = {
     'list_item_not_playable': 33181,
     'list_item_repeat_playable': 33182,
     'list_item_airing': 33183,
+    'skip_intro_question': 33270,
+    'skip_recap_question': 33271,
+    'widgets': 33272,
+    'continue_watching': 33273,
+    'widgets_help': 33274,
+    'backup_lists': 33275,
+    'restore_lists': 33276,
+    'backup_saved': 33277,
+    'restore_done': 33278,
+    'restore_choose': 33279,
+    'restore_none': 33280,
+    'daily_check_problem': 33283,
+    'search_other_service': 33284,
+    'restore_confirm': 33288,
+    'episode_label': 33289,
+    'watched_sent': 33290,
 }
 
 
@@ -1471,10 +1505,12 @@ def main_menu():
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
+        add_directory_item(get_string('continue_watching'), {'mode': 'widget', 'list': 'continue'}, thumb=_pick_png('continue'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
         add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
         add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
+        add_directory_item(get_string('widgets'), {'mode': 'widgets'}, thumb=_pick_png('widgets'))
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'), is_folder=False, is_playable=False)
     
@@ -2824,6 +2860,29 @@ def export_diagnostics():
         xbmcgui.Dialog().notification('NLZiet', get_string('diagnostics_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
+def _collect_diagnostics(t):
+    """All diagnostic checks (used by the settings button and the daily check)."""
+    try:
+        api = get_api_instance()
+        base_url = getattr(api, 'base_url', '') or 'https://api.nlziet.nl/'
+    except Exception:
+        base_url = 'https://api.nlziet.nl/'
+    endpoints = [('NLZiet', base_url), ('TMDb', 'https://api.themoviedb.org/3/'),
+                 ('TVmaze', 'https://api.tvmaze.com/')]
+    tmdb_status = None
+    if _setting_on('library_enrich', True):
+        tmdb_status = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))[0]
+    try:
+        lib = _get_library()
+    except Exception:
+        lib = None
+    return diagnostics_mod.run_checks(
+        t, ADDON.getAddonInfo('version'), _is_logged_in(), endpoints, library=lib,
+        library_special=(library_mod.DEFAULT_TV_PATH, library_mod.DEFAULT_MOVIES_PATH),
+        tmdb_status=tmdb_status,
+        kodi_counts=library_art.kodi_counts(lib, 'plugin.video.nlziet/library') if lib else None)
+
+
 def run_diagnostics():
     """Settings button: check everything playback and the library need."""
     try:
@@ -2834,25 +2893,7 @@ def run_diagnostics():
     progress = xbmcgui.DialogProgress()
     progress.create('NLZiet', t['title'] + '...')
     try:
-        try:
-            api = get_api_instance()
-            base_url = getattr(api, 'base_url', '') or 'https://api.nlziet.nl/'
-        except Exception:
-            base_url = 'https://api.nlziet.nl/'
-        endpoints = [('NLZiet', base_url), ('TMDb', 'https://api.themoviedb.org/3/'),
-                     ('TVmaze', 'https://api.tvmaze.com/')]
-        tmdb_status = None
-        if _setting_on('library_enrich', True):
-            tmdb_status = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))[0]
-        try:
-            lib = _get_library()
-        except Exception:
-            lib = None
-        checks = diagnostics_mod.run_checks(
-            t, ADDON.getAddonInfo('version'), _is_logged_in(), endpoints, library=lib,
-            library_special=(library_mod.DEFAULT_TV_PATH, library_mod.DEFAULT_MOVIES_PATH),
-            tmdb_status=tmdb_status,
-            kodi_counts=library_art.kodi_counts(lib, 'plugin.video.nlziet/library') if lib else None)
+        checks = _collect_diagnostics(t)
         text = diagnostics_mod.render(t, checks)
         folder = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'diagnostics')
         log_lines = diagnostics_mod.kodi_log_excerpt(['nlziet'], _redact_diagnostic_text)
@@ -5040,11 +5081,12 @@ def _choose_search_query():
     return query
 
 
-def do_search():
-    query = _choose_search_query()
+def do_search(query=None):
+    query = (query or '').strip() or _choose_search_query()
     if not query:
         return
     _remember_search(query)
+    _add_other_service_search(query)
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for search
@@ -6533,6 +6575,147 @@ def _extract_id_from_stream(stream):
     return ''
 
 
+# ------------------------------------------------- while a video plays ---
+
+def _after_playback_started(api, content_id, fmt, metadata, stream_info):
+    """Things that run next to playback: watched status, skip intro, Up Next.
+
+    Nothing here may delay or break playback, so every part is guarded.
+    """
+    if fmt == 'live' or not content_id:
+        return
+    try:
+        # The background service follows playback and sends "watched" to
+        # NLZiet when this video is (almost) finished.
+        xbmcgui.Window(10000).setProperty(
+            watch_sync.PLAYING_PROPERTY.format('nlziet'), watch_sync.playing_value(content_id))
+    except Exception:
+        pass
+    if fmt == 'epg':
+        return
+    markers = {}
+    try:
+        chapters = api.get_chapters(content_id)
+        markers = playback_extras.markers_from_chapters(chapters)
+        if not markers:
+            markers = playback_extras.find_markers(stream_info)
+        xbmc.log('NLZiet {}: chapters {} -> markers found: {}'.format(
+            content_id, playback_extras.chapter_titles(chapters)[:12],
+            playback_extras.marker_summary(markers)), xbmc.LOGINFO)
+    except Exception as exc:
+        xbmc.log('NLZiet chapters failed: {}'.format(exc), xbmc.LOGINFO)
+    if markers and _setting_on('skip_markers', True):
+        def ask(kind):
+            text = get_string('skip_recap_question' if kind == 'recap' else 'skip_intro_question')
+            return xbmcgui.Dialog().yesno('NLZiet', text, autoclose=8000)
+        try:
+            playback_extras.start_skip_watcher(markers, ask)
+        except Exception as exc:
+            xbmc.log('NLZiet skip watcher failed: {}'.format(exc), xbmc.LOGINFO)
+    if _setting_on('upnext', True) and playback_extras.upnext_available():
+        playback_extras.start_background(
+            lambda: _announce_next_episode(api, content_id, metadata or {}, stream_info, markers),
+            'NLZietUpNext')
+
+
+def _next_episode_for(api, content_id, metadata, stream_info):
+    """(current_info, next_info, play_query) for Up Next, or None.
+
+    Order of sources: the Kodi library (exact numbering), the series
+    episode list from NLZiet, then NLZiet's surrounding-episodes answer.
+    """
+    showtitle = metadata.get('showtitle') or ''
+    try:
+        found = library_mod.next_library_episode(_get_library().store, content_id)
+    except Exception:
+        found = None
+    if found:
+        _sid, entry, (cur_s, cur_e), next_id, (next_s, next_e) = found
+        showtitle = entry.get('title') or showtitle
+        current = playback_extras.episode_info(metadata.get('title') or '', showtitle, cur_s, cur_e,
+                                               episode_id=str(content_id))
+        art = {'thumb': entry.get('thumb') or '', 'tvshow.poster': entry.get('thumb') or ''}
+        following = playback_extras.episode_info(
+            get_string('episode_label', next_e),
+            showtitle, next_s, next_e, art=art, episode_id=str(next_id))
+        query = {'mode': 'play', 'id': next_id, 'media_type': 'episode', 'showtitle': showtitle,
+                 'season': str(next_s), 'episode': str(next_e)}
+        return current, following, query
+    if not showtitle and not metadata.get('season'):
+        return None   # not an episode
+    content = _handshake_metadata_content(stream_info) or {}
+    series_id = content.get('seriesId') or content.get('series_id')
+    following = None
+    if series_id:
+        try:
+            episodes = api.get_series_episodes(series_id, limit=400) or []
+            ids = [str(ep.get('id') or '') for ep in episodes]
+            if str(content_id) in ids:
+                index = ids.index(str(content_id))
+                following = episodes[index + 1] if index + 1 < len(episodes) else None
+                if following is None:
+                    return None
+        except Exception as exc:
+            xbmc.log('NLZiet Up Next: episode list failed: {}'.format(exc), xbmc.LOGINFO)
+    if following is None:
+        following = library_mod.next_from_surrounding(api.get_surrounding_episodes(content_id), content_id)
+    if not following or not following.get('id'):
+        return None
+    try:
+        cur_s, cur_e = int(metadata.get('season') or 0), int(metadata.get('episode') or 0)
+    except (TypeError, ValueError):
+        cur_s, cur_e = 0, 0
+    next_s = following.get('season') or following.get('seasonNumber') or cur_s
+    next_e = following.get('episode') or following.get('episodeNumber') or (cur_e + 1 if cur_e else 0)
+    current = playback_extras.episode_info(metadata.get('title') or '', showtitle, cur_s, cur_e,
+                                           episode_id=str(content_id))
+    thumb = _pick_landscape_thumb(following) or ''
+    nxt = playback_extras.episode_info(
+        following.get('subtitle') or following.get('title') or '', showtitle, next_s, next_e,
+        plot=following.get('description') or '', art={'thumb': thumb}, episode_id=str(following['id']))
+    query = {'mode': 'play', 'id': following['id']}
+    return current, nxt, query
+
+
+def _announce_next_episode(api, content_id, metadata, stream_info, markers):
+    try:
+        found = _next_episode_for(api, content_id, metadata, stream_info)
+        if not found:
+            xbmc.log('NLZiet Up Next: no next episode for {}'.format(content_id), xbmc.LOGINFO)
+            return
+        current, following, query = found
+        player = xbmc.Player()
+        if not playback_extras.wait_for_playback(player):
+            return
+        notify_at = None
+        credits = markers.get('credits') if markers else None
+        if credits and credits[0]:
+            try:
+                total = player.getTotalTime()
+                if total > credits[0]:
+                    notify_at = total - credits[0]
+            except Exception:
+                pass
+        sent = playback_extras.send_upnext(ADDON.getAddonInfo('id'), current, following,
+                                           build_url(query), notify_at)
+        xbmc.log('NLZiet Up Next: next episode {} announced={}'.format(query.get('id'), sent), xbmc.LOGINFO)
+    except Exception as exc:
+        xbmc.log('NLZiet Up Next skipped: {}'.format(exc), xbmc.LOGINFO)
+
+
+def remote_watched(content_id, watched='1', background=False):
+    """Tell NLZiet an episode/film was watched (or not). Started by the service."""
+    if not content_id or not _setting_on('watched_to_service', True) or not _is_logged_in():
+        return
+    flag = str(watched) not in ('0', 'false', '')
+    ok = get_api_instance().set_watched(content_id, flag)
+    xbmc.log('NLZiet: watched status {} for {} sent to NLZiet: {}'.format(
+        'on' if flag else 'off', content_id, 'ok' if ok else 'failed'),
+        xbmc.LOGINFO if ok else xbmc.LOGWARNING)
+    if not background and ok:
+        xbmcgui.Dialog().notification('NLZiet', get_string('watched_sent'), xbmcgui.NOTIFICATION_INFO, 3000)
+
+
 def play_item(content_id, fmt=None, **kwargs):
     if fmt in ('live', 'epg') and not _pin_ok(live=True):
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
@@ -6903,6 +7086,7 @@ def play_item(content_id, fmt=None, **kwargs):
 
         li.setMimeType('application/dash+xml')
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
+        _after_playback_started(api, content_id, fmt, playback_metadata, info)
     else:
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
@@ -6957,6 +7141,216 @@ def play_item(content_id, fmt=None, **kwargs):
             xbmc.log(f"NLZiet exception in non-DRM subtitle handling: {e}", xbmc.LOGINFO)
         
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
+        _after_playback_started(api, content_id, fmt, playback_metadata, info)
+
+
+# ----------------------------------------------- search both services ---
+
+OTHER_SERVICE_ID = 'plugin.video.videoland.nl'
+
+
+def _add_other_service_search(query):
+    """Top line in the search results: the same search in Videoland."""
+    try:
+        if not xbmc.getCondVisibility('System.HasAddon({})'.format(OTHER_SERVICE_ID)):
+            return
+    except Exception:
+        return
+    target = 'plugin://{}/?{}'.format(OTHER_SERVICE_ID, urllib.parse.urlencode({'action': 'search', 'query': query}))
+    li = xbmcgui.ListItem(label='[B]{}[/B]: {}'.format(get_string('search_other_service'), query))
+    li.setArt({'icon': 'special://home/addons/{}/icon.png'.format(OTHER_SERVICE_ID),
+               'thumb': 'special://home/addons/{}/icon.png'.format(OTHER_SERVICE_ID)})
+    xbmcplugin.addDirectoryItem(HANDLE, target, li, isFolder=True)
+
+
+# ----------------------------------------------------------- widgets ---
+
+WIDGET_LISTS = (
+    ('continue', 'continue_watching', 'continue'),
+    ('watch_later', 'watch_later', 'watchlater'),
+    ('my_series', 'my_series', 'myseries'),
+    ('my_list', 'my_list', 'mylist'),
+)
+
+
+def widgets_menu():
+    """Ready-made lists for the skin's home screen widgets."""
+    for name, label_key, icon in WIDGET_LISTS:
+        add_directory_item(get_string(label_key), {'mode': 'widget', 'list': name},
+                           is_folder=True, thumb=_pick_menu_png_any(icon),
+                           info={'plot': get_string('widgets_help')})
+    _end_directory()
+
+
+def widget_list(name):
+    """One widget list: only the titles, fast, and never a pop-up."""
+    items = []
+    try:
+        if name == 'continue':
+            items = get_api_instance().get_continue_watching() or []
+        else:
+            api = _get_list_api()
+            getter = {'watch_later': api.get_watch_later, 'my_series': api.get_my_series,
+                      'my_list': api.get_my_list}.get(name)
+            items = (getter() if getter else []) or []
+    except Exception as exc:
+        xbmc.log('NLZiet widget {} failed: {}'.format(name, exc), xbmc.LOGWARNING)
+    for item in items:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        group = str(item.get('group') or '').lower()
+        kind = str(item.get('type') or '').lower()
+        title = item.get('title') or ''
+        info = {'title': title, 'plot': item.get('description') or ''}
+        thumb = item.get('thumb') or item.get('posterUrl') or _pick_landscape_thumb(item)
+        if group == 'series' or 'series' in kind and 'episode' not in kind:
+            add_directory_item(title, {'mode': 'series_detail', 'series_id': item['id']},
+                               is_folder=True, thumb=thumb, info=info, content=item)
+        elif group == 'channels':
+            continue
+        else:
+            add_directory_item(title, {'mode': 'play', 'id': item['id']}, is_folder=False,
+                               thumb=thumb, info=info, content=item)
+    _end_directory()
+
+
+# ------------------------------------------------- backup and restore ---
+
+BACKUP_SETTINGS_SKIP = ('password', 'username', 'parental_pin', 'tmdb_api_key')
+
+
+def _backup_folder():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'backups')
+
+
+def _backup_sources(api):
+    """Name -> file path of everything a backup keeps."""
+    profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+    files = {
+        'mylist.json': getattr(api, 'mylist_file', None),
+        'watchlater.json': getattr(api, 'watchlater_file', None),
+        'myseries.json': getattr(api, 'myseries_file', None),
+        'library.json': os.path.join(profile, 'library.json'),
+        'search_history.json': os.path.join(profile, 'search_history.json'),
+    }
+    return {name: path for name, path in files.items() if path}
+
+
+def _settings_snapshot():
+    """Plain settings (not the password or PIN) from settings.xml."""
+    values = {}
+    path = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'settings.xml')
+    try:
+        import xml.etree.ElementTree as ET
+        for node in ET.parse(path).getroot().iter('setting'):
+            key = node.get('id')
+            if key and not any(word in key for word in BACKUP_SETTINGS_SKIP):
+                values[key] = node.text or ''
+    except Exception:
+        pass
+    return values
+
+
+def backup_lists():
+    import zipfile
+    api = _get_list_api()
+    folder = _backup_folder()
+    os.makedirs(folder, exist_ok=True)
+    name = 'nlziet-backup-{}.zip'.format(time.strftime('%Y%m%d-%H%M'))
+    path = os.path.join(folder, name)
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for arcname, source in _backup_sources(api).items():
+            if os.path.isfile(source):
+                archive.write(source, arcname)
+        archive.writestr('settings.json', json.dumps(_settings_snapshot(), indent=1, ensure_ascii=False))
+        archive.writestr('backup.json', json.dumps({'addon': ADDON.getAddonInfo('id'),
+                                                    'version': ADDON.getAddonInfo('version'),
+                                                    'created': int(time.time())}))
+    # Keep the 10 newest backups.
+    old = sorted(f for f in os.listdir(folder) if f.startswith('nlziet-backup-') and f.endswith('.zip'))
+    for stale in old[:-10]:
+        try:
+            os.remove(os.path.join(folder, stale))
+        except OSError:
+            pass
+    xbmcgui.Dialog().ok('NLZiet', get_string('backup_saved', path))
+
+
+def restore_lists():
+    import zipfile
+    folder = _backup_folder()
+    try:
+        names = sorted((f for f in os.listdir(folder) if f.endswith('.zip')), reverse=True)
+    except OSError:
+        names = []
+    if not names:
+        xbmcgui.Dialog().ok('NLZiet', get_string('restore_none'))
+        return
+    choice = xbmcgui.Dialog().select(get_string('restore_choose'), names)
+    if choice < 0 or not xbmcgui.Dialog().yesno('NLZiet', get_string('restore_confirm')):
+        return
+    api = _get_list_api()
+    targets = _backup_sources(api)
+    restored = []
+    with zipfile.ZipFile(os.path.join(folder, names[choice])) as archive:
+        members = set(archive.namelist())
+        for arcname, target in targets.items():
+            if arcname not in members:
+                continue
+            data = archive.read(arcname)
+            json.loads(data.decode('utf-8'))   # only restore valid JSON
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            tmp = target + '.tmp'
+            with open(tmp, 'wb') as handle:
+                handle.write(data)
+            os.replace(tmp, target)
+            restored.append(arcname.replace('.json', ''))
+        if 'settings.json' in members:
+            settings = json.loads(archive.read('settings.json').decode('utf-8'))
+            for key, value in settings.items():
+                try:
+                    ADDON.setSetting(key, value)
+                except Exception:
+                    pass
+            restored.append('settings')
+    global _LIBRARY
+    _LIBRARY = None
+    xbmcgui.Dialog().ok('NLZiet', get_string('restore_done', ', '.join(restored)))
+    if 'library' in restored:
+        xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=library_update&background=1)')
+
+
+# ------------------------------------------------------- daily check ---
+
+def daily_check():
+    """Run the diagnostics quietly; one notification when something is wrong."""
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    t = diagnostics_mod.texts(language)
+    checks = _collect_diagnostics(t)
+    problems = diagnostics_mod.problem_labels(checks)
+    xbmc.log('NLZiet daily check: {}'.format(', '.join(problems) or 'all OK'), xbmc.LOGINFO)
+    # Say it when something new goes wrong; repeat an unchanged problem weekly.
+    state_path = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'daily_check.json')
+    try:
+        with open(state_path, 'r', encoding='utf-8') as handle:
+            state = json.load(handle) or {}
+    except (OSError, ValueError):
+        state = {}
+    now = time.time()
+    changed = sorted(problems) != sorted(state.get('problems') or [])
+    if problems and (changed or now - float(state.get('notified') or 0) >= 7 * 86400):
+        xbmcgui.Dialog().notification('NLZiet', get_string('daily_check_problem', ', '.join(problems[:3])),
+                                      xbmcgui.NOTIFICATION_WARNING, 10000)
+        state['notified'] = now
+    state['problems'] = problems
+    try:
+        with open(state_path, 'w', encoding='utf-8') as handle:
+            json.dump(state, handle)
+    except OSError:
+        pass
 
 
 def select_iptv_channels():
@@ -7029,6 +7423,12 @@ def get_route_handlers():
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
         'run_diagnostics': run_diagnostics,
+        'widgets_menu': widgets_menu,
+        'widget_list': widget_list,
+        'backup_lists': backup_lists,
+        'restore_lists': restore_lists,
+        'daily_check': daily_check,
+        'remote_watched': remote_watched,
         'library_from_lists': library_from_lists,
         'choose_tmdb': choose_tmdb,
         'parental_set_pin': parental_set_pin,

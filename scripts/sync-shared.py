@@ -20,6 +20,8 @@ SHARED = [
     'resources/lib/diagnostics.py',
     'resources/lib/search_filters.py',
     'resources/lib/logo_cache.py',
+    'resources/lib/playback_extras.py',
+    'resources/lib/watch_sync.py',
 ]
 ROOT = Path(__file__).resolve().parents[1]
 

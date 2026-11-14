@@ -192,6 +192,27 @@
             <close>true</close>
           </control>
         </setting>
+        <setting id="daily_check" type="boolean" label="33281" help="33282">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="6" label="33286">
+        <setting id="backup_lists" type="action" label="33275" help="33287">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=backup_lists)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="restore_lists" type="action" label="33276" help="33287">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=restore_lists)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
       </group>
     </category>
 
@@ -203,6 +224,28 @@
           <control type="toggle"/>
         </setting>
       </group>
+      <group id="2" label="33285">
+        <setting id="upnext" type="boolean" label="33265" help="33266">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="install_upnext" type="action" label="33267">
+          <level>0</level>
+          <data>InstallAddon(service.upnext)</data>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool" operator="!is">System.HasAddon(service.upnext)</dependency>
+          </dependencies>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="skip_markers" type="boolean" label="33268" help="33269">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
     </category>
 
     <category id="category_sync" label="30008" help="">
@@ -210,6 +253,11 @@
         <setting id="watch_later_sync" type="boolean" label="30114" help="30116">
           <level>0</level>
           <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="watched_to_service" type="boolean" label="33263" help="33264">
+          <level>0</level>
+          <default>true</default>
           <control type="toggle"/>
         </setting>
         <setting id="trakt_watched_status" type="boolean" label="33243" help="33244">

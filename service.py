@@ -8,12 +8,44 @@ from resources.lib import library as library_mod
 from resources.lib import library_art
 from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import metadata as metadata_mod
+from resources.lib import watch_sync
+from resources.lib import diagnostics as diagnostics_mod
 
 ADDON = xbmcaddon.Addon()
 
 
+ADDON_ID = 'plugin.video.nlziet'
+
+
+def _send_watched(content_id, watched):
+    """Ask the plugin to tell NLZiet (runs in its own process)."""
+    if not content_id or not _setting_on('watched_to_service', True):
+        return
+    if not REPEATS.fresh(str(content_id), watched):
+        return
+    xbmc.log('NLZiet service: watched={} for {}'.format(watched, content_id), xbmc.LOGINFO)
+    xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=remote_watched&id={}&watched={}&background=1)'.format(
+        ADDON_ID, content_id, 1 if watched else 0))
+
+
+def _rpc(method, params):
+    import json
+    answer = json.loads(xbmc.executeJSONRPC(json.dumps(
+        {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})))
+    return answer.get('result') or {}
+
+
+def _read_text(path):
+    import xbmcvfs
+    handle = xbmcvfs.File(path)
+    try:
+        return handle.read()
+    finally:
+        handle.close()
+
+
 class LibraryMonitor(xbmc.Monitor):
-    """Notices when Kodi finished a video library scan."""
+    """Notices library scans and watched/unwatched changes in Kodi's library."""
 
     def __init__(self):
         super().__init__()
@@ -23,8 +55,60 @@ class LibraryMonitor(xbmc.Monitor):
         if library == 'video':
             self.scan_finished = True
 
+    def onNotification(self, sender, method, data):
+        if method != 'VideoLibrary.OnUpdate':
+            return
+        change = watch_sync.library_update(data)
+        if not change:
+            return
+        media_type, dbid, watched = change
+        try:
+            path = watch_sync.library_file(media_type, dbid, _rpc)
+            params = watch_sync.plugin_params(watch_sync.strm_target(path, _read_text), ADDON_ID)
+            if params.get('mode') == 'play' and params.get('id'):
+                _send_watched(params['id'], watched)
+        except Exception as exc:
+            xbmc.log('NLZiet service: library watched check failed: {}'.format(exc), xbmc.LOGWARNING)
+
+
+class PlaybackFollower(xbmc.Player):
+    """Follows videos the add-on starts, to send "watched" at the end."""
+
+    def __init__(self):
+        super().__init__()
+        self.watch = watch_sync.PlaybackWatch()
+
+    def onAVStarted(self):
+        import xbmcgui
+        window = xbmcgui.Window(10000)
+        prop = watch_sync.PLAYING_PROPERTY.format('nlziet')
+        self.watch.start(watch_sync.parse_playing(window.getProperty(prop)))
+        window.clearProperty(prop)
+        self.sample()
+
+    def sample(self):
+        if not self.watch.key:
+            return
+        try:
+            if self.isPlayingVideo():
+                self.watch.sample(self.getTime(), self.getTotalTime())
+        except RuntimeError:
+            pass
+
+    def _done(self):
+        key = self.watch.finish()
+        if key:
+            _send_watched(key, True)
+
+    def onPlayBackStopped(self):
+        self._done()
+
+    def onPlayBackEnded(self):
+        self._done()
+
 
 MONITOR = LibraryMonitor()
+REPEATS = watch_sync.Repeats()
 
 # Give Kodi time to finish starting before the first library update.
 LIBRARY_STARTUP_DELAY = 120
@@ -82,17 +166,41 @@ def _library_update_due():
     return (time.time() - last) >= hours * 3600
 
 
+def _daily_check_due():
+    if not _setting_on('daily_check', True):
+        return False
+    path = os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'daily_check.json')
+    try:
+        last = os.path.getmtime(path)
+    except OSError:
+        last = 0
+    return diagnostics_mod.daily_due(last, time.time())
+
+
 def main():
     xbmc.log('NLZiet service: started', xbmc.LOGINFO)
     started = time.time()
     last_sync = time.time()
     last_library_trigger = 0
+    last_minute = 0
+    last_daily = 0
     legacy_checked = False
+    player = PlaybackFollower()
     while not MONITOR.abortRequested():
-        if MONITOR.waitForAbort(60):
+        # Short ticks so the playback position is known when a video stops.
+        if MONITOR.waitForAbort(5):
             break
-
+        player.sample()
         now = time.time()
+        if now - last_minute < 60:
+            continue
+        last_minute = now
+
+        if (now - started >= LIBRARY_STARTUP_DELAY + 300 and now - last_daily >= 6 * 3600
+                and not xbmc.Player().isPlaying() and _daily_check_due()):
+            last_daily = now
+            xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=daily_check&background=1)'.format(ADDON_ID))
+
         # A scan asked for while Kodi was busy runs as soon as it is free.
         library_art.run_pending_scan(library_mod.scan_flag_path())
 

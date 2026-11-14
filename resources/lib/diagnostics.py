@@ -220,6 +220,20 @@ def render(t, checks, report_path=None):
     return '\n'.join(lines)
 
 
+def problem_labels(checks, include_warnings=True):
+    """Labels of the checks that need attention (for the daily check)."""
+    bad = (WARN, FAIL) if include_warnings else (FAIL,)
+    return [label for status, label, _d in checks if status in bad]
+
+
+def daily_due(last_run, now, hours=24):
+    """True when the automatic check has not run for ``hours``."""
+    try:
+        return now - float(last_run or 0) >= hours * 3600
+    except (TypeError, ValueError):
+        return True
+
+
 def plain(text):
     return re.sub(r'\[/?COLOR[^\]]*\]', '', text)
 
