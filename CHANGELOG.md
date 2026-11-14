@@ -1,6 +1,14 @@
 # Changelog
 
-> **Latest Version:** v1.7.0 (November 14, 2026)
+> **Latest Version:** v1.7.1 (November 14, 2026)
+
+## [1.7.1] - 2026-11-14
+
+### Added
+- **Library metadata**: NLZiet's own data is always used first; only empty fields are filled in from TMDb (series and films, needs a free TMDb API key) and TVmaze (series, no key needed): description, poster, background, year, genres, rating, network/studio, and per-episode titles, descriptions and images. Placeholder titles such as "Aflevering 3" are replaced by the real episode title.
+- **Library metadata**: `.nfo` files now also carry TMDb, TVDB, IMDb and TVmaze ids, so Kodi, skins and Trakt match titles reliably. (TVDB is not queried directly because its API needs a paid key; the id comes from TMDb/TVmaze.)
+- **Settings → Library → Extra metadata**: on/off switch, a field for the TMDb API key and a "Test TMDb key" button.
+- Only exact title matches are used (films also need a matching year), answers are cached for 7 days, and a slow or unreachable service is skipped for a few minutes so library updates never hang.
 
 ## [1.7.0] - 2026-11-14
 

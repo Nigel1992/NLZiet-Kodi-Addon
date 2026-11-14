@@ -169,6 +169,36 @@
           </control>
         </setting>
       </group>
+      <group id="3" label="33212">
+        <setting id="library_enrich" type="boolean" label="33213" help="33214">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tmdb_api_key" type="string" label="33215" help="33216">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="edit" format="string">
+            <heading>33215</heading>
+          </control>
+        </setting>
+        <setting id="check_tmdb_key" type="action" label="33217" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=check_tmdb_key)</data>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+      </group>
     </category>
 
     <category id="category_expiry" label="33153" help="">

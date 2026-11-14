@@ -25,6 +25,7 @@ from resources.lib.kodi import ui as kodi_ui
 from resources.lib.router import Router
 from resources.lib import tvmaze
 from resources.lib import library as library_mod
+from resources.lib import metadata as metadata_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -210,6 +211,8 @@ TRANSLATIONS = {
     'library_update_now': {'nl': 'Bibliotheek nu bijwerken', 'en': 'Update library now'},
     'library_empty': {'nl': 'De bibliotheek is nog leeg', 'en': 'The library is empty'},
     'library': {'nl': 'Bibliotheek', 'en': 'Library'},
+    'tmdb_check_ok': {'nl': 'TMDb-sleutel werkt', 'en': 'TMDb key works'},
+    'tmdb_check_failed': {'nl': 'TMDb-sleutel werkt niet. Controleer de sleutel.', 'en': 'TMDb key does not work. Check the key.'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -382,6 +385,8 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'tmdb_check_ok': 33210,
+    'tmdb_check_failed': 33211,
     'diagnostics_exported': 33069,
     'diagnostics_failed': 33070,
     'subtitle_cache_cleared': 33159,
@@ -1640,10 +1645,33 @@ def _library_episode_fetcher(api, series_id, detail):
 _LIBRARY = None
 
 
+def _library_enricher():
+    """Metadata helper that fills gaps from TMDb/TVmaze, or None when turned off."""
+    if not _setting_on('library_enrich', True):
+        return None
+    try:
+        profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+    except Exception:
+        profile = ''
+    language = 'nl-NL'
+    try:
+        if not str(xbmc.getLanguage(xbmc.ISO_639_1) or 'nl').lower().startswith('nl'):
+            language = 'en-US'
+    except Exception:
+        pass
+    return metadata_mod.Enricher(
+        os.path.join(profile or '', 'metadata_cache.json'),
+        tmdb_key=ADDON.getSetting('tmdb_api_key') or '',
+        language=language,
+        user_agent='plugin.video.nlziet',
+    )
+
+
 def _get_library():
     global _LIBRARY
     if _LIBRARY is None:
-        _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher)
+        _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher,
+                                       enricher=_library_enricher())
     return _LIBRARY
 
 
@@ -1769,6 +1797,15 @@ def library_update(background=False):
             get_string('library_update_done', totals.get('added', 0), totals.get('removed', 0)),
             xbmcgui.NOTIFICATION_INFO,
         )
+
+
+def check_tmdb_key():
+    """Settings button: try the entered TMDb key once."""
+    key = (ADDON.getSetting('tmdb_api_key') or '').strip()
+    enricher = metadata_mod.Enricher('', tmdb_key=key, user_agent='plugin.video.nlziet')
+    ok = bool(key) and enricher._tmdb('/configuration') is not None
+    xbmcgui.Dialog().notification('NLZiet', get_string('tmdb_check_ok' if ok else 'tmdb_check_failed'),
+                                  xbmcgui.NOTIFICATION_INFO if ok else xbmcgui.NOTIFICATION_ERROR)
 
 
 def browse_library():
@@ -6390,6 +6427,7 @@ def get_route_handlers():
         'library_remove': library_remove,
         'library_update': library_update,
         'browse_library': browse_library,
+        'check_tmdb_key': check_tmdb_key,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,

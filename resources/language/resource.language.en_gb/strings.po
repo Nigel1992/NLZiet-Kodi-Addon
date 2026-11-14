@@ -921,3 +921,35 @@ msgstr "Add this folder in Kodi as a video source (type TV shows, scraper \"Loca
 msgctxt "#33206"
 msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
 msgstr "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
+
+msgctxt "#33210"
+msgid "TMDb key works"
+msgstr "TMDb key works"
+
+msgctxt "#33211"
+msgid "TMDb key does not work. Check the key."
+msgstr "TMDb key does not work. Check the key."
+
+msgctxt "#33212"
+msgid "Extra metadata"
+msgstr "Extra metadata"
+
+msgctxt "#33213"
+msgid "Fill in missing data from TMDb / TVmaze"
+msgstr "Fill in missing data from TMDb / TVmaze"
+
+msgctxt "#33214"
+msgid "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+msgstr "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+
+msgctxt "#33215"
+msgid "TMDb API key (optional)"
+msgstr "TMDb API key (optional)"
+
+msgctxt "#33216"
+msgid "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+msgstr "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+
+msgctxt "#33217"
+msgid "Test TMDb key"
+msgstr "Test TMDb key"

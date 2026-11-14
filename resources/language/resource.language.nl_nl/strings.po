@@ -938,3 +938,35 @@ msgstr "Voeg deze map in Kodi toe als videobron (type Series, scraper \"Lokale i
 msgctxt "#33206"
 msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
 msgstr "Voeg deze map in Kodi toe als videobron (type Films, scraper \"Lokale informatie\"), zodat Kodi de films vindt."
+
+msgctxt "#33210"
+msgid "TMDb key works"
+msgstr "TMDb-sleutel werkt"
+
+msgctxt "#33211"
+msgid "TMDb key does not work. Check the key."
+msgstr "TMDb-sleutel werkt niet. Controleer de sleutel."
+
+msgctxt "#33212"
+msgid "Extra metadata"
+msgstr "Extra gegevens"
+
+msgctxt "#33213"
+msgid "Fill in missing data from TMDb / TVmaze"
+msgstr "Ontbrekende gegevens aanvullen via TMDb / TVmaze"
+
+msgctxt "#33214"
+msgid "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+msgstr "De gegevens van NLZiet worden altijd eerst gebruikt. Alleen lege velden (beschrijving, poster, achtergrond, jaar, genre, waardering, beschrijvingen en plaatjes van afleveringen) worden aangevuld. Voegt ook TMDb-, TVDB- en IMDb-nummers toe. Series werken zonder sleutel via TVmaze; films hebben een TMDb-sleutel nodig."
+
+msgctxt "#33215"
+msgid "TMDb API key (optional)"
+msgstr "TMDb API-sleutel (optioneel)"
+
+msgctxt "#33216"
+msgid "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+msgstr "Gratis sleutel via themoviedb.org: Instellingen > API. Plak de \"API Key\" of het \"API Read Access Token\"."
+
+msgctxt "#33217"
+msgid "Test TMDb key"
+msgstr "TMDb-sleutel testen"

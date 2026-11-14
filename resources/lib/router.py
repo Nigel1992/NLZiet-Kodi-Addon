@@ -120,6 +120,8 @@ class Router:
             self.handlers['library_update'](**self._sync_options(params))
         elif mode == 'browse_library':
             self.handlers['browse_library']()
+        elif mode == 'check_tmdb_key':
+            self.handlers['check_tmdb_key']()
         elif mode == 'placement_row':
             self.handlers['browse_placement_row'](
                 params.get('items_url'),

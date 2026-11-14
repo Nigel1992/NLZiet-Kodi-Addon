@@ -17,6 +17,8 @@ import time
 import urllib.parse
 from xml.sax.saxutils import escape
 
+from . import metadata
+
 try:
     import xbmc
 except ImportError:  # pragma: no cover - only outside Kodi
@@ -259,7 +261,8 @@ class LibraryStore:
 
 
 class Library:
-    def __init__(self, api, addon, episode_fetcher, store=None, fs=None, now=None):
+    def __init__(self, api, addon, episode_fetcher, store=None, fs=None, now=None, enricher=None):
+        self.enricher = enricher
         self.api = api
         self.addon = addon
         self.episode_fetcher = episode_fetcher
@@ -388,11 +391,17 @@ class Library:
         entry['title'] = series_title
         entry.setdefault('added', int(self.now()))
         thumb = detail.get('thumb') or _image(detail.get('raw') or {}, 'posterUrl', 'image')
-        if thumb:
-            entry['thumb'] = thumb
+        show_data = {
+            'plot': detail.get('description') or '',
+            'poster': thumb or '',
+            'fanart': _image(detail.get('raw') or {}, 'backdropUrl', 'landscapeUrl', 'heroUrl') or '',
+        }
+        show_data = self._enrich_show(entry, series_title, show_data)
+        if show_data.get('poster'):
+            entry['thumb'] = show_data['poster']
         show_dir = self._show_folder(entry, series_title)
 
-        self.fs.write(self.fs.join(show_dir, 'tvshow.nfo'), self._tvshow_nfo(series_id, series_title, detail, thumb))
+        self.fs.write(self.fs.join(show_dir, 'tvshow.nfo'), self._tvshow_nfo(series_id, series_title, show_data))
 
         wanted = set()
         for ep, season, number, airdate in self._assign_numbers(entry, episodes):
@@ -414,7 +423,14 @@ class Library:
             }
             if self.fs.write(strm_path, self.plugin_url(query) + '\n'):
                 result['added'] += 1
-            self.fs.write(nfo_path, self._episode_nfo(ep, ep_title, series_title, season, number, airdate))
+            ep_data = {
+                'title': ep_title,
+                'plot': ep.get('description') or '',
+                'thumb': ep.get('thumb') or _image(ep, 'posterUrl', 'image') or '',
+                'aired': '' if airdate == UNDATED else airdate,
+            }
+            ep_data = self._enrich_episode(entry, ep_data, season, number)
+            self.fs.write(nfo_path, self._episode_nfo(ep, ep_data, series_title, season, number))
 
         # Remove episodes that are no longer offered (and old export files).
         for path in list(self.fs.walk_files(show_dir)):
@@ -426,6 +442,7 @@ class Library:
                     result['removed'] += 1
         self.fs.remove_empty_dirs(show_dir)
 
+        self._save_metadata()
         entry['updated'] = int(self.now())
         entry['last_checked'] = int(self.now())
         entry['episode_count'] = len(episodes)
@@ -433,35 +450,67 @@ class Library:
         result.update({'ok': True, 'total': len(episodes), 'title': series_title})
         return result
 
-    def _tvshow_nfo(self, series_id, title, detail, thumb):
+    # --------------------------------------------------------------- metadata
+    def _enrich_show(self, entry, title, local):
+        if self.enricher is None:
+            return local
+        try:
+            extra = self.enricher.show(title, known=entry.get('ids'))
+        except Exception as exc:
+            _log('metadata lookup failed for {}: {}'.format(title, exc))
+            return local
+        ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
+        if ids:
+            entry['ids'] = ids
+        return metadata.merge(local, extra)
+
+    def _enrich_episode(self, entry, local, season, number):
+        if self.enricher is None or not entry.get('ids'):
+            return local
+        try:
+            extra = self.enricher.episode(entry['ids'], season, number, local.get('aired') or None,
+                                          by_number=entry.get('numbering') == 'api')
+        except Exception:
+            return local
+        return metadata.merge(local, extra)
+
+    def _save_metadata(self):
+        if self.enricher is not None:
+            try:
+                self.enricher.save()
+            except Exception:
+                pass
+
+    def _tvshow_nfo(self, series_id, title, data):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<tvshow>',
                  '  <title>{}</title>'.format(escape(title)),
-                 '  <plot>{}</plot>'.format(escape(detail.get('description') or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(series_id)))]
-        if thumb:
-            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(thumb)))
-        fanart = _image(detail.get('raw') or {}, 'backdropUrl', 'landscapeUrl', 'heroUrl')
-        if fanart:
-            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(fanart)))
+        if data.get('year'):
+            parts.append('  <year>{}</year>'.format(data['year']))
+        if data.get('poster'):
+            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(data['poster'])))
+        if data.get('fanart'):
+            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(data['fanart'])))
+        parts += metadata.nfo_extra_lines(data, escape)
         parts.append('</tvshow>')
         return '\n'.join(parts) + '\n'
 
-    def _episode_nfo(self, ep, ep_title, series_title, season, number, airdate):
+    def _episode_nfo(self, ep, data, series_title, season, number):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<episodedetails>',
-                 '  <title>{}</title>'.format(escape(ep_title)),
+                 '  <title>{}</title>'.format(escape(data.get('title') or 'Episode {}'.format(number))),
                  '  <showtitle>{}</showtitle>'.format(escape(series_title)),
                  '  <season>{}</season>'.format(season),
                  '  <episode>{}</episode>'.format(number),
-                 '  <aired>{}</aired>'.format('' if airdate == UNDATED else airdate),
-                 '  <plot>{}</plot>'.format(escape(ep.get('description') or '')),
+                 '  <aired>{}</aired>'.format(escape(data.get('aired') or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(ep.get('id'))))]
         duration = _int_or_none(ep.get('duration'))
         if duration:
             minutes = duration // 60 if duration > 600 else duration
             parts.append('  <runtime>{}</runtime>'.format(minutes))
-        thumb = ep.get('thumb') or _image(ep, 'posterUrl', 'image')
-        if thumb:
-            parts.append('  <thumb>{}</thumb>'.format(escape(thumb)))
+        if data.get('thumb'):
+            parts.append('  <thumb>{}</thumb>'.format(escape(data['thumb'])))
         parts.append('</episodedetails>')
         return '\n'.join(parts) + '\n'
 
@@ -495,6 +544,22 @@ class Library:
                             or raw.get('releaseYear') or raw.get('productionYear'))
         if year and not 1900 <= year <= 2100:
             year = None
+        movie_data = {
+            'plot': detail.get('description') or item.get('description') or '',
+            'poster': detail.get('thumb') or item.get('thumb') or item.get('posterUrl') or '',
+            'year': year,
+        }
+        if self.enricher is not None:
+            try:
+                extra = self.enricher.movie(movie_title, year, known=entry.get('ids'))
+                ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
+                if ids:
+                    entry['ids'] = ids
+                movie_data = metadata.merge(movie_data, extra)
+            except Exception as exc:
+                _log('metadata lookup failed for {}: {}'.format(movie_title, exc))
+            self._save_metadata()
+        year = _int_or_none(movie_data.get('year'))
         if not entry.get('folder'):
             entry['folder'] = safe_filename('{} ({})'.format(movie_title, year) if year else movie_title)
         movie_dir = self.fs.join(self.movies_root(), entry['folder'])
@@ -504,8 +569,8 @@ class Library:
             query['year'] = str(year)
         if self.fs.write(base + '.strm', self.plugin_url(query) + '\n'):
             result['added'] = 1
-        thumb = detail.get('thumb') or item.get('thumb') or item.get('posterUrl')
-        self.fs.write(base + '.nfo', self._movie_nfo(movie_id, movie_title, detail.get('description') or item.get('description') or '', year, thumb))
+        thumb = movie_data.get('poster')
+        self.fs.write(base + '.nfo', self._movie_nfo(movie_id, movie_title, movie_data, year))
 
         entry.update({'title': movie_title, 'updated': int(self.now()), 'last_checked': int(self.now())})
         entry.setdefault('added', int(self.now()))
@@ -517,15 +582,18 @@ class Library:
         result.update({'ok': True, 'total': 1, 'title': movie_title})
         return result
 
-    def _movie_nfo(self, movie_id, title, plot, year, thumb):
+    def _movie_nfo(self, movie_id, title, data, year):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<movie>',
                  '  <title>{}</title>'.format(escape(title)),
-                 '  <plot>{}</plot>'.format(escape(plot or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(movie_id)))]
         if year:
             parts.append('  <year>{}</year>'.format(year))
-        if thumb:
-            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(thumb)))
+        if data.get('poster'):
+            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(data['poster'])))
+        if data.get('fanart'):
+            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(data['fanart'])))
+        parts += metadata.nfo_extra_lines(data, escape, kind='movie')
         parts.append('</movie>')
         return '\n'.join(parts) + '\n'
 
