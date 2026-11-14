@@ -15,6 +15,7 @@ with ``tv_root()``, ``movies_root()``, ``store.section(kind)`` and ``fs``.
 
 import json
 import os
+import urllib.parse
 import urllib.request
 
 try:
@@ -93,9 +94,20 @@ def save_art(library, entry, folder, urls, names, downloader):
             _write_bytes(library.fs, path, data)
         except Exception:
             continue
+        if known.get(kind) and known[kind] != url:
+            remember_owned(entry, known[kind])
         known[kind] = url
         saved[kind] = path
     return saved
+
+
+def remember_owned(entry, value):
+    """Artwork the add-on itself provided earlier: it may be replaced later."""
+    if value:
+        history = entry.setdefault("art_history", [])
+        if value not in history:
+            history.append(value)
+            del history[:-30]
 
 
 def art_names(kind, folder):
@@ -153,14 +165,16 @@ def local_art(library, kind, entry):
     else:
         base = library.fs.join(library.movies_root(), folder)
     names = art_names(kind, folder)
+    urls = entry.get("art_urls") or {}
+    # Prefer the image url: when a better image arrives it has a new url, so
+    # Kodi shows it at once (a rewritten poster.jpg keeps its cached old copy).
+    for key in ("poster", "fanart", "clearlogo"):
+        if urls.get(key):
+            art[key] = urls[key]
     for key, name in names.items():
         path = library.fs.join(base, name)
-        if _exists(library.fs, path):
+        if key not in art and _exists(library.fs, path):
             art[key] = path
-    urls = entry.get("art_urls") or {}
-    for key in ("poster", "fanart", "clearlogo"):
-        if key not in art and urls.get(key):
-            art[key] = urls[key]
     if "poster" not in art and entry.get("thumb"):
         art["poster"] = entry["thumb"]
     return art
@@ -176,6 +190,32 @@ def _rpc(method, params, rpc=None):
         return json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
     except Exception:
         return {}
+
+
+def _kodi_art_value(value):
+    """Kodi returns art as image://<quoted url>/; give back the plain url/path."""
+    value = str(value or "")
+    if value.startswith("image://"):
+        value = urllib.parse.unquote(value[len("image://"):].rstrip("/"))
+    return value
+
+
+def _owned(library, kind, entry, value):
+    """True when the artwork Kodi has now came from this add-on."""
+    value = _kodi_art_value(value).replace("\\", "/")
+    if not value:
+        return True
+    candidates = set(entry.get("art_history") or [])
+    candidates.update((entry.get("art_urls") or {}).values())
+    candidates.update(v for v in (entry.get("poster_hint"), entry.get("fanart_hint"), entry.get("thumb")) if v)
+    candidates.update((entry.get("season_art") or {}).values())
+    folder = entry.get("folder")
+    if folder:
+        root = library.tv_root() if kind == "series" else library.movies_root()
+        base = str(library.fs.join(root, folder)).replace("\\", "/")
+        if value.startswith(base + "/"):
+            return True
+    return value in {str(c).replace("\\", "/") for c in candidates}
 
 
 def _folder_of(path, is_file):
@@ -229,7 +269,10 @@ def repair_kodi_art(library, marker="", rpc=None):
             if not entry:
                 continue
             current = item.get("art") or {}
-            missing = {k: v for k, v in local_art(library, kind, entry).items() if not current.get(k)}
+            # Fill empty slots, and replace artwork this add-on set earlier
+            # when a better image is known. Artwork chosen in Kodi stays.
+            missing = {k: v for k, v in local_art(library, kind, entry).items()
+                       if _kodi_art_value(current.get(k)) != v and _owned(library, kind, entry, current.get(k))}
             if kind == "series" and entry.get("season_art"):
                 updated += _repair_seasons(item[id_key], entry["season_art"], rpc)
             if not missing:

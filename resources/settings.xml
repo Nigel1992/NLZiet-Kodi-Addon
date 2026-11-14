@@ -230,6 +230,22 @@
             <heading>33215</heading>
           </control>
         </setting>
+        <setting id="art_tmdb_first" type="boolean" label="33254" help="33255">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+        <setting id="browse_logos" type="boolean" label="33252" help="33253">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
         <setting id="check_tmdb_key" type="action" label="33217" help="">
           <level>0</level>
           <data>RunPlugin(plugin://$ID?mode=check_tmdb_key)</data>

@@ -42,6 +42,15 @@ def normalize_title(text):
     return re.sub(r"[^0-9a-z]+", " ", text).strip()
 
 
+def clean_title(title):
+    """Title without a trailing year or season note, e.g. "Show (2021)",
+    "Show - Seizoen 2", which services add but TMDb does not use."""
+    text = str(title or "").strip()
+    text = re.sub(r"\s*\((?:19|20)\d{2}\)\s*$", "", text)
+    text = re.sub(r"\s*[-:]\s*(?:seizoen|season|serie)\s*\d+\s*$", "", text, flags=re.IGNORECASE)
+    return text.strip()
+
+
 def is_missing(value):
     """True for empty values and placeholder episode titles like 'Aflevering 3'."""
     if value is None:
@@ -59,6 +68,17 @@ def merge(local, extra):
     for key, value in (extra or {}).items():
         if is_missing(result.get(key)) and not is_missing(value):
             result[key] = value
+    return result
+
+
+def merge_art_first(local, extra, prefer_extra_art=True):
+    """Like merge, but posters and backgrounds from ``extra`` (TMDb) win when
+    ``prefer_extra_art``; descriptions and other fields stay local-first."""
+    result = merge(local, extra)
+    if prefer_extra_art:
+        for key in ("poster", "fanart"):
+            if not is_missing((extra or {}).get(key)):
+                result[key] = extra[key]
     return result
 
 
@@ -242,16 +262,28 @@ class Enricher:
             ids.setdefault(key, value)
         return data
 
+    def search_candidates(self, kind, title):
+        """TMDb results for a manual choice: [(id, name, year)]."""
+        tmdb_kind = "movie" if kind == "movie" else "tv"
+        payload = self._tmdb("/search/" + tmdb_kind,
+                             {"query": clean_title(title) or title, "language": self.language,
+                              "include_adult": "false"}) or {}
+        found = []
+        for hit in payload.get("results") or []:
+            name = hit.get("name") or hit.get("title") or ""
+            found.append((hit.get("id"), name, _year(hit.get("first_air_date") or hit.get("release_date"))))
+        return [entry for entry in found if entry[0]]
+
     def _tmdb_search(self, kind, title, year=None):
-        wanted = normalize_title(title)
+        wanted = normalize_title(clean_title(title))
         if not wanted:
             return None
-        params = {"query": title, "language": self.language, "include_adult": "false"}
+        params = {"query": clean_title(title), "language": self.language, "include_adult": "false"}
         payload = self._tmdb("/search/" + kind, params) or {}
         candidates = []
         for hit in payload.get("results") or []:
             names = (hit.get("name"), hit.get("original_name"), hit.get("title"), hit.get("original_title"))
-            if wanted in {normalize_title(name) for name in names if name}:
+            if wanted in {normalize_title(clean_title(name)) for name in names if name}:
                 hit_year = _year(hit.get("first_air_date") or hit.get("release_date"))
                 candidates.append((hit_year, hit.get("id")))
         if not candidates:
@@ -376,6 +408,22 @@ class Enricher:
         return {"title": match.get("name") or "", "plot": _strip_html(match.get("summary")),
                 "thumb": (match.get("image") or {}).get("original") or "",
                 "aired": match.get("airdate") or ""}
+
+    def logo_for(self, kind, title, year=None):
+        """Clearlogo url for a title, '' when TMDb has none, None when TMDb
+        could not be reached (try again later)."""
+        if not self.tmdb_key:
+            return ""
+        tmdb_kind = "movie" if kind == "movie" else "tv"
+        tmdb_id = self._tmdb_search(tmdb_kind, title, year)
+        if self.now() < self._offline_until.get("tmdb", 0):
+            return None
+        if not tmdb_id:
+            return ""
+        logo = self._tmdb_logo(tmdb_kind, tmdb_id)
+        if self.now() < self._offline_until.get("tmdb", 0):
+            return None
+        return logo or ""
 
     # ---------------------------------------------------------------- movies
     def movie(self, title, year=None, known=None):

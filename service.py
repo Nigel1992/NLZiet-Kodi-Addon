@@ -6,6 +6,8 @@ import xbmcaddon
 
 from resources.lib import library as library_mod
 from resources.lib import library_art
+from resources.lib import logo_cache as logo_cache_mod
+from resources.lib import metadata as metadata_mod
 
 ADDON = xbmcaddon.Addon()
 
@@ -93,6 +95,20 @@ def main():
         now = time.time()
         # A scan asked for while Kodi was busy runs as soon as it is free.
         library_art.run_pending_scan(library_mod.scan_flag_path())
+
+        # Look up logos for titles seen in browse lists, a few at a time.
+        if not xbmc.Player().isPlaying():
+            try:
+                folder = library_mod.translate_path(ADDON.getAddonInfo('profile')) or ''
+                if os.path.isfile(os.path.join(folder, 'logo_queue.json')):
+                    enricher = metadata_mod.Enricher(os.path.join(folder, 'metadata_cache.json'),
+                                                     tmdb_key=_setting('tmdb_api_key', ''),
+                                                     user_agent='plugin.video.nlziet')
+                    logo_cache_mod.LogoCache(folder).process(enricher, limit=15,
+                                                             should_stop=MONITOR.abortRequested)
+                    enricher.save()
+            except Exception as exc:
+                xbmc.log('NLZiet service: logo lookup failed: {}'.format(exc), xbmc.LOGWARNING)
 
         if MONITOR.scan_finished:
             MONITOR.scan_finished = False

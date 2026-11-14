@@ -389,10 +389,10 @@ def test_repair_fills_only_missing_art(tmp_path):
     sets = [c for c in calls if c['method'].startswith('VideoLibrary.Set')]
     assert fixed == 2
     assert sets[0]['params']['tvshowid'] == 1
-    assert sets[0]['params']['art']['poster'].endswith('poster.jpg')
+    assert sets[0]['params']['art']['poster'] == 'https://img/p.jpg'
     assert sets[1]['params']['movieid'] == 9
     assert 'poster' not in sets[1]['params']['art']  # the user's own choice stays
-    assert sets[1]['params']['art']['fanart'].endswith('-fanart.jpg')
+    assert sets[1]['params']['art']['fanart'] == 'https://img/mf.jpg'
 
 
 def test_lists_sync_adds_series_and_films(wired, monkeypatch):
@@ -419,3 +419,37 @@ def test_lists_sync_adds_series_and_films(wired, monkeypatch):
     assert lib.is_in_library('series', 's1') and lib.is_in_library('series', 's2')
     assert lib.is_in_library('movie', 'm1') and not lib.is_in_library('series', 'gone')
     assert lib.store.get('series', 's1')['source'] == 'lists'
+
+
+
+def test_repair_replaces_art_the_addon_set_but_not_the_users(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show'}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_series('s1', poster='https://videoland/old.jpg')
+    # A better poster arrives (e.g. TMDb first): the old one becomes "ours".
+    lib.add_series('s1', poster='https://videoland/old.jpg')
+    entry = lib.store.get('series', 's1')
+    library_art.save_art(lib, entry, str(tmp_path / 'TV Shows' / 'Show'), {'poster': 'https://tmdb/new.jpg'},
+                         {'poster': 'poster.jpg'}, lambda url: b'y')
+    lib.store.section('series')['s1'] = entry
+    tv = str(tmp_path / 'TV Shows')
+    shows = [{'tvshowid': 1, 'file': tv + '/Show/', 'art': {'poster': 'image://https%3a%2f%2fvideoland%2fold.jpg/'}}]
+    calls = []
+
+    def rpc(payload):
+        calls.append(payload)
+        if payload['method'] == 'VideoLibrary.GetTVShows':
+            return {'result': {'tvshows': shows}}
+        return {'result': {}}
+
+    library_art.repair_kodi_art(lib, rpc=rpc)
+    sets = [c for c in calls if c['method'] == 'VideoLibrary.SetTVShowDetails']
+    assert sets[0]['params']['art']['poster'] == 'https://tmdb/new.jpg'
+
+    calls.clear()
+    shows[0]['art'] = {'poster': 'image://https%3a%2f%2fmy%2fown-choice.jpg/'}
+    library_art.repair_kodi_art(lib, rpc=rpc)
+    assert not [c for c in calls if c['method'] == 'VideoLibrary.SetTVShowDetails'
+                and 'poster' in c['params']['art']]

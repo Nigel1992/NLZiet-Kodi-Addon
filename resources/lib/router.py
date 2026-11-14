@@ -96,6 +96,8 @@ class Router:
             self.handlers['parental_clear_pin']()
         elif mode == 'toggle_profile_lock':
             self.handlers['toggle_profile_lock'](params.get('profile_id'))
+        elif mode == 'choose_tmdb':
+            self.handlers['choose_tmdb'](params.get('kind'), params.get('id'))
         elif mode == 'library_from_lists':
             self.handlers['library_from_lists'](**self._sync_options(params))
         elif mode == 'diagnostics':

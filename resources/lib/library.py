@@ -348,6 +348,10 @@ class Library:
                     shutil.move(os.path.join(root, name), target)
         shutil.rmtree(src, ignore_errors=True)
 
+    def tmdb_art_first(self):
+        """Posters/backgrounds from TMDb before NLZiet's own (default on)."""
+        return self._setting('art_tmdb_first') not in ('false', '0')
+
     def movies_root(self):
         return translate_path(self._setting('library_movies_path') or DEFAULT_MOVIES_PATH)
 
@@ -563,7 +567,7 @@ class Library:
         ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
         if ids:
             entry['ids'] = ids
-        return metadata.merge(local, extra)
+        return metadata.merge_art_first(local, extra, self.tmdb_art_first())
 
     def _enrich_episode(self, entry, local, season, number):
         if self.enricher is None or not entry.get('ids'):
@@ -661,7 +665,7 @@ class Library:
                 ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
                 if ids:
                     entry['ids'] = ids
-                movie_data = metadata.merge(movie_data, extra)
+                movie_data = metadata.merge_art_first(movie_data, extra, self.tmdb_art_first())
             except Exception as exc:
                 _log('metadata lookup failed for {}: {}'.format(movie_title, exc))
             self._save_metadata()

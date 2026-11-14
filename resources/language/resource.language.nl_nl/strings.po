@@ -1118,3 +1118,31 @@ msgstr "Lijsten: {} toegevoegd, {} verwijderd, {} mislukt"
 msgctxt "#33247"
 msgid "Add My Series and Watch Later to the library now"
 msgstr "Mijn series en Kijk later nu naar de bibliotheek"
+
+msgctxt "#33252"
+msgid "Show logos in the menus too"
+msgstr "Logo's ook in de menu's tonen"
+
+msgctxt "#33253"
+msgid "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+msgstr "Logo's van titels buiten de bibliotheek worden op de achtergrond bij TMDb opgezocht (TMDb-sleutel nodig). Lijsten wachten daar nooit op: een logo verschijnt de volgende keer dat je de lijst opent."
+
+msgctxt "#33254"
+msgid "Posters and backgrounds: TMDb first"
+msgstr "Posters en achtergronden: TMDb eerst"
+
+msgctxt "#33255"
+msgid "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+msgstr "Aan: posters en achtergronden komen van TMDb als die ze heeft, met de plaatjes van NLZiet als reserve. Beschrijvingen komen altijd eerst van NLZiet. Plaatjes die je zelf in Kodi hebt gekozen worden nooit vervangen."
+
+msgctxt "#33256"
+msgid "Choose the right TMDb title"
+msgstr "Juiste TMDb-titel kiezen"
+
+msgctxt "#33257"
+msgid "Other search term..."
+msgstr "Andere zoekterm..."
+
+msgctxt "#33258"
+msgid "TMDb title set; details and artwork are updated"
+msgstr "TMDb-titel ingesteld; gegevens en plaatjes worden bijgewerkt"

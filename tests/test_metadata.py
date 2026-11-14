@@ -287,3 +287,11 @@ def test_season_posters_saved_for_seasons_we_have(tmp_path):
     assert library_art.repair_kodi_art(lib, rpc=rpc) == 1
     season_sets = [c for c in calls if c['method'] == 'VideoLibrary.SetSeasonDetails']
     assert [c['params']['seasonid'] for c in season_sets] == [31]
+
+
+def test_tmdb_art_first_only_for_posters_and_backgrounds():
+    local = {'plot': 'Eigen', 'poster': 'https://vl/landscape.jpg', 'fanart': ''}
+    extra = {'plot': 'TMDb', 'poster': 'https://tmdb/p.jpg', 'fanart': 'https://tmdb/f.jpg'}
+    first = metadata.merge_art_first(local, extra, True)
+    assert first == {'plot': 'Eigen', 'poster': 'https://tmdb/p.jpg', 'fanart': 'https://tmdb/f.jpg'}
+    assert metadata.merge_art_first(local, extra, False)['poster'] == 'https://vl/landscape.jpg'

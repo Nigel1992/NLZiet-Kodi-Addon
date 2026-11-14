@@ -32,6 +32,7 @@ from resources.lib import diagnostics as diagnostics_mod
 from resources.lib import search_filters
 from resources.lib import parental as parental_mod
 from resources.lib import trakt_status
+from resources.lib import logo_cache as logo_cache_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -242,6 +243,9 @@ TRANSLATIONS = {
     'library_lists_busy': {'nl': 'Mijn series en Kijk later naar de bibliotheek...', 'en': 'Adding My Series and Watch Later to the library...'},
     'library_lists_done': {'nl': 'Lijsten: {} toegevoegd, {} verwijderd, {} mislukt', 'en': 'Lists: {} added, {} removed, {} failed'},
     'library_lists_now': {'nl': 'Mijn series en Kijk later nu naar de bibliotheek', 'en': 'Add My Series and Watch Later to the library now'},
+    'choose_tmdb': {'nl': 'Juiste TMDb-titel kiezen', 'en': 'Choose the right TMDb title'},
+    'choose_tmdb_other': {'nl': 'Andere zoekterm...', 'en': 'Other search term...'},
+    'choose_tmdb_done': {'nl': 'TMDb-titel ingesteld; gegevens en plaatjes worden bijgewerkt', 'en': 'TMDb title set; details and artwork are updated'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -414,6 +418,9 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'choose_tmdb': 33256,
+    'choose_tmdb_other': 33257,
+    'choose_tmdb_done': 33258,
     'library_lists_busy': 33245,
     'library_lists_done': 33246,
     'library_lists_now': 33247,
@@ -630,6 +637,8 @@ def _end_directory():
     """endOfDirectory with Kodi's sort options for list pages."""
     _add_sort_methods()
     xbmcplugin.endOfDirectory(HANDLE)
+    if _LOGO_CACHE:
+        _LOGO_CACHE.flush()
 
 
 def build_url(query):
@@ -1190,8 +1199,24 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
 _LOGOS = None
 
 
-def _library_logo(query, content=None, group=None):
-    """Clearlogo of a series/film that is in the library, for browse lists."""
+_LOGO_CACHE = None
+
+
+def _browse_logo_cache():
+    """Logo cache for titles outside the library (needs a TMDb key)."""
+    global _LOGO_CACHE
+    if _LOGO_CACHE is None:
+        if not (_setting_on('browse_logos', True) and _setting_on('library_enrich', True)
+                and (ADDON.getSetting('tmdb_api_key') or '').strip()):
+            _LOGO_CACHE = False
+        else:
+            folder = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+            _LOGO_CACHE = logo_cache_mod.LogoCache(folder)
+    return _LOGO_CACHE or None
+
+
+def _library_logo(query, content=None, group=None, title=None, metadata=None):
+    """Clearlogo for browse lists: from the library, else from the logo cache."""
     global _LOGOS
     if not isinstance(query, dict):
         return None
@@ -1211,7 +1236,22 @@ def _library_logo(query, content=None, group=None):
             _LOGOS = library_art.logo_index(library_mod.LibraryStore(os.path.join(profile, 'library.json')))
         except Exception:
             _LOGOS = {}
-    return _LOGOS.get(key)
+    logo = _LOGOS.get(key)
+    if logo:
+        return logo
+    cache = _browse_logo_cache()
+    if cache is None:
+        return None
+    if key[0] == 'movie':
+        name = (metadata or {}).get('title') or title
+        year = (metadata or {}).get('year')
+    else:
+        name = ((content or {}).get('title') if isinstance(content, dict) else None) or title
+        year = None
+    try:
+        return cache.get(key[0], name, year) or None
+    except Exception:
+        return None
 
 
 _TRAKT_INDEX = None
@@ -1260,7 +1300,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     if trakt_metadata and not item_info.get('playcount') and _trakt_watched(trakt_metadata):
         item_info['playcount'] = 1
 
-    logo = _library_logo(query, content, group)
+    logo = _library_logo(query, content, group, title, trakt_metadata)
     return kodi_ui.add_directory_item(
         ADDON,
         HANDLE,
@@ -2091,6 +2131,44 @@ def check_tmdb_key():
     xbmcgui.Dialog().ok('NLZiet', get_string(messages[status]))
 
 
+def choose_tmdb(kind, item_id):
+    """Library menu: pick the right TMDb series/film for a title by hand."""
+    kind = _library_kind(kind)
+    lib = _get_library()
+    entry = lib.store.get(kind, item_id)
+    enricher = _library_enricher()
+    if entry is None:
+        return
+    if enricher is None or not enricher.tmdb_key:
+        xbmcgui.Dialog().ok('NLZiet', get_string('tmdb_check_missing'))
+        return
+    query = entry.get('title') or ''
+    while True:
+        found = enricher.search_candidates(kind, query)
+        labels = [get_string('choose_tmdb_other')] + [
+            '{} ({})'.format(name, year) if year else name for _id, name, year in found]
+        picked = xbmcgui.Dialog().select(get_string('choose_tmdb'), labels)
+        if picked < 0:
+            return
+        if picked == 0:
+            query = xbmcgui.Dialog().input(get_string('choose_tmdb_other'), query)
+            if not query:
+                return
+            continue
+        tmdb_id = found[picked - 1][0]
+        break
+    entry['ids'] = {'tmdb': str(tmdb_id)}  # other ids are looked up again from TMDb
+    lib.store.section(kind)[str(item_id)] = entry
+    if kind == 'series':
+        lib.add_series(item_id, title=entry.get('title'))
+    else:
+        lib.add_movie(item_id, title=entry.get('title'))
+    lib.store.save()
+    repair_library_art()
+    xbmcgui.Dialog().notification('NLZiet', get_string('choose_tmdb_done'), xbmcgui.NOTIFICATION_INFO)
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def browse_library():
     """List everything that is in the Kodi library."""
     lib = _get_library()
@@ -2103,7 +2181,9 @@ def browse_library():
         title = entry.get('title') or sid
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('series'))
         remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
-            build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title})))]
+            build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title}))),
+                  (get_string('choose_tmdb'), 'RunPlugin({})'.format(
+            build_url({'mode': 'choose_tmdb', 'kind': 'series', 'id': sid})))]
         kodi_ui.add_directory_item(
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=entry.get('thumb'),
@@ -2114,7 +2194,9 @@ def browse_library():
         title = entry.get('title') or mid
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('movies'))
         remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
-            build_url({'mode': 'library_remove', 'kind': 'movie', 'id': mid, 'title': title})))]
+            build_url({'mode': 'library_remove', 'kind': 'movie', 'id': mid, 'title': title}))),
+                  (get_string('choose_tmdb'), 'RunPlugin({})'.format(
+            build_url({'mode': 'choose_tmdb', 'kind': 'movie', 'id': mid})))]
         kodi_ui.add_directory_item(
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'play', 'id': mid}, is_folder=False, thumb=entry.get('thumb'),
@@ -6948,6 +7030,7 @@ def get_route_handlers():
         'repair_library_art': repair_library_art,
         'run_diagnostics': run_diagnostics,
         'library_from_lists': library_from_lists,
+        'choose_tmdb': choose_tmdb,
         'parental_set_pin': parental_set_pin,
         'parental_clear_pin': parental_clear_pin,
         'toggle_profile_lock': toggle_profile_lock,

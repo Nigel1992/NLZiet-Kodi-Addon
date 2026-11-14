@@ -1101,3 +1101,31 @@ msgstr "Lists: {} added, {} removed, {} failed"
 msgctxt "#33247"
 msgid "Add My Series and Watch Later to the library now"
 msgstr "Add My Series and Watch Later to the library now"
+
+msgctxt "#33252"
+msgid "Show logos in the menus too"
+msgstr "Show logos in the menus too"
+
+msgctxt "#33253"
+msgid "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+msgstr "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+
+msgctxt "#33254"
+msgid "Posters and backgrounds: TMDb first"
+msgstr "Posters and backgrounds: TMDb first"
+
+msgctxt "#33255"
+msgid "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+msgstr "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+
+msgctxt "#33256"
+msgid "Choose the right TMDb title"
+msgstr "Choose the right TMDb title"
+
+msgctxt "#33257"
+msgid "Other search term..."
+msgstr "Other search term..."
+
+msgctxt "#33258"
+msgid "TMDb title set; details and artwork are updated"
+msgstr "TMDb title set; details and artwork are updated"

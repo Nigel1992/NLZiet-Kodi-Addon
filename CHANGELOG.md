@@ -1,6 +1,15 @@
 # Changelog
 
-> **Latest Version:** v1.8.2 (November 14, 2026)
+> **Latest Version:** v1.9.0 (November 14, 2026)
+
+## [1.9.0] - 2026-11-14
+
+### Added
+- **Posters and backgrounds: TMDb first** (Settings → Library → Extra metadata, on by default): posters and backgrounds come from TMDb when it has them, with the service's own images as fallback; descriptions stay service-first. Artwork the add-on set earlier in Kodi is replaced when a better image is known (Kodi gets the image url, so the change shows at once); artwork you chose yourself in Kodi is never replaced.
+- **Choose the right TMDb title** (Library menu, context menu of a title): pick the matching TMDb series or film by hand, or search with another term, when the automatic match missed it. Titles with a trailing year or "- Seizoen N" now also match automatically.
+- **Season posters**: each season gets its own poster from TMDb (`season01-poster.jpg`), also for seasons Kodi already scanned.
+- **Logos in the menus**: logos of titles outside the library are looked up on TMDb in the background and appear the next time a list is opened (setting "Show logos in the menus too", needs the TMDb key).
+- **My Series and Watch Later in the library**: "Add My Series and Watch Later to the library now" (Library menu and settings), plus an automatic option and an optional removal of titles that left these lists. An episode in Watch Later adds its series.
 
 ## [1.8.2] - 2026-11-14
 
