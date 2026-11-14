@@ -1146,3 +1146,19 @@ msgstr "Andere zoekterm..."
 msgctxt "#33258"
 msgid "TMDb title set; details and artwork are updated"
 msgstr "TMDb-titel ingesteld; gegevens en plaatjes worden bijgewerkt"
+
+msgctxt "#33259"
+msgid "Folders"
+msgstr "Mappen"
+
+msgctxt "#33260"
+msgid "Lists to the library"
+msgstr "Lijsten naar de bibliotheek"
+
+msgctxt "#33261"
+msgid "Automatic updates"
+msgstr "Automatisch bijwerken"
+
+msgctxt "#33262"
+msgid "Maintenance"
+msgstr "Onderhoud"

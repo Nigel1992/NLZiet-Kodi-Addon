@@ -1129,3 +1129,19 @@ msgstr "Other search term..."
 msgctxt "#33258"
 msgid "TMDb title set; details and artwork are updated"
 msgstr "TMDb title set; details and artwork are updated"
+
+msgctxt "#33259"
+msgid "Folders"
+msgstr ""
+
+msgctxt "#33260"
+msgid "Lists to the library"
+msgstr ""
+
+msgctxt "#33261"
+msgid "Automatic updates"
+msgstr ""
+
+msgctxt "#33262"
+msgid "Maintenance"
+msgstr ""

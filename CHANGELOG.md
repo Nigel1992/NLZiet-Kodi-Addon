@@ -1,6 +1,14 @@
 # Changelog
 
-> **Latest Version:** v1.9.0 (November 14, 2026)
+> **Latest Version:** v1.9.1 (November 14, 2026)
+
+## [1.9.1] - 2026-11-14
+
+### Changed
+- **Settings → Library** is now right below Account and split into groups with a heading: Folders, Lists to the library, Automatic updates, Extra metadata and Maintenance.
+
+### Development
+- Modules shared with the other add-on are listed in `scripts/sync-shared.py` and pinned in `SHARED.lock`; a test fails when one is changed without copying it to the other add-on.
 
 ## [1.9.0] - 2026-11-14
 

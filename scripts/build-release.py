@@ -12,7 +12,7 @@ output = root / 'build' / f'{addon_id}-{version}.zip'
 output.parent.mkdir(exist_ok=True)
 files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).decode().split('\0')
 skip_prefixes = ('tests/', 'scripts/', '.github/', 'build/')
-skip_names = {'.gitignore', 'requirements.txt'}
+skip_names = {'.gitignore', 'requirements.txt', 'SHARED.lock'}
 with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
     for name in sorted(filter(None, files)):
         if name.startswith(skip_prefixes) or name in skip_names or name.endswith(('.zip', '.sha256')):

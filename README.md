@@ -107,6 +107,10 @@ N when possible)
 - [X] **Accessibility improvements for screen readers** (text instead of emoji/colour-only markers, status words in diagnostics)  
 - [X] **Add unit tests for routing, playback metadata, and Trakt scrobbling**  
 
+## 🧑‍💻 Development
+
+Some modules are shared with the Videoland add-on (`metadata.py`, `library_art.py`, `errors.py`, `diagnostics.py`, `search_filters.py`, `logo_cache.py` in `resources/lib/`). After changing one, copy it to the other add-on with `python3 scripts/sync-shared.py <path to the other add-on>`; `tests/test_shared_modules.py` fails until you do. Menu icons are rebuilt with `python3 scripts/build-menu-icons.py`, the installable zip with `python3 scripts/build-release.py`.
+
 ## 💖 Support the Project
 
 All donations go towards your chosen charity. You can pick any charity you'd like, and 5% is retained due to Ko-Fi fees. As a thank you, your name will be listed as a supporter/donor in a GitHub project. Feel free to email me at thedjskywalker@gmail.com for proof! :)  
