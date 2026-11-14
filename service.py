@@ -10,11 +10,28 @@ from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import metadata as metadata_mod
 from resources.lib import watch_sync
 from resources.lib import diagnostics as diagnostics_mod
+from resources.lib import playback_extras
+from resources.lib import trakt_status
+from resources.lib import reminders as reminders_mod
 
 ADDON = xbmcaddon.Addon()
 
 
 ADDON_ID = 'plugin.video.nlziet'
+
+
+def _maybe_play_next(content_id):
+    """Binge: start the next episode, unless the user pressed Stop after this
+    one, or the Up Next add-on is installed (then Up Next handles it)."""
+    if not _setting_on('autoplay_next', False):
+        return
+    import xbmcgui
+    if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
+        return
+    if xbmc.getCondVisibility('System.HasAddon(service.upnext)'):
+        return
+    xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
+        ADDON_ID, content_id))
 
 
 def _send_watched(content_id, watched):
@@ -84,7 +101,20 @@ class PlaybackFollower(xbmc.Player):
         prop = watch_sync.PLAYING_PROPERTY.format('nlziet')
         self.watch.start(watch_sync.parse_playing(window.getProperty(prop)))
         window.clearProperty(prop)
+        window.clearProperty('nlziet.stop_after')
         self.sample()
+        self._scrobble('start')
+        # Preferred audio/subtitle language.
+        audio = _setting('preferred_audio', 'off')
+        sub = _setting('preferred_subtitle', 'off')
+        if audio not in ('', 'off') or sub not in ('', 'off'):
+            try:
+                result = playback_extras.apply_language(_rpc, audio, sub)
+                xbmc.log('NLZiet service: language {}'.format(result), xbmc.LOGINFO)
+            except Exception as exc:
+                xbmc.log('NLZiet service: language select failed: {}'.format(exc), xbmc.LOGWARNING)
+        if _setting_on('auto_subtitle_search', False):
+            self._maybe_find_subtitles()
 
     def sample(self):
         if not self.watch.key:
@@ -95,16 +125,64 @@ class PlaybackFollower(xbmc.Player):
         except RuntimeError:
             pass
 
-    def _done(self):
-        key = self.watch.finish()
-        if key:
-            _send_watched(key, True)
+    def _done(self, natural):
+        self._scrobble('stop')
+        key = self.watch.key
+        try:
+            share = max(0.5, min(0.99, _int_setting('watched_threshold', 90) / 100.0))
+        except Exception:
+            share = 0.9
+        watched = self.watch.finish(share)
+        if watched:
+            _send_watched(watched, True)
+        if natural and key:
+            _maybe_play_next(key)
 
     def onPlayBackStopped(self):
-        self._done()
+        self._done(False)
 
     def onPlayBackEnded(self):
-        self._done()
+        self._done(True)
+
+    def _maybe_find_subtitles(self):
+        """Open Kodi's subtitle search when the video has no subtitles of its own."""
+        try:
+            if MONITOR.waitForAbort(3):
+                return
+            if not self.isPlayingVideo() or playback_extras.subtitles_present(_rpc):
+                return
+            xbmc.executebuiltin('ActivateWindow(subtitlesearch)')
+        except Exception as exc:
+            xbmc.log('NLZiet service: subtitle search skipped: {}'.format(exc), xbmc.LOGWARNING)
+
+    def _scrobble(self, action):
+        if not _setting_on('trakt_scrobble', False):
+            return
+        try:
+            import json, xbmcaddon, xbmcgui
+            trakt_addon = xbmcaddon.Addon('script.trakt')
+        except Exception:
+            return
+        token = trakt_status.access_token(trakt_addon)
+        client_id = trakt_status.official_client_id(trakt_addon.getAddonInfo('path') or '')
+        if not token or not client_id:
+            return
+        raw = xbmcgui.Window(10000).getProperty('nlziet.now_meta')
+        try:
+            meta = json.loads(raw) if raw else {}
+        except ValueError:
+            meta = {}
+        media = trakt_status.scrobble_media(meta.get('showtitle'), meta.get('season'),
+                                            meta.get('episode'), meta.get('title'), meta.get('year'))
+        if not media:
+            return
+        progress = 0.0
+        if self.watch.total:
+            progress = max(0.0, min(100.0, self.watch.position / self.watch.total * 100.0))
+        try:
+            trakt_status.scrobble(token, client_id, action, media, progress)
+        except Exception:
+            pass
 
 
 MONITOR = LibraryMonitor()
@@ -166,6 +244,24 @@ def _library_update_due():
     return (time.time() - last) >= hours * 3600
 
 
+def _reminders_path():
+    return os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'epg_reminders.json')
+
+
+def _check_reminders():
+    import xbmcgui
+
+    def _text(row):
+        name = row.get('title') or ''
+        channel = row.get('channel_name') or ''
+        if channel:
+            return ADDON.getLocalizedString(33337).format(name, channel)
+        return ADDON.getLocalizedString(33336).format(name)
+
+    for row in reminders_mod.due(_reminders_path()):
+        xbmcgui.Dialog().notification('NLZiet', _text(row), xbmcgui.NOTIFICATION_INFO, 9000)
+
+
 def _daily_check_due():
     if not _setting_on('daily_check', True):
         return False
@@ -184,6 +280,7 @@ def main():
     last_library_trigger = 0
     last_minute = 0
     last_daily = 0
+    last_notify = 0
     legacy_checked = False
     player = PlaybackFollower()
     while not MONITOR.abortRequested():
@@ -196,10 +293,21 @@ def main():
             continue
         last_minute = now
 
+        # EPG reminders about to start (checked here, no plugin round-trip).
+        try:
+            _check_reminders()
+        except Exception as exc:
+            xbmc.log('NLZiet service: reminder check failed: {}'.format(exc), xbmc.LOGWARNING)
+
         if (now - started >= LIBRARY_STARTUP_DELAY + 300 and now - last_daily >= 6 * 3600
                 and not xbmc.Player().isPlaying() and _daily_check_due()):
             last_daily = now
             xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=daily_check&background=1)'.format(ADDON_ID))
+
+        if (now - started >= LIBRARY_STARTUP_DELAY and now - last_notify >= 3 * 3600
+                and not xbmc.Player().isPlaying() and _setting_on('notify_new_episodes', True)):
+            last_notify = now
+            xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=notify_new&background=1)'.format(ADDON_ID))
 
         # A scan asked for while Kodi was busy runs as soon as it is free.
         library_art.run_pending_scan(library_mod.scan_flag_path())

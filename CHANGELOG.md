@@ -1,7 +1,41 @@
 # Changelog
 
-> **Latest Version:** v2.0.0 (November 14, 2026)
+> **Latest Version:** v2.3.0 (November 14, 2026)
 
+## [2.3.0] - 2026-11-14
+
+### Added
+- **EPG-herinnering**: in de tv-gids kun je op een toekomstig programma "Herinnering instellen"; vlak voor het begint krijg je een Kodi-melding. De controle draait op de achtergrond, elke minuut.
+- **Trakt-kijklijst importeren**: een knop (Instellingen → Synchronisatie) die de series en films van je Trakt-kijklijst opzoekt in NLZiet en de gevonden titels aan je bibliotheek toevoegt.
+- **Ondertitels zoeken als de stream er geen heeft**: optioneel opent de addon automatisch de ondertitelzoeker van Kodi, zodat je eigen ondertitel-addon (bijv. OpenSubtitles) er een kan vinden (Instellingen → Afspelen).
+
+### Development
+- Nieuwe module `reminders.py` met tests; Trakt-watchlist-import en `subtitles_present`-helper.
+## [2.2.0] - 2026-11-14
+
+### Added
+- **Hele serie als bekeken markeren**: contextmenu op een serie in je bibliotheek stuurt alle afleveringen als bekeken naar NLZiet.
+- **Melding bij nieuwe afleveringen**: een Kodi-melding als een serie die je volgt een nieuwe aflevering krijgt (Instellingen → Synchronisatie; achtergrondcontrole elke paar uur).
+- **Verloopt binnenkort**: een lijst en widget met titels uit je lijsten die binnenkort van NLZiet verdwijnen, met "nog X dagen".
+- **Favoriete kanalen**: een snelle lijst met je ingeschakelde kanalen vooraan, in het hoofdmenu.
+- **Aanbevolen / Nieuw-widgets**: lijsten op basis van NLZiet's eigen aanbevelingen en placement-rijen.
+- **Verder kijken (beide diensten)**: een widget die NLZiet's Verder kijken toont met een snelkoppeling naar die van Videoland.
+- **Instelbaar bekeken-percentage**: kies bij hoeveel procent een video als bekeken naar NLZiet gaat (Instellingen → Synchronisatie, standaard 90%).
+- **Live Trakt-scrobbelen**: geef Trakt tijdens het kijken live door wat er speelt (vereist de aangemelde Trakt-addon).
+
+### Development
+- Nieuwe gedeelde `watch_history` al in gebruik; extra Trakt-scrobble-helpers en tests.
+## [2.1.0] - 2026-11-14
+
+### Added
+- **Binge-modus**: nieuwe schakelaar "Volgende aflevering automatisch afspelen" (Instellingen → Afspelen). Als een bibliotheek-aflevering eindigt, start de volgende vanzelf. Heb je Up Next, laat dit uit en laat Up Next het doen.
+- **Stop na deze aflevering**: via het contextmenu/een actie kun je de automatische volgende aflevering voor die avond uitzetten.
+- **Willekeurige aflevering (shuffle)**: contextmenu op een serie in je bibliotheek → "Willekeurige aflevering afspelen".
+- **Vaste taal- en ondertitelvoorkeur**: kies een gesproken taal en/of ondertiteltaal die automatisch gekozen wordt als een video start (Instellingen → Afspelen).
+- **Kijkgeschiedenis**: een lokale lijst (alleen op dit apparaat) van wat je gekeken hebt, in het hoofdmenu en als widget; met een knop om te wissen.
+
+### Development
+- Nieuwe gedeelde module `watch_history.py` en uitbreiding van `playback_extras.py` (taalkeuze), gedeeld met Videoland. Extra tests.
 ## [2.0.0] - 2026-11-14
 
 ### Added

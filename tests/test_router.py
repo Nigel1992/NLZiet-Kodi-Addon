@@ -24,6 +24,9 @@ EXPECTED_HANDLER_NAMES = {
     'check_tmdb_key', 'repair_library_art', 'run_diagnostics', 'search_filter',
     'parental_set_pin', 'parental_clear_pin', 'toggle_profile_lock', 'library_from_lists', 'choose_tmdb',
     'widgets_menu', 'widget_list', 'backup_lists', 'restore_lists', 'daily_check', 'remote_watched',
+    'play_next', 'toggle_stop_after', 'shuffle_series', 'browse_history', 'clear_history', 'record_history',
+    'mark_series_watched_route', 'notify_new',
+    'browse_expiring', 'both_continue', 'favourite_channels', 'check_reminders', 'import_trakt_watchlist',
 }
 
 

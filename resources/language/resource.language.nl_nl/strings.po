@@ -1274,3 +1274,223 @@ msgstr "Aflevering {0}"
 msgctxt "#33290"
 msgid "Watched status sent to NLZiet"
 msgstr "Kijkstatus naar NLZiet gestuurd"
+
+msgctxt "#33291"
+msgid "Automatically play the next episode (binge)"
+msgstr "Volgende aflevering automatisch afspelen (binge)"
+
+msgctxt "#33292"
+msgid "When an episode from your library ends, the next one starts by itself. With the Up Next add-on installed, leave this off and let Up Next do it."
+msgstr "Als een aflevering uit je bibliotheek eindigt, start de volgende vanzelf. Heb je de Up Next-addon, laat dit dan uit en laat Up Next het doen."
+
+msgctxt "#33293"
+msgid "Stop after this episode"
+msgstr "Stop na deze aflevering"
+
+msgctxt "#33294"
+msgid "Keep playing after this episode"
+msgstr "Doorgaan na deze aflevering"
+
+msgctxt "#33295"
+msgid "The next episode will not start automatically"
+msgstr "De volgende aflevering start niet automatisch"
+
+msgctxt "#33296"
+msgid "Automatic next episode is on again"
+msgstr "Automatisch volgende aflevering staat weer aan"
+
+msgctxt "#33297"
+msgid "Play a random episode"
+msgstr "Willekeurige aflevering afspelen"
+
+msgctxt "#33298"
+msgid "No episodes found to pick from"
+msgstr "Geen afleveringen gevonden om uit te kiezen"
+
+msgctxt "#33299"
+msgid "Watch history"
+msgstr "Kijkgeschiedenis"
+
+msgctxt "#33300"
+msgid "Nothing watched yet"
+msgstr "Nog niets gekeken"
+
+msgctxt "#33301"
+msgid "Clear watch history"
+msgstr "Kijkgeschiedenis wissen"
+
+msgctxt "#33302"
+msgid "Watch history cleared"
+msgstr "Kijkgeschiedenis gewist"
+
+msgctxt "#33303"
+msgid "Preferred audio language"
+msgstr "Voorkeur gesproken taal"
+
+msgctxt "#33304"
+msgid "Automatically choose this spoken language when a video starts, if it is available."
+msgstr "Kies deze gesproken taal automatisch als een video start, als die beschikbaar is."
+
+msgctxt "#33305"
+msgid "Preferred subtitle language"
+msgstr "Voorkeur ondertiteltaal"
+
+msgctxt "#33306"
+msgid "Automatically turn on subtitles in this language when a video starts, if available."
+msgstr "Zet automatisch ondertiteling in deze taal aan als een video start, als die beschikbaar is."
+
+msgctxt "#33307"
+msgid "Off"
+msgstr "Uit"
+
+msgctxt "#33308"
+msgid "Dutch"
+msgstr "Nederlands"
+
+msgctxt "#33309"
+msgid "English"
+msgstr "Engels"
+
+msgctxt "#33310"
+msgid "Original"
+msgstr "Origineel"
+
+msgctxt "#33311"
+msgid "Mark whole series as watched"
+msgstr "Hele serie als bekeken markeren"
+
+msgctxt "#33312"
+msgid "{0} episodes marked as watched"
+msgstr "{0} afleveringen als bekeken gemarkeerd"
+
+msgctxt "#33313"
+msgid "Marking as watched..."
+msgstr "Bezig met markeren..."
+
+msgctxt "#33314"
+msgid "New episode: {0}"
+msgstr "Nieuwe aflevering: {0}"
+
+msgctxt "#33315"
+msgid "New season of {0}"
+msgstr "Nieuw seizoen van {0}"
+
+msgctxt "#33316"
+msgid "Notify about new episodes"
+msgstr "Melding bij nieuwe afleveringen"
+
+msgctxt "#33317"
+msgid "Show a Kodi notification when a series you follow gets a new episode or season."
+msgstr "Toon een Kodi-melding als een serie die je volgt een nieuwe aflevering of seizoen krijgt."
+
+msgctxt "#33318"
+msgid "Recommended for you"
+msgstr "Aanbevolen voor jou"
+
+msgctxt "#33319"
+msgid "New on NLZiet"
+msgstr "Nieuw op NLZiet"
+
+msgctxt "#33320"
+msgid "Leaving soon"
+msgstr "Verloopt binnenkort"
+
+msgctxt "#33321"
+msgid "{0} days left"
+msgstr "Nog {0} dagen"
+
+msgctxt "#33322"
+msgid "Leaves tomorrow"
+msgstr "Verloopt morgen"
+
+msgctxt "#33323"
+msgid "Leaves today"
+msgstr "Verloopt vandaag"
+
+msgctxt "#33324"
+msgid "Nothing is leaving the service soon"
+msgstr "Er verloopt binnenkort niets"
+
+msgctxt "#33325"
+msgid "Favourite channels"
+msgstr "Favoriete kanalen"
+
+msgctxt "#33326"
+msgid "Continue watching (both services)"
+msgstr "Verder kijken (beide diensten)"
+
+msgctxt "#33327"
+msgid "Open Videoland: Continue watching"
+msgstr "Open Videoland: Verder kijken"
+
+msgctxt "#33328"
+msgid "Counts as watched at"
+msgstr "Telt als bekeken bij"
+
+msgctxt "#33329"
+msgid "How much of a video you must see before it is sent to NLZiet as watched."
+msgstr "Hoeveel van een video je gezien moet hebben voordat die als bekeken naar NLZiet gaat."
+
+msgctxt "#33330"
+msgid "Live Trakt scrobbling"
+msgstr "Live Trakt-scrobbelen"
+
+msgctxt "#33331"
+msgid "Tell Trakt in real time what you are watching (needs the Trakt add-on signed in)."
+msgstr "Geef Trakt live door wat je kijkt (hiervoor moet de Trakt-addon aangemeld zijn)."
+
+msgctxt "#33332"
+msgid "Set a reminder"
+msgstr "Herinnering instellen"
+
+msgctxt "#33333"
+msgid "Remove reminder"
+msgstr "Herinnering verwijderen"
+
+msgctxt "#33334"
+msgid "Reminder set for {0}"
+msgstr "Herinnering ingesteld voor {0}"
+
+msgctxt "#33335"
+msgid "Reminder removed"
+msgstr "Herinnering verwijderd"
+
+msgctxt "#33336"
+msgid "Starting now: {0}"
+msgstr "Begint nu: {0}"
+
+msgctxt "#33337"
+msgid "Soon on {1}: {0}"
+msgstr "Zo op {1}: {0}"
+
+msgctxt "#33338"
+msgid "Import Trakt watchlist to library"
+msgstr "Trakt-kijklijst naar bibliotheek importeren"
+
+msgctxt "#33339"
+msgid "Look up the shows and films on your Trakt watchlist in NLZiet and add the matches to your library."
+msgstr "Zoek de series en films van je Trakt-kijklijst op in NLZiet en voeg de gevonden titels toe aan je bibliotheek."
+
+msgctxt "#33340"
+msgid "Sign in with the Trakt add-on first"
+msgstr "Meld je eerst aan met de Trakt-addon"
+
+msgctxt "#33341"
+msgid "Your Trakt watchlist is empty"
+msgstr "Je Trakt-kijklijst is leeg"
+
+msgctxt "#33342"
+msgid "Importing from Trakt..."
+msgstr "Bezig met importeren van Trakt..."
+
+msgctxt "#33343"
+msgid "Added {0} titles, {1} not found on NLZiet"
+msgstr "{0} titels toegevoegd, {1} niet gevonden op NLZiet"
+
+msgctxt "#33344"
+msgid "Find subtitles if the stream has none"
+msgstr "Ondertitels zoeken als de stream er geen heeft"
+
+msgctxt "#33345"
+msgid "When a video has no subtitles of its own, open Kodi's subtitle search so your subtitle add-on (e.g. OpenSubtitles) can find one."
+msgstr "Als een video geen eigen ondertiteling heeft, open de ondertitelzoeker van Kodi zodat je ondertitel-addon (bijv. OpenSubtitles) er een kan zoeken."

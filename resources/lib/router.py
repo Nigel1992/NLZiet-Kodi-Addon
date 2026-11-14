@@ -43,6 +43,34 @@ class Router:
         elif mode == 'remote_watched':
             self.handlers['remote_watched'](params.get('id'), params.get('watched', '1'),
                                             params.get('background') == '1')
+        elif mode == 'play_next':
+            self.handlers['play_next'](params.get('id'), params.get('background') == '1')
+        elif mode == 'toggle_stop_after':
+            self.handlers['toggle_stop_after']()
+        elif mode == 'shuffle':
+            self.handlers['shuffle_series'](params.get('series_id'))
+        elif mode == 'history':
+            self.handlers['browse_history']()
+        elif mode == 'clear_history':
+            self.handlers['clear_history']()
+        elif mode == 'record_history':
+            self.handlers['record_history'](params.get('id'), params.get('title', ''),
+                                            params.get('subtitle', ''), params.get('thumb', ''),
+                                            params.get('media_type', ''), params.get('background') == '1')
+        elif mode == 'mark_series_watched':
+            self.handlers['mark_series_watched_route'](params.get('series_id'))
+        elif mode == 'notify_new':
+            self.handlers['notify_new'](params.get('background') == '1')
+        elif mode == 'expiring':
+            self.handlers['browse_expiring']()
+        elif mode == 'both_continue':
+            self.handlers['both_continue']()
+        elif mode == 'favourite_channels':
+            self.handlers['favourite_channels']()
+        elif mode == 'check_reminders':
+            self.handlers['check_reminders'](params.get('background') == '1')
+        elif mode == 'import_trakt':
+            self.handlers['import_trakt_watchlist'](params.get('background') == '1')
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
         elif mode == 'my_list':

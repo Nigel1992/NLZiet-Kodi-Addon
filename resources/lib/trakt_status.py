@@ -134,3 +134,67 @@ def load_index(cache_path, token, client_id, http=None, now=None):
     except Exception:
         pass
     return index
+
+
+def scrobble(token, client_id, action, media, progress):
+    """Tell Trakt what is playing now (live scrobble).
+
+    ``action`` is 'start', 'pause' or 'stop'. ``media`` is a dict with either
+    {'movie': {...}} or {'show': {...}, 'episode': {...}}. Returns True on a
+    2xx answer. Any problem is swallowed so playback is never affected.
+    """
+    if not token or not client_id or action not in ('start', 'pause', 'stop'):
+        return False
+    payload = dict(media or {})
+    try:
+        payload['progress'] = max(0.0, min(100.0, float(progress)))
+    except (TypeError, ValueError):
+        payload['progress'] = 0.0
+    data = json.dumps(payload).encode('utf-8')
+    request = urllib.request.Request(API + '/scrobble/' + action, data=data, method='POST', headers={
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'trakt-api-version': '2',
+        'trakt-api-key': client_id,
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            return 200 <= response.status < 300
+    except Exception:
+        return False
+
+
+def scrobble_media(showtitle, season, episode, title, year=None):
+    """Build the Trakt scrobble media dict from the fields the add-on knows."""
+    def _int(value):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    if showtitle and _int(season) is not None and _int(episode) is not None:
+        return {'show': {'title': showtitle},
+                'episode': {'season': _int(season), 'number': _int(episode)}}
+    name = title or showtitle
+    if not name:
+        return None
+    movie = {'title': name}
+    if _int(year):
+        movie['year'] = _int(year)
+    return {'movie': movie}
+
+
+def official_client_id(trakt_addon_path):
+    """Decode the public Trakt client id bundled with script.trakt, or ''."""
+    try:
+        import os
+        with open(os.path.join(trakt_addon_path, 'resources', 'lib', 'traktapi.py'),
+                  'r', encoding='utf-8') as source_file:
+            source = source_file.read()
+        match = re.search(r'__client_id:\s*str\s*=\s*\[([^\]]+)\]', source)
+        if not match:
+            return ''
+        encoded = [int(value) for value in re.findall(r'\d+', match.group(1))]
+        return ''.join(chr(value ^ 0x42) for value in encoded)
+    except Exception:
+        return ''
