@@ -139,6 +139,26 @@
         </setting>
       </group>
       <group id="2" label="">
+        <setting id="library_lists_sync" type="boolean" label="33248" help="33249">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_lists_remove" type="boolean" label="33250" help="33251">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="enable" setting="library_lists_sync">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_from_lists_now" type="action" label="33247" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=library_from_lists)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
         <setting id="library_auto_update" type="boolean" label="33201" help="">
           <level>0</level>
           <default>true</default>

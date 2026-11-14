@@ -290,7 +290,11 @@ class Enricher:
         if not detail:
             return {}
         external = detail.get("external_ids") or {}
+        season_posters = {str(season.get("season_number")): self._image(season.get("poster_path"))
+                          for season in detail.get("seasons") or []
+                          if season.get("poster_path") and season.get("season_number") is not None}
         return {
+            "season_posters": season_posters,
             "clearlogo": self._tmdb_logo("tv", tmdb_id),
             "plot": detail.get("overview") or "",
             "poster": self._image(detail.get("poster_path")),

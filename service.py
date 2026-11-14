@@ -73,7 +73,7 @@ def _library_update_due():
         store = library_mod.LibraryStore(os.path.join(profile, 'library.json'))
     except Exception:
         return False
-    if not store.section('series') and not store.section('movie'):
+    if not store.section('series') and not store.section('movie') and not _setting_on('library_lists_sync', False):
         return False
     hours = max(1, _int_setting('library_update_hours', 12))
     last = store.data.get('last_update') or 0

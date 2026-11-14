@@ -393,3 +393,29 @@ def test_repair_fills_only_missing_art(tmp_path):
     assert sets[1]['params']['movieid'] == 9
     assert 'poster' not in sets[1]['params']['art']  # the user's own choice stays
     assert sets[1]['params']['art']['fanart'].endswith('-fanart.jpg')
+
+
+def test_lists_sync_adds_series_and_films(wired, monkeypatch):
+    default, api, lib, tmp, jobs, rec = wired
+
+    class ListAPI:
+        def get_my_series(self):
+            return [{'id': 's1', 'title': 'Show', 'type': 'series'}]
+
+        def get_watch_later(self):
+            return [{'id': 'm1', 'title': 'Film', 'type': 'movie'},
+                    {'id': 'e9', 'title': 'Show', 'type': 'episode', 'seriesId': 's1'},
+                    {'id': 'e7', 'title': 'Other', 'type': 'episode', 'raw': {'seriesId': 's2'}}]
+
+    api.series.update({'s1': {'title': 'Show'}, 's2': {'title': 'Other'}})
+    api.episodes.update({'s1': [_daily('a', '2026-01-01')], 's2': [_daily('b', '2026-01-02')]})
+    api.content['m1'] = {'title': 'Film', 'raw': {}}
+    monkeypatch.setattr(default, '_setting_on', lambda name, default_value=False: name == 'library_lists_remove')
+    lib.store.section('series')['gone'] = {'title': 'Weg', 'source': 'lists'}
+
+    added, removed, failed = default.sync_lists_to_library(lib, api=ListAPI())
+
+    assert (added, removed, failed) == (3, 1, 0)
+    assert lib.is_in_library('series', 's1') and lib.is_in_library('series', 's2')
+    assert lib.is_in_library('movie', 'm1') and not lib.is_in_library('series', 'gone')
+    assert lib.store.get('series', 's1')['source'] == 'lists'

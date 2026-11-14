@@ -239,6 +239,9 @@ TRANSLATIONS = {
     'parental_profile_unlocked': {'nl': 'Dit profiel vraagt niet meer om de pincode', 'en': 'This profile no longer asks for the PIN'},
     'parental_kids': {'nl': 'Kids', 'en': 'Kids'},
     'parental_pin_tag': {'nl': 'pincode', 'en': 'PIN'},
+    'library_lists_busy': {'nl': 'Mijn series en Kijk later naar de bibliotheek...', 'en': 'Adding My Series and Watch Later to the library...'},
+    'library_lists_done': {'nl': 'Lijsten: {} toegevoegd, {} verwijderd, {} mislukt', 'en': 'Lists: {} added, {} removed, {} failed'},
+    'library_lists_now': {'nl': 'Mijn series en Kijk later nu naar de bibliotheek', 'en': 'Add My Series and Watch Later to the library now'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -411,6 +414,9 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'library_lists_busy': 33245,
+    'library_lists_done': 33246,
+    'library_lists_now': 33247,
     'parental_enter_pin': 33222,
     'parental_enter_current_pin': 33223,
     'parental_new_pin': 33224,
@@ -1923,11 +1929,117 @@ def export_series_library(series_id):
     library_add('series', series_id)
 
 
+def _list_library_titles(api):
+    """Series and films from My Series and Watch Later as
+    [(kind, id, title, poster)]; an episode in Watch Later adds its series."""
+    titles, seen = [], set()
+
+    def add(kind, item_id, title, poster):
+        key = (kind, str(item_id or ''))
+        if key[1] and key not in seen:
+            seen.add(key)
+            titles.append((kind, key[1], title or '', poster or ''))
+
+    for item in api.get_my_series() or []:
+        if isinstance(item, dict):
+            add('series', item.get('id'), _item_title(item), item.get('thumb') or kodi_ui.pick_portrait_thumb(item))
+    for item in api.get_watch_later() or []:
+        if not isinstance(item, dict):
+            continue
+        group = _content_group(item)
+        if group == 'movies':
+            add('movie', item.get('id'), _item_title(item), item.get('thumb') or kodi_ui.pick_portrait_thumb(item))
+        elif group in ('episodes', 'series'):
+            raw = item.get('raw') if isinstance(item.get('raw'), dict) else {}
+            collection = item.get('collection') if isinstance(item.get('collection'), dict) else {}
+            series_id = (item.get('seriesId') or raw.get('seriesId') or collection.get('id')
+                         or (item.get('id') if group == 'series' else None))
+            if not series_id:
+                try:
+                    series_id = _find_series_id_by_title(api, _item_title(item))
+                except Exception:
+                    series_id = None
+            add('series', series_id, _item_title(item), '')
+    return titles
+
+
+def sync_lists_to_library(lib, api=None, progress=None):
+    """Add My Series and Watch Later titles that are not in the library yet;
+    optionally remove titles that came from these lists and left them.
+    Returns (added, removed, failed)."""
+    api = api or get_api_instance()
+    titles = _list_library_titles(api)
+    added = removed = failed = 0
+    wanted = set()
+    for index, (kind, item_id, title, poster) in enumerate(titles):
+        wanted.add((kind, item_id))
+        if lib.is_in_library(kind, item_id):
+            continue
+        if progress is not None:
+            progress(index, len(titles), title)
+        try:
+            if kind == 'series':
+                result = lib.add_series(item_id, title=title, poster=poster or None)
+            else:
+                result = lib.add_movie(item_id, title=title, poster=poster or None)
+        except Exception as e:
+            xbmc.log(f"NLZiet list title {item_id} not added: {e}", xbmc.LOGWARNING)
+            result = {}
+        if result.get('ok'):
+            entry = lib.store.get(kind, item_id)
+            if entry is not None:
+                entry['source'] = 'lists'
+            added += 1
+        else:
+            failed += 1
+    if _setting_on('library_lists_remove', False) and titles:
+        for kind in ('series', 'movie'):
+            for item_id, entry in list(lib.items(kind)):
+                if entry.get('source') == 'lists' and (kind, item_id) not in wanted:
+                    if lib.remove(kind, item_id, save=False):
+                        removed += 1
+    lib.store.save()
+    return added, removed, failed
+
+
+def library_from_lists(background=False):
+    """Menu/settings action: put My Series and Watch Later in the Kodi library."""
+    if background and xbmc.Player().isPlaying():
+        return
+    lib = _get_library()
+    dialog = None
+    if not background and hasattr(xbmcgui, 'DialogProgressBG'):
+        dialog = xbmcgui.DialogProgressBG()
+        dialog.create('NLZiet', get_string('library_lists_busy'))
+
+    def report(index, total, title):
+        if dialog is not None and total:
+            dialog.update(int(index * 100 / total), 'NLZiet', title)
+
+    try:
+        added, removed, failed = sync_lists_to_library(lib, progress=report)
+    finally:
+        if dialog is not None:
+            dialog.close()
+    if added or removed:
+        library_mod.run_library_jobs(scan=True, clean=bool(removed) and _setting_on('library_clean_after', True))
+    if not background or (added or removed):
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_lists_done', added, removed, failed),
+                                      xbmcgui.NOTIFICATION_INFO)
+    if not background:
+        xbmc.executebuiltin('Container.Refresh')
+
+
 def library_update(background=False):
     """Refresh every series and movie in the library."""
     if background and xbmc.Player().isPlaying():
         return
     lib = _get_library()
+    if _setting_on('library_lists_sync', False):
+        try:
+            sync_lists_to_library(lib)
+        except Exception as e:
+            xbmc.log(f"NLZiet list sync skipped: {e}", xbmc.LOGWARNING)
     progress = None
     if not background and hasattr(xbmcgui, 'DialogProgressBG'):
         progress = xbmcgui.DialogProgressBG()
@@ -1983,6 +2095,8 @@ def browse_library():
     """List everything that is in the Kodi library."""
     lib = _get_library()
     add_directory_item(get_string('library_update_now'), {'mode': 'library_update'}, is_folder=False, is_playable=False)
+    add_directory_item(get_string('library_lists_now'), {'mode': 'library_from_lists'}, is_folder=False, is_playable=False,
+                       thumb=_pick_menu_png_any('myseries'))
     series = lib.items('series')
     movies = lib.items('movie')
     for sid, entry in series:
@@ -6833,6 +6947,7 @@ def get_route_handlers():
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
         'run_diagnostics': run_diagnostics,
+        'library_from_lists': library_from_lists,
         'parental_set_pin': parental_set_pin,
         'parental_clear_pin': parental_clear_pin,
         'toggle_profile_lock': toggle_profile_lock,

@@ -106,6 +106,31 @@ def art_names(kind, folder):
             "clearlogo": folder + "-clearlogo.png"}
 
 
+def season_poster_name(season):
+    """Kodi's local file name for a season poster."""
+    season = int(season)
+    return "season-specials-poster.jpg" if season == 0 else "season{:02d}-poster.jpg".format(season)
+
+
+def save_season_posters(library, entry, show_dir, posters, seasons, downloader):
+    """Download the poster of every season the library has, once.
+    ``posters``: {"1": url, ...} (TMDb numbering); ``seasons``: our season numbers."""
+    saved = dict(entry.get("season_art") or {})
+    if not posters or downloader is None:
+        return saved
+    wanted = {str(int(s)) for s in seasons if str(s).lstrip("-").isdigit()}
+    urls = {key: url for key, url in posters.items() if key in wanted and url}
+    if not urls:
+        return saved
+    names = {"season" + key: season_poster_name(key) for key in urls}
+    result = save_art(library, entry, show_dir, {"season" + key: url for key, url in urls.items()},
+                      names, downloader)
+    for key, path in result.items():
+        saved[key[len("season"):]] = path
+    entry["season_art"] = saved
+    return saved
+
+
 def logo_index(store):
     """{(kind, id): clearlogo path or url} for titles in the library."""
     index = {}
@@ -160,6 +185,19 @@ def _folder_of(path, is_file):
     return path.rsplit("/", 1)[-1]
 
 
+def _repair_seasons(tvshow_id, season_art, rpc=None):
+    """Season posters for seasons Kodi shows without one. Returns 1 if any set."""
+    result = (_rpc("VideoLibrary.GetSeasons", {"tvshowid": tvshow_id, "properties": ["season", "art"]}, rpc)
+              or {}).get("result") or {}
+    changed = 0
+    for season in result.get("seasons") or []:
+        path = season_art.get(str(season.get("season")))
+        if path and not (season.get("art") or {}).get("poster"):
+            _rpc("VideoLibrary.SetSeasonDetails", {"seasonid": season["seasonid"], "art": {"poster": path}}, rpc)
+            changed = 1
+    return changed
+
+
 def repair_kodi_art(library, marker="", rpc=None):
     """Give library titles without a poster or background their artwork.
 
@@ -192,6 +230,8 @@ def repair_kodi_art(library, marker="", rpc=None):
                 continue
             current = item.get("art") or {}
             missing = {k: v for k, v in local_art(library, kind, entry).items() if not current.get(k)}
+            if kind == "series" and entry.get("season_art"):
+                updated += _repair_seasons(item[id_key], entry["season_art"], rpc)
             if not missing:
                 continue
             _rpc(setter, {id_key: item[id_key], "art": missing}, rpc)

@@ -1073,3 +1073,31 @@ msgstr "Kids"
 msgctxt "#33237"
 msgid "PIN"
 msgstr "PIN"
+
+msgctxt "#33248"
+msgid "Keep My Series and Watch Later in the library automatically"
+msgstr "Keep My Series and Watch Later in the library automatically"
+
+msgctxt "#33249"
+msgid "Every series in My Series and every film in Watch Later is added to the Kodi library; an episode in Watch Later adds its series. New titles are added at every automatic update."
+msgstr "Every series in My Series and every film in Watch Later is added to the Kodi library; an episode in Watch Later adds its series. New titles are added at every automatic update."
+
+msgctxt "#33250"
+msgid "Remove titles that left these lists"
+msgstr "Remove titles that left these lists"
+
+msgctxt "#33251"
+msgid "Only titles added from these lists are removed; titles you added yourself stay."
+msgstr "Only titles added from these lists are removed; titles you added yourself stay."
+
+msgctxt "#33245"
+msgid "Adding My Series and Watch Later to the library..."
+msgstr "Adding My Series and Watch Later to the library..."
+
+msgctxt "#33246"
+msgid "Lists: {} added, {} removed, {} failed"
+msgstr "Lists: {} added, {} removed, {} failed"
+
+msgctxt "#33247"
+msgid "Add My Series and Watch Later to the library now"
+msgstr "Add My Series and Watch Later to the library now"

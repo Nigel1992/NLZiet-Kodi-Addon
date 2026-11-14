@@ -501,7 +501,9 @@ class Library:
         entry['clearlogo'] = _saved.get('clearlogo') or show_data.get('clearlogo') or ''
 
         wanted = set()
+        seasons_used = set()
         for ep, season, number, airdate in self._assign_numbers(entry, episodes):
+            seasons_used.add(season)
             ep_title = ep.get('subtitle') or ep.get('title') or 'Episode {}'.format(number)
             base = '{} S{:02d}E{:02d}'.format(safe_filename(entry['folder']), season, number)
             season_dir = self.fs.join(show_dir, 'Season {}'.format(season))
@@ -539,6 +541,8 @@ class Library:
                     result['removed'] += 1
         self.fs.remove_empty_dirs(show_dir)
 
+        library_art.save_season_posters(self, entry, show_dir, show_data.get('season_posters'),
+                                        seasons_used, self.downloader)
         self._save_metadata()
         entry['updated'] = int(self.now())
         entry['last_checked'] = int(self.now())

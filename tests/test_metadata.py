@@ -247,3 +247,43 @@ def test_library_saves_clearlogo_file(tmp_path):
     assert (show / 'clearlogo.png').read_bytes() == b'PNG'
     assert '<thumb aspect="clearlogo">https://image.tmdb.org/t/p/original/logo.png</thumb>' in (show / 'tvshow.nfo').read_text()
     assert lib.store.get('series', 's9')['clearlogo'].endswith('clearlogo.png')
+
+
+def test_season_posters_saved_for_seasons_we_have(tmp_path):
+    routes = {
+        'themoviedb/search/tv': {'results': [{'id': 9, 'name': 'Show'}]},
+        'themoviedb/tv/9': {'overview': '', 'external_ids': {}, 'seasons': [
+            {'season_number': 0, 'poster_path': '/s0.jpg'},
+            {'season_number': 1, 'poster_path': '/s1.jpg'},
+            {'season_number': 2, 'poster_path': '/s2.jpg'}]},
+        'themoviedb/tv/9/images': {'logos': []},
+    }
+    enricher, _http = make(tmp_path, routes, key='abc')
+    api = FakeAPI()
+    api.series['s9'] = {'title': 'Show'}
+    api.episodes['s9'] = [{'id': 'a', 'title': 'A', 'season_number': 1, 'episode_number': 1},
+                          {'id': 'b', 'title': 'B', 'season_number': 1, 'episode_number': 2}]
+    lib = library.Library(api, Addon(tmp_path), lambda a, sid, d: a.episodes[sid], enricher=enricher,
+                          downloader=lambda url: url.encode())
+    lib.add_series('s9')
+    show = tmp_path / 'TV' / 'Show'
+    assert (show / 'season01-poster.jpg').read_bytes().endswith(b'/s1.jpg')
+    assert not (show / 'season02-poster.jpg').exists()  # we have no season 2
+    assert lib.store.get('series', 's9')['season_art']['1'].endswith('season01-poster.jpg')
+
+    calls = []
+
+    def rpc(payload):
+        calls.append(payload)
+        if payload['method'] == 'VideoLibrary.GetTVShows':
+            return {'result': {'tvshows': [{'tvshowid': 3, 'file': str(tmp_path / 'TV') + '/Show/',
+                                            'art': {'poster': 'x', 'fanart': 'y', 'clearlogo': 'z'}}]}}
+        if payload['method'] == 'VideoLibrary.GetSeasons':
+            return {'result': {'seasons': [{'seasonid': 31, 'season': 1, 'art': {}},
+                                           {'seasonid': 32, 'season': 2, 'art': {}}]}}
+        return {'result': {}}
+
+    from resources.lib import library_art
+    assert library_art.repair_kodi_art(lib, rpc=rpc) == 1
+    season_sets = [c for c in calls if c['method'] == 'VideoLibrary.SetSeasonDetails']
+    assert [c['params']['seasonid'] for c in season_sets] == [31]
