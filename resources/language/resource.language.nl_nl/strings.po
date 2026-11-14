@@ -1494,3 +1494,31 @@ msgstr "Ondertitels zoeken als de stream er geen heeft"
 msgctxt "#33345"
 msgid "When a video has no subtitles of its own, open Kodi's subtitle search so your subtitle add-on (e.g. OpenSubtitles) can find one."
 msgstr "Als een video geen eigen ondertiteling heeft, open de ondertitelzoeker van Kodi zodat je ondertitel-addon (bijv. OpenSubtitles) er een kan zoeken."
+
+msgctxt "#33346"
+msgid "Remember where you stopped watching"
+msgstr "Onthouden waar je gebleven bent"
+
+msgctxt "#33347"
+msgid "Saves your position in a video and offers to continue from there next time."
+msgstr "Bewaart je plek in een video en biedt de volgende keer aan vanaf daar verder te kijken."
+
+msgctxt "#33348"
+msgid "Ask before resuming"
+msgstr "Vragen voor hervatten"
+
+msgctxt "#33349"
+msgid "Ask \"Continue from ...?\" when a video has a saved position. Off means it resumes automatically."
+msgstr "Vraag \"Verder kijken vanaf ...?\" als een video een bewaarde plek heeft. Uit betekent automatisch hervatten."
+
+msgctxt "#33350"
+msgid "Continue from {0}?"
+msgstr "Verder kijken vanaf {0}?"
+
+msgctxt "#33351"
+msgid "Continue"
+msgstr "Verder kijken"
+
+msgctxt "#33352"
+msgid "From the start"
+msgstr "Vanaf het begin"

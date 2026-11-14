@@ -37,6 +37,7 @@ from resources.lib import playback_extras
 from resources.lib import watch_sync
 from resources.lib import watch_history
 from resources.lib import reminders as reminders_mod
+from resources.lib import resume_store
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -389,6 +390,9 @@ TRANSLATIONS = {
     'trakt_import_empty': {'nl': 'Je Trakt-kijklijst is leeg', 'en': 'Your Trakt watchlist is empty'},
     'trakt_import_busy': {'nl': 'Bezig met importeren van Trakt...', 'en': 'Importing from Trakt...'},
     'trakt_import_done': {'nl': '{0} titels toegevoegd, {1} niet gevonden op NLZiet', 'en': 'Added {0} titles, {1} not found on NLZiet'},
+    'resume_from': {'nl': 'Verder kijken vanaf {0}?', 'en': 'Continue from {0}?'},
+    'resume_yes': {'nl': 'Verder kijken', 'en': 'Continue'},
+    'resume_no': {'nl': 'Vanaf het begin', 'en': 'From the start'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -649,6 +653,9 @@ STRING_IDS = {
     'trakt_import_empty': 33341,
     'trakt_import_busy': 33342,
     'trakt_import_done': 33343,
+    'resume_from': 33350,
+    'resume_yes': 33351,
+    'resume_no': 33352,
 }
 
 
@@ -1218,7 +1225,7 @@ def _add_trakt_metadata_to_query(query, title, info=None, content=None):
     return query_copy
 
 
-def _apply_playback_metadata(list_item, metadata, fmt=None):
+def _apply_playback_metadata(list_item, metadata, fmt=None, content_id=None):
     """Publish metadata as Kodi VideoPlayer labels for script.trakt."""
     if fmt == 'live':
         # This is the exclusion property recognized by the official Trakt
@@ -1300,6 +1307,8 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
         except Exception:
             list_item.setProperty('ResumeTime', '0')
             list_item.setProperty('TotalTime', '3600')
+    elif fmt not in ('live', 'epg'):
+        _apply_resume(list_item, content_id)
 
 
 _LOGOS = None
@@ -6916,6 +6925,37 @@ def _reminders_path():
     return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'epg_reminders.json')
 
 
+def _resume_path():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'resume.json')
+
+
+def _apply_resume(list_item, content_id):
+    """Set a Kodi resume point on a VOD item from the local resume store."""
+    if not content_id or not _setting_on('resume_playback', True):
+        return
+    found = resume_store.get(_resume_path(), content_id)
+    if not found:
+        return
+    position, total = found
+    if position < resume_store.MIN_POSITION:
+        return
+    if _setting_on('resume_ask', True):
+        label = resume_store.format_time(position)
+        choice = xbmcgui.Dialog().yesno('NLZiet', get_string('resume_from', label),
+                                        yeslabel=get_string('resume_yes'), nolabel=get_string('resume_no'))
+        if not choice:
+            resume_store.clear(_resume_path(), content_id)
+            return
+    total = total if total > position else position + 1.0
+    try:
+        list_item.getVideoInfoTag().setResumePoint(float(position), float(total))
+    except Exception:
+        pass
+    list_item.setProperty('StartOffset', str(int(position)))
+    list_item.setProperty('ResumeTime', str(int(position)))
+    list_item.setProperty('TotalTime', str(int(total)))
+
+
 def check_reminders(background=True):
     """Show a notification for any EPG reminder about to start (service)."""
     try:
@@ -7299,7 +7339,7 @@ def play_item(content_id, fmt=None, **kwargs):
         if not is_helper:
             return
         li = xbmcgui.ListItem(path=manifest, offscreen=True)
-        _apply_playback_metadata(li, playback_metadata, fmt=fmt)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id)
         # Use the inputstream addon resolved by InputStream Helper.
         try:
             inputstream_addon = is_helper.inputstream_addon
@@ -7469,7 +7509,7 @@ def play_item(content_id, fmt=None, **kwargs):
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
         li = xbmcgui.ListItem(path=manifest)
-        _apply_playback_metadata(li, playback_metadata, fmt=fmt)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id)
         
         # Check subtitle setting once
         try:

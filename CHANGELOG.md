@@ -1,7 +1,14 @@
 # Changelog
 
-> **Latest Version:** v2.3.0 (November 14, 2026)
+> **Latest Version:** v2.3.1 (November 14, 2026)
 
+## [2.3.1] - 2026-11-14
+
+### Fixed
+- **NLZiet onthield niet waar je gebleven was.** Voor gewone video's (VOD) werd geen hervatpunt bewaard, dus alles begon weer vanaf 0 (de bestaande hervat-code werd nergens gebruikt). De service onthoudt nu je positie bij het stoppen en NLZiet biedt bij opnieuw afspelen aan "Verder kijken vanaf ...". Een (bijna) uitgekeken video wordt niet meer hervat. Aan/uit en wel/niet vragen staat bij Instellingen → Afspelen.
+
+### Development
+- Nieuwe module `resume_store.py` (lokaal, met tests).
 ## [2.3.0] - 2026-11-14
 
 ### Added

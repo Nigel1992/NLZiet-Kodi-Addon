@@ -1477,3 +1477,31 @@ msgstr ""
 msgctxt "#33345"
 msgid "When a video has no subtitles of its own, open Kodi's subtitle search so your subtitle add-on (e.g. OpenSubtitles) can find one."
 msgstr ""
+
+msgctxt "#33346"
+msgid "Remember where you stopped watching"
+msgstr ""
+
+msgctxt "#33347"
+msgid "Saves your position in a video and offers to continue from there next time."
+msgstr ""
+
+msgctxt "#33348"
+msgid "Ask before resuming"
+msgstr ""
+
+msgctxt "#33349"
+msgid "Ask \"Continue from ...?\" when a video has a saved position. Off means it resumes automatically."
+msgstr ""
+
+msgctxt "#33350"
+msgid "Continue from {0}?"
+msgstr ""
+
+msgctxt "#33351"
+msgid "Continue"
+msgstr ""
+
+msgctxt "#33352"
+msgid "From the start"
+msgstr ""

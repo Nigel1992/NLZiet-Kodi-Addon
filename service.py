@@ -13,6 +13,7 @@ from resources.lib import diagnostics as diagnostics_mod
 from resources.lib import playback_extras
 from resources.lib import trakt_status
 from resources.lib import reminders as reminders_mod
+from resources.lib import resume_store
 
 ADDON = xbmcaddon.Addon()
 
@@ -128,6 +129,12 @@ class PlaybackFollower(xbmc.Player):
     def _done(self, natural):
         self._scrobble('stop')
         key = self.watch.key
+        position, total = self.watch.position, self.watch.total
+        if key and _setting_on('resume_playback', True):
+            try:
+                resume_store.save(_resume_path(), key, position, total)
+            except Exception as exc:
+                xbmc.log('NLZiet service: resume save failed: {}'.format(exc), xbmc.LOGWARNING)
         try:
             share = max(0.5, min(0.99, _int_setting('watched_threshold', 90) / 100.0))
         except Exception:
@@ -246,6 +253,10 @@ def _library_update_due():
 
 def _reminders_path():
     return os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'epg_reminders.json')
+
+
+def _resume_path():
+    return os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'resume.json')
 
 
 def _check_reminders():
