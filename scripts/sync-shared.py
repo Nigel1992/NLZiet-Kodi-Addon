@@ -23,6 +23,7 @@ SHARED = [
     'resources/lib/playback_extras.py',
     'resources/lib/watch_sync.py',
     'resources/lib/watch_history.py',
+    'resources/lib/library_resume.py',
 ]
 ROOT = Path(__file__).resolve().parents[1]
 

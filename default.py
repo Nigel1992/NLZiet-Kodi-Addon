@@ -7100,6 +7100,81 @@ def notify_new(background=True):
         pass
 
 
+def _library_rpc(method, params):
+    """Run one JSON-RPC call and return its ``result`` (or ``{}``)."""
+    import json as _json
+    answer = _json.loads(xbmc.executeJSONRPC(_json.dumps(
+        {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})))
+    return answer.get('result') or {}
+
+
+def sync_resume(background=True):
+    """Copy NLZiet's own watch positions into the Kodi library.
+
+    So an episode or film you started on your phone or in the NLZiet app also
+    turns up in the skin's "Afleveringen die je kijkt" row here, which reads the
+    Kodi library.
+    """
+    if not _setting_on('sync_resume_from_service', True) or not _is_logged_in():
+        return
+    from resources.lib import library_resume
+    addon_id = ADDON.getAddonInfo('id') or 'plugin.video.nlziet'
+    try:
+        api = _get_list_api()
+        positions = api.get_resume_positions()
+    except Exception as exc:
+        xbmc.log('NLZiet: resume sync could not reach the service ({})'.format(
+            type(exc).__name__), xbmc.LOGWARNING)
+        return
+    if not positions:
+        return
+
+    def _cid_for(item):
+        file_path = item.get('file') or ''
+        cid = library_resume.plugin_content_id(file_path, addon_id, 'id')
+        if cid:
+            return cid
+        if library_resume.is_strm(file_path):
+            try:
+                import xbmcvfs
+                handle = xbmcvfs.File(file_path)
+                try:
+                    text = handle.read()
+                finally:
+                    handle.close()
+            except Exception:
+                return None
+            return library_resume.plugin_content_id(text, addon_id, 'id')
+        return None
+
+    calls = []
+    try:
+        episodes = _library_rpc('VideoLibrary.GetEpisodes',
+                                {'properties': ['file', 'runtime', 'resume']}).get('episodes', [])
+        calls += library_resume.build_calls(
+            episodes, positions, 'episodeid',
+            'VideoLibrary.SetEpisodeDetails', _cid_for)
+        movies = _library_rpc('VideoLibrary.GetMovies',
+                              {'properties': ['file', 'runtime', 'resume']}).get('movies', [])
+        calls += library_resume.build_calls(
+            movies, positions, 'movieid',
+            'VideoLibrary.SetMovieDetails', _cid_for)
+    except Exception as exc:
+        xbmc.log('NLZiet: resume sync could not read the library ({})'.format(
+            type(exc).__name__), xbmc.LOGWARNING)
+        return
+    done = 0
+    for method, params in calls:
+        try:
+            _library_rpc(method, params)
+            done += 1
+        except Exception:
+            pass
+    xbmc.log('NLZiet: resume sync updated {} library item(s)'.format(done), xbmc.LOGINFO)
+    if done:
+        xbmc.executebuiltin('Container.Refresh')
+
+
 def mark_series_watched_route(series_id):
     mark_series_watched(series_id, background=False)
 
@@ -8039,6 +8114,7 @@ def get_route_handlers():
         'record_history': record_history,
         'mark_series_watched_route': mark_series_watched_route,
         'notify_new': notify_new,
+        'sync_resume': sync_resume,
         'browse_expiring': browse_expiring,
         'both_continue': both_continue,
         'favourite_channels': favourite_channels,

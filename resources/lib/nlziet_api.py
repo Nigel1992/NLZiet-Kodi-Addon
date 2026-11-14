@@ -1888,6 +1888,49 @@ class NLZietAPI:
         """NLZiet's own "Verder kijken" row, normalised like the cloud lists."""
         return self._cloud_list('/v9/continuewatching')
 
+    def get_resume_positions(self):
+        """Watch positions from NLZiet's "Verder kijken" row, for cross-device
+        resume.
+
+        Returns ``{str(content_id): (position_seconds, duration_seconds)}`` for
+        every in-progress item, or ``None`` when the row can't be reached.
+        ``duration`` is ``0`` when NLZiet only reports a position.
+        """
+        from resources.lib import library_resume
+        positions = {}
+        offset = 0
+        logged = False
+        while True:
+            payload = self._watchlist_request(
+                'GET', path='/v9/continuewatching',
+                params={'limit': self._CLOUD_LIST_PAGE_SIZE, 'offset': offset})
+            if payload is None:
+                return positions or None
+            entries = payload.get('data') if isinstance(payload, dict) else payload
+            if not isinstance(entries, list) or not entries:
+                return positions
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                content = entry.get('content') if isinstance(entry.get('content'), dict) else {}
+                analytics = entry.get('analytics') if isinstance(entry.get('analytics'), dict) else {}
+                content_id = content.get('id') or analytics.get('content_id')
+                if not content_id:
+                    continue
+                if not logged:
+                    logged = True
+                    try:
+                        self._append_debug('continuewatching entry keys: '
+                                           + ','.join(sorted(str(k) for k in entry.keys())))
+                    except Exception:
+                        pass
+                progress = library_resume.extract_progress(entry)
+                if progress:
+                    positions[str(content_id)] = progress
+            if len(entries) < self._CLOUD_LIST_PAGE_SIZE:
+                return positions
+            offset += len(entries)
+
     def _normalize_cloud_item(self, entry):
         """Convert a cloud watchlist entry into the local list item format."""
         if not isinstance(entry, dict):

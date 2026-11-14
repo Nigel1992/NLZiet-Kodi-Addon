@@ -334,6 +334,7 @@ def main():
     last_minute = 0
     last_daily = 0
     last_notify = 0
+    last_resume_sync = 0
     legacy_checked = False
     player = PlaybackFollower()
     while not MONITOR.abortRequested():
@@ -367,6 +368,13 @@ def main():
                 and not xbmc.Player().isPlaying() and _setting_on('notify_new_episodes', True)):
             last_notify = now
             xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=notify_new&background=1)'.format(ADDON_ID))
+
+        # Pull watch positions from NLZiet into the library (what you watched on
+        # another device), shortly after startup and then once an hour.
+        if (now - started >= LIBRARY_STARTUP_DELAY and now - last_resume_sync >= 3600
+                and not xbmc.Player().isPlaying() and _setting_on('sync_resume_from_service', True)):
+            last_resume_sync = now
+            xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=sync_resume&background=1)'.format(ADDON_ID))
 
         # A scan asked for while Kodi was busy runs as soon as it is free.
         library_art.run_pending_scan(library_mod.scan_flag_path())

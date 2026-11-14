@@ -1521,3 +1521,11 @@ msgstr ""
 msgctxt "#33356"
 msgid "Library dates updated ({0} episodes)"
 msgstr ""
+
+msgctxt "#33357"
+msgid "Also show what you watched on another device"
+msgstr ""
+
+msgctxt "#33358"
+msgid "Once an hour, copy your NLZiet watch position into the Kodi library, so episodes you started on your phone or tablet also appear in the continue-watching rows here."
+msgstr ""

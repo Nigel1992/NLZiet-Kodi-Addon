@@ -333,6 +333,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="sync_resume_from_service" type="boolean" label="33357" help="33358">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="watched_threshold" type="integer" label="33328" help="33329">
           <level>0</level>
           <default>90</default>

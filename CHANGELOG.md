@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.4.4 (November 14, 2026)
+> **Latest Version:** v2.4.5 (November 14, 2026)
+
+## [2.4.5] - 2026-11-14
+
+### Toegevoegd
+- **Ook tonen wat je op een ander apparaat keek.** Eén keer per uur (en kort na het opstarten) haalt NLZiet je kijkpositie uit je "Verder kijken"-rij op en zet die als hervatpunt in de Kodi-bibliotheek. Zo verschijnt een aflevering of film die je op je telefoon, tablet of in de NLZiet-app begon ook hier in de rij "Afleveringen die je kijkt" van de skin. Uit te zetten met de nieuwe instelling *Ook tonen wat je op een ander apparaat keek* (standaard aan). Raakt alleen titels die NLZiet zelf in je bibliotheek heeft gezet.
 
 ## [2.4.4] - 2026-11-14
 

@@ -61,6 +61,8 @@ class Router:
             self.handlers['mark_series_watched_route'](params.get('series_id'))
         elif mode == 'notify_new':
             self.handlers['notify_new'](params.get('background') == '1')
+        elif mode == 'sync_resume':
+            self.handlers['sync_resume'](params.get('background') == '1')
         elif mode == 'expiring':
             self.handlers['browse_expiring']()
         elif mode == 'both_continue':
