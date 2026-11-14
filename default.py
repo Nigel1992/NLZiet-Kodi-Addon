@@ -1181,6 +1181,33 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
             list_item.setProperty('TotalTime', '3600')
 
 
+_LOGOS = None
+
+
+def _library_logo(query, content=None, group=None):
+    """Clearlogo of a series/film that is in the library, for browse lists."""
+    global _LOGOS
+    if not isinstance(query, dict):
+        return None
+    mode = query.get('mode')
+    if mode == 'series_detail':
+        key = ('series', str(query.get('series_id') or ''))
+    elif mode == 'play' and query.get('fmt') not in ('live', 'epg'):
+        ctype = str((content or {}).get('type') or '').lower() if isinstance(content, dict) else ''
+        if not (str(group or '').lower() == 'movies' or 'movie' in ctype or 'film' in ctype):
+            return None
+        key = ('movie', str(query.get('id') or ''))
+    else:
+        return None
+    if _LOGOS is None:
+        try:
+            profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+            _LOGOS = library_art.logo_index(library_mod.LibraryStore(os.path.join(profile, 'library.json')))
+        except Exception:
+            _LOGOS = {}
+    return _LOGOS.get(key)
+
+
 _TRAKT_INDEX = None
 _TRAKT_LOADED = False
 
@@ -1227,6 +1254,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     if trakt_metadata and not item_info.get('playcount') and _trakt_watched(trakt_metadata):
         item_info['playcount'] = 1
 
+    logo = _library_logo(query, content, group)
     return kodi_ui.add_directory_item(
         ADDON,
         HANDLE,
@@ -1243,6 +1271,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         is_live=is_live,
         group=group,
         extra_context_items=extra_context_items,
+        extra_art={'clearlogo': logo} if logo else None,
         add_to_library_label=get_string('add_to_library'),
         remove_from_library_label=get_string('remove_from_library'),
         library_check=is_in_library,
@@ -1965,6 +1994,7 @@ def browse_library():
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=entry.get('thumb'),
             extra_context_items=remove, library_check=None,
+            extra_art={'clearlogo': entry['clearlogo']} if entry.get('clearlogo') else None,
         )
     for mid, entry in movies:
         title = entry.get('title') or mid
@@ -1975,6 +2005,7 @@ def browse_library():
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'play', 'id': mid}, is_folder=False, thumb=entry.get('thumb'),
             extra_context_items=remove, library_check=None,
+            extra_art={'clearlogo': entry['clearlogo']} if entry.get('clearlogo') else None,
         )
     if not series and not movies:
         xbmcgui.Dialog().notification('NLZiet', get_string('library_empty'), xbmcgui.NOTIFICATION_INFO)

@@ -210,3 +210,40 @@ def test_tmdb_key_check_reports_the_real_problem():
     token_headers = []
     metadata.test_tmdb_key('t' * 200, http=lambda url, headers: token_headers.append(headers) or {})
     assert token_headers[0]['Authorization'] == 'Bearer ' + 't' * 200
+
+
+def test_clearlogo_prefers_dutch_png_then_english(tmp_path):
+    routes = {
+        'themoviedb/search/tv': {'results': [{'id': 9, 'name': 'Flikken Maastricht'}]},
+        'themoviedb/tv/9': {'overview': 'x', 'external_ids': {}},
+        'themoviedb/tv/9/images': {'logos': [
+            {'file_path': '/en.png', 'iso_639_1': 'en', 'vote_average': 9},
+            {'file_path': '/nl.svg', 'iso_639_1': 'nl', 'vote_average': 8},
+            {'file_path': '/nl.png', 'iso_639_1': 'nl', 'vote_average': 5},
+        ]},
+    }
+    enricher, _http = make(tmp_path, routes, key='abc')
+    data = enricher.show('Flikken Maastricht')
+    assert data['clearlogo'] == 'https://image.tmdb.org/t/p/original/nl.png'
+    routes['themoviedb/tv/9/images'] = {'logos': [{'file_path': '/en.png', 'iso_639_1': 'en'}]}
+    other, _ = make(tmp_path / 'b', routes, key='abc')
+    assert other.show('Flikken Maastricht')['clearlogo'].endswith('/en.png')
+
+
+def test_library_saves_clearlogo_file(tmp_path):
+    routes = {
+        'themoviedb/search/tv': {'results': [{'id': 9, 'name': 'Show'}]},
+        'themoviedb/tv/9': {'overview': '', 'external_ids': {}},
+        'themoviedb/tv/9/images': {'logos': [{'file_path': '/logo.png', 'iso_639_1': 'nl'}]},
+    }
+    enricher, _http = make(tmp_path, routes, key='abc')
+    api = FakeAPI()
+    api.series['s9'] = {'title': 'Show'}
+    api.episodes['s9'] = [{'id': 'e', 'title': 'Aflevering 1', 'aired_date': '2026-01-03'}]
+    lib = library.Library(api, Addon(tmp_path), lambda a, sid, d: a.episodes[sid], enricher=enricher,
+                          downloader=lambda url: b'PNG')
+    lib.add_series('s9')
+    show = tmp_path / 'TV' / 'Show'
+    assert (show / 'clearlogo.png').read_bytes() == b'PNG'
+    assert '<thumb aspect="clearlogo">https://image.tmdb.org/t/p/original/logo.png</thumb>' in (show / 'tvshow.nfo').read_text()
+    assert lib.store.get('series', 's9')['clearlogo'].endswith('clearlogo.png')

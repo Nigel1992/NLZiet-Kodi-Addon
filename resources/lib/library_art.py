@@ -98,6 +98,25 @@ def save_art(library, entry, folder, urls, names, downloader):
     return saved
 
 
+def art_names(kind, folder):
+    """File names Kodi picks up as local artwork."""
+    if kind == "series":
+        return {"poster": "poster.jpg", "fanart": "fanart.jpg", "clearlogo": "clearlogo.png"}
+    return {"poster": folder + "-poster.jpg", "fanart": folder + "-fanart.jpg",
+            "clearlogo": folder + "-clearlogo.png"}
+
+
+def logo_index(store):
+    """{(kind, id): clearlogo path or url} for titles in the library."""
+    index = {}
+    for kind in ("series", "movie"):
+        for item_id, entry in store.section(kind).items():
+            logo = entry.get("clearlogo")
+            if logo:
+                index[(kind, str(item_id))] = logo
+    return index
+
+
 def local_art(library, kind, entry):
     """Paths (or urls) of the artwork for a library entry."""
     folder = entry.get("folder")
@@ -106,16 +125,15 @@ def local_art(library, kind, entry):
     art = {}
     if kind == "series":
         base = library.fs.join(library.tv_root(), folder)
-        names = {"poster": "poster.jpg", "fanart": "fanart.jpg"}
     else:
         base = library.fs.join(library.movies_root(), folder)
-        names = {"poster": folder + "-poster.jpg", "fanart": folder + "-fanart.jpg"}
+    names = art_names(kind, folder)
     for key, name in names.items():
         path = library.fs.join(base, name)
         if _exists(library.fs, path):
             art[key] = path
     urls = entry.get("art_urls") or {}
-    for key in ("poster", "fanart"):
+    for key in ("poster", "fanart", "clearlogo"):
         if key not in art and urls.get(key):
             art[key] = urls[key]
     if "poster" not in art and entry.get("thumb"):

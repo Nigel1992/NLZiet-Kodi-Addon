@@ -272,12 +272,26 @@ class Enricher:
             detail = dict(detail, overview=english.get("overview") or "")
         return detail
 
+    def _tmdb_logo(self, kind, tmdb_id):
+        """Best clearlogo: Dutch first (or the add-on language), then English,
+        then one without text; within a language the best-rated one."""
+        language = self.language.split("-")[0].lower()
+        payload = self._tmdb("/{}/{}/images".format(kind, tmdb_id),
+                             {"include_image_language": "{},en,null".format(language)}) or {}
+        order = {language: 0, "en": 1, None: 2}
+        logos = [logo for logo in payload.get("logos") or [] if logo.get("file_path")]
+        logos.sort(key=lambda logo: (order.get(logo.get("iso_639_1"), 3),
+                                     0 if str(logo["file_path"]).endswith(".png") else 1,
+                                     -(logo.get("vote_average") or 0)))
+        return self._image(logos[0]["file_path"]) if logos else ""
+
     def _tmdb_show(self, tmdb_id):
         detail = self._tmdb_details("tv", tmdb_id)
         if not detail:
             return {}
         external = detail.get("external_ids") or {}
         return {
+            "clearlogo": self._tmdb_logo("tv", tmdb_id),
             "plot": detail.get("overview") or "",
             "poster": self._image(detail.get("poster_path")),
             "fanart": self._image(detail.get("backdrop_path")),
@@ -370,6 +384,7 @@ class Enricher:
             return {"ids": dict(known, tmdb=str(tmdb_id))}
         external = detail.get("external_ids") or {}
         return {
+            "clearlogo": self._tmdb_logo("movie", tmdb_id),
             "plot": detail.get("overview") or "",
             "poster": self._image(detail.get("poster_path")),
             "fanart": self._image(detail.get("backdrop_path")),
@@ -387,6 +402,8 @@ class Enricher:
 def nfo_extra_lines(data, escape, kind="show"):
     """XML lines for the extra fields every nfo type shares."""
     lines = []
+    if data.get("clearlogo"):
+        lines.append('  <thumb aspect="clearlogo">{}</thumb>'.format(escape(data["clearlogo"])))
     for genre in data.get("genres") or []:
         lines.append("  <genre>{}</genre>".format(escape(genre)))
     if data.get("premiered"):

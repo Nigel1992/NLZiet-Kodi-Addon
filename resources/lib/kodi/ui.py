@@ -55,6 +55,7 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        add_to_library_label='Add to library',
                        remove_from_library_label='Remove from library',
                        library_check=None,
+                       extra_art=None,
                        mylist_add_label='Add to My List',
                        mylist_remove_label='Remove from My List',
                        watch_later_add_label='Add to Watch Later',
@@ -79,6 +80,11 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
         # Use smart artwork assignment to respect aspect ratios
         # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
         set_smart_artwork(li, content, thumb=thumb)
+    if extra_art:
+        try:
+            li.setArt(dict(extra_art))
+        except Exception:
+            pass
 
     item_info = dict(info or {})
 

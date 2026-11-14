@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v1.8.1 (November 14, 2026)
+> **Latest Version:** v1.8.2 (November 14, 2026)
+
+## [1.8.2] - 2026-11-14
+
+### Added
+- **Series and film logos (clearlogo)**: with a TMDb key, every series and film in the library gets its logo (Dutch first, then English, then one without text) as `clearlogo.png` (films: `<name>-clearlogo.png`) and in the `.nfo`. Titles Kodi already scanned get the logo through the artwork repair. Skins that show logos instead of titles (widgets, info screens) now use them; browse lists in the add-on show the logo for titles that are in the library.
 
 ## [1.8.1] - 2026-11-14
 
