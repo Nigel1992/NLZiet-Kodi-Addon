@@ -47,11 +47,202 @@
       </group>
     </category>
 
+    <category id="category_library" label="33198" help="">
+      <group id="1" label="33259">
+        <setting id="library_path" type="path" label="33199" help="33205">
+          <level>0</level>
+          <default>special://profile/addon_data/plugin.video.nlziet/library/TV Shows</default>
+          <constraints>
+            <writable>true</writable>
+          </constraints>
+          <control type="button" format="path">
+            <heading>33199</heading>
+          </control>
+        </setting>
+        <setting id="library_movies_path" type="path" label="33200" help="33206">
+          <level>0</level>
+          <default>special://profile/addon_data/plugin.video.nlziet/library/Movies</default>
+          <constraints>
+            <writable>true</writable>
+          </constraints>
+          <control type="button" format="path">
+            <heading>33200</heading>
+          </control>
+        </setting>
+      </group>
+      <group id="2" label="33260">
+        <setting id="library_lists_sync" type="boolean" label="33248" help="33249">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_lists_remove" type="boolean" label="33250" help="33251">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="enable" setting="library_lists_sync">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_from_lists_now" type="action" label="33247" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=library_from_lists)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+      </group>
+      <group id="3" label="33261">
+        <setting id="library_auto_update" type="boolean" label="33201" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_update_hours" type="integer" label="33202" help="">
+          <level>0</level>
+          <default>12</default>
+          <constraints>
+            <minimum>1</minimum>
+            <step>1</step>
+            <maximum>168</maximum>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="library_auto_update">true</dependency>
+          </dependencies>
+          <control type="slider" format="integer">
+            <popup>false</popup>
+          </control>
+        </setting>
+        <setting id="library_scan_after" type="boolean" label="33203" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_clean_after" type="boolean" label="33204" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="4" label="33212">
+        <setting id="library_enrich" type="boolean" label="33213" help="33214">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="tmdb_api_key" type="string" label="33215" help="33216">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="edit" format="string">
+            <heading>33215</heading>
+          </control>
+        </setting>
+        <setting id="check_tmdb_key" type="action" label="33217" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=check_tmdb_key)</data>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="art_tmdb_first" type="boolean" label="33254" help="33255">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+        <setting id="browse_logos" type="boolean" label="33252" help="33253">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="library_enrich">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="5" label="33262">
+        <setting id="library_update_now" type="action" label="33194" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=library_update)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="library_repair_art" type="action" label="33209" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=repair_library_art)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="run_diagnostics" type="action" label="33220" help="33221">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=diagnostics)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="daily_check" type="boolean" label="33281" help="33282">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="6" label="33286">
+        <setting id="backup_lists" type="action" label="33275" help="33287">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=backup_lists)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+        <setting id="restore_lists" type="action" label="33276" help="33287">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=restore_lists)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+      </group>
+    </category>
+
     <category id="category_playback" label="30006" help="">
       <group id="1" label="">
         <setting id="subtitles_default" type="boolean" label="30110" help="">
           <level>0</level>
           <default>false</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="2" label="33285">
+        <setting id="upnext" type="boolean" label="33265" help="33266">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="install_upnext" type="action" label="33267">
+          <level>0</level>
+          <data>InstallAddon(service.upnext)</data>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool" operator="!is">System.HasAddon(service.upnext)</dependency>
+          </dependencies>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="skip_markers" type="boolean" label="33268" help="33269">
+          <level>0</level>
+          <default>true</default>
           <control type="toggle"/>
         </setting>
       </group>
@@ -62,6 +253,19 @@
         <setting id="watch_later_sync" type="boolean" label="30114" help="30116">
           <level>0</level>
           <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="watched_to_service" type="boolean" label="33263" help="33264">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="trakt_watched_status" type="boolean" label="33243" help="33244">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool">System.HasAddon(script.trakt)</dependency>
+          </dependencies>
           <control type="toggle"/>
         </setting>
         <setting id="auto_add_new_episodes" type="boolean" label="33148" help="33155">
@@ -107,66 +311,48 @@
       </group>
     </category>
 
-    <category id="category_library" label="33198" help="">
+
+    <category id="category_parental" label="33238" help="">
       <group id="1" label="">
-        <setting id="library_path" type="path" label="33199" help="33205">
+        <setting id="parental_set_pin" type="action" label="33239" help="33242">
           <level>0</level>
-          <default>special://profile/addon_data/plugin.video.nlziet/library/TV Shows</default>
-          <constraints>
-            <writable>true</writable>
-          </constraints>
-          <control type="button" format="path">
-            <heading>33199</heading>
-          </control>
-        </setting>
-        <setting id="library_movies_path" type="path" label="33200" help="33206">
-          <level>0</level>
-          <default>special://profile/addon_data/plugin.video.nlziet/library/Movies</default>
-          <constraints>
-            <writable>true</writable>
-          </constraints>
-          <control type="button" format="path">
-            <heading>33200</heading>
-          </control>
-        </setting>
-      </group>
-      <group id="2" label="">
-        <setting id="library_auto_update" type="boolean" label="33201" help="">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="library_update_hours" type="integer" label="33202" help="">
-          <level>0</level>
-          <default>12</default>
-          <constraints>
-            <minimum>1</minimum>
-            <step>1</step>
-            <maximum>168</maximum>
-          </constraints>
-          <dependencies>
-            <dependency type="enable" setting="library_auto_update">true</dependency>
-          </dependencies>
-          <control type="slider" format="integer">
-            <popup>false</popup>
-          </control>
-        </setting>
-        <setting id="library_scan_after" type="boolean" label="33203" help="">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="library_clean_after" type="boolean" label="33204" help="">
-          <level>0</level>
-          <default>true</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="library_update_now" type="action" label="33194" help="">
-          <level>0</level>
-          <data>RunPlugin(plugin://$ID?mode=library_update)</data>
+          <data>RunPlugin(plugin://$ID?mode=parental_set_pin)</data>
           <control type="button" format="action">
-            <close>false</close>
+            <close>true</close>
           </control>
+        </setting>
+        <setting id="parental_clear_pin" type="action" label="33240" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=parental_clear_pin)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="parental_lock_live" type="boolean" label="33241" help="33242">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="parental_pin_hash" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="parental_pin_salt" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="parental_protected_profiles" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
         </setting>
       </group>
     </category>

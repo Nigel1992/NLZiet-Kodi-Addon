@@ -938,3 +938,339 @@ msgstr "Voeg deze map in Kodi toe als videobron (type Series, scraper \"Lokale i
 msgctxt "#33206"
 msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
 msgstr "Voeg deze map in Kodi toe als videobron (type Films, scraper \"Lokale informatie\"), zodat Kodi de films vindt."
+
+msgctxt "#33210"
+msgid "TMDb key works"
+msgstr "TMDb-sleutel werkt"
+
+msgctxt "#33211"
+msgid "TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token."
+msgstr "TMDb accepteert deze sleutel niet. Controleer of je de API Key (32 tekens) of het API Read Access Token volledig hebt geplakt."
+
+msgctxt "#33212"
+msgid "Extra metadata"
+msgstr "Extra gegevens"
+
+msgctxt "#33213"
+msgid "Fill in missing data from TMDb / TVmaze"
+msgstr "Ontbrekende gegevens aanvullen via TMDb / TVmaze"
+
+msgctxt "#33214"
+msgid "NLZiet data is always used first. Only empty fields (description, poster, background, year, genre, rating, episode descriptions and images) are filled in. Also adds TMDb, TVDB and IMDb ids. Series work without a key through TVmaze; films need a TMDb key."
+msgstr "De gegevens van NLZiet worden altijd eerst gebruikt. Alleen lege velden (beschrijving, poster, achtergrond, jaar, genre, waardering, beschrijvingen en plaatjes van afleveringen) worden aangevuld. Voegt ook TMDb-, TVDB- en IMDb-nummers toe. Series werken zonder sleutel via TVmaze; films hebben een TMDb-sleutel nodig."
+
+msgctxt "#33215"
+msgid "TMDb API key (optional)"
+msgstr "TMDb API-sleutel (optioneel)"
+
+msgctxt "#33216"
+msgid "Free key from themoviedb.org: Settings > API. Paste the \"API Key\" or the \"API Read Access Token\"."
+msgstr "Gratis sleutel via themoviedb.org: Instellingen > API. Plak de \"API Key\" of het \"API Read Access Token\"."
+
+msgctxt "#33217"
+msgid "Test TMDb key"
+msgstr "TMDb-sleutel testen"
+
+msgctxt "#33207"
+msgid "{} series moved to the NLZiet folder. Add that folder as a source in Kodi."
+msgstr "{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi."
+
+msgctxt "#33208"
+msgid "Artwork updated for {} titles"
+msgstr "Posters bijgewerkt voor {} titels"
+
+msgctxt "#33209"
+msgid "Repair artwork in the Kodi library"
+msgstr "Posters in Kodi-bibliotheek herstellen"
+
+msgctxt "#33218"
+msgid "No TMDb key is saved yet. Enter the key, press OK to save the settings and test again."
+msgstr "Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om de instellingen op te slaan en test daarna opnieuw."
+
+msgctxt "#33219"
+msgid "TMDb could not be reached. Check your internet connection; the key itself was not tested."
+msgstr "TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest."
+
+msgctxt "#33220"
+msgid "Run diagnostics"
+msgstr "Diagnose uitvoeren"
+
+msgctxt "#33221"
+msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+msgstr "Controleert aanmelding, InputStream Adaptive, Widevine, de verbinding met NLZiet, TMDb en TVmaze, en de bibliotheekmappen. Slaat een rapport zonder privégegevens op dat je bij een foutmelding kunt meesturen."
+
+msgctxt "#33238"
+msgid "Parental control"
+msgstr "Ouderlijk toezicht"
+
+msgctxt "#33239"
+msgid "Set or change PIN"
+msgstr "Pincode instellen of wijzigen"
+
+msgctxt "#33240"
+msgid "Remove PIN"
+msgstr "Pincode verwijderen"
+
+msgctxt "#33241"
+msgid "Live tv and TV guide only with PIN"
+msgstr "Live tv en TV Gids alleen met pincode"
+
+msgctxt "#33242"
+msgid "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+msgstr "Kies bij Profielen (lang indrukken op een profiel) welke profielen de pincode nodig hebben. Na een goede pincode blijft het slot 30 minuten open. Deze instellingen zelf kan Kodi niet vergrendelen; gebruik daarvoor de hoofdvergrendeling van Kodi."
+
+msgctxt "#33243"
+msgid "Show Trakt watched status in menus"
+msgstr "Trakt-kijkstatus tonen in de menu's"
+
+msgctxt "#33244"
+msgid "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+msgstr "Markeert films en afleveringen die je volgens Trakt hebt gezien als bekeken in de menu's van NLZiet. Gebruikt het Trakt-account dat in de Trakt-add-on (script.trakt) is gekoppeld; afleveringen worden herkend aan serietitel, seizoen en afleveringsnummer."
+
+msgctxt "#33222"
+msgid "Enter the PIN"
+msgstr "Voer de pincode in"
+
+msgctxt "#33223"
+msgid "Enter the current PIN"
+msgstr "Voer de huidige pincode in"
+
+msgctxt "#33224"
+msgid "Choose a new PIN (at least 4 digits)"
+msgstr "Kies een nieuwe pincode (minimaal 4 cijfers)"
+
+msgctxt "#33225"
+msgid "Repeat the new PIN"
+msgstr "Herhaal de nieuwe pincode"
+
+msgctxt "#33226"
+msgid "The PIN needs at least 4 digits."
+msgstr "De pincode moet minimaal 4 cijfers hebben."
+
+msgctxt "#33227"
+msgid "The two PINs are not the same. Please try again."
+msgstr "De twee pincodes zijn niet gelijk. Probeer het opnieuw."
+
+msgctxt "#33228"
+msgid "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+msgstr "Pincode ingesteld. Kies nu bij Profielen (lang indrukken) welke profielen een pincode nodig hebben."
+
+msgctxt "#33229"
+msgid "PIN removed"
+msgstr "Pincode verwijderd"
+
+msgctxt "#33230"
+msgid "Wrong PIN"
+msgstr "Onjuiste pincode"
+
+msgctxt "#33231"
+msgid "Set a PIN first."
+msgstr "Stel eerst een pincode in."
+
+msgctxt "#33232"
+msgid "Require the PIN for this profile"
+msgstr "Pincode vereisen voor dit profiel"
+
+msgctxt "#33233"
+msgid "No longer require the PIN for this profile"
+msgstr "Geen pincode meer voor dit profiel"
+
+msgctxt "#33234"
+msgid "This profile now asks for the PIN"
+msgstr "Dit profiel vraagt nu om de pincode"
+
+msgctxt "#33235"
+msgid "This profile no longer asks for the PIN"
+msgstr "Dit profiel vraagt niet meer om de pincode"
+
+msgctxt "#33236"
+msgid "Kids"
+msgstr "Kids"
+
+msgctxt "#33237"
+msgid "PIN"
+msgstr "pincode"
+
+msgctxt "#33248"
+msgid "Keep My Series and Watch Later in the library automatically"
+msgstr "Mijn series en Kijk later automatisch in de bibliotheek"
+
+msgctxt "#33249"
+msgid "Every series in My Series and every film in Watch Later is added to the Kodi library; an episode in Watch Later adds its series. New titles are added at every automatic update."
+msgstr "Elke serie uit Mijn series en elke film uit Kijk later komt in de Kodi-bibliotheek; een aflevering in Kijk later voegt de hele serie toe. Nieuwe titels komen er bij elke automatische update bij."
+
+msgctxt "#33250"
+msgid "Remove titles that left these lists"
+msgstr "Titels die uit deze lijsten verdwijnen ook verwijderen"
+
+msgctxt "#33251"
+msgid "Only titles added from these lists are removed; titles you added yourself stay."
+msgstr "Alleen titels die via deze lijsten zijn toegevoegd worden verwijderd; titels die je zelf hebt toegevoegd blijven staan."
+
+msgctxt "#33245"
+msgid "Adding My Series and Watch Later to the library..."
+msgstr "Mijn series en Kijk later naar de bibliotheek..."
+
+msgctxt "#33246"
+msgid "Lists: {} added, {} removed, {} failed"
+msgstr "Lijsten: {} toegevoegd, {} verwijderd, {} mislukt"
+
+msgctxt "#33247"
+msgid "Add My Series and Watch Later to the library now"
+msgstr "Mijn series en Kijk later nu naar de bibliotheek"
+
+msgctxt "#33252"
+msgid "Show logos in the menus too"
+msgstr "Logo's ook in de menu's tonen"
+
+msgctxt "#33253"
+msgid "Logos of titles outside the library are looked up on TMDb in the background (needs the TMDb key). Lists never wait: a logo appears the next time you open the list."
+msgstr "Logo's van titels buiten de bibliotheek worden op de achtergrond bij TMDb opgezocht (TMDb-sleutel nodig). Lijsten wachten daar nooit op: een logo verschijnt de volgende keer dat je de lijst opent."
+
+msgctxt "#33254"
+msgid "Posters and backgrounds: TMDb first"
+msgstr "Posters en achtergronden: TMDb eerst"
+
+msgctxt "#33255"
+msgid "On: posters and backgrounds come from TMDb when it has them, with NLZiet's own images as fallback. Descriptions always come from NLZiet first. Artwork you chose yourself in Kodi is never replaced."
+msgstr "Aan: posters en achtergronden komen van TMDb als die ze heeft, met de plaatjes van NLZiet als reserve. Beschrijvingen komen altijd eerst van NLZiet. Plaatjes die je zelf in Kodi hebt gekozen worden nooit vervangen."
+
+msgctxt "#33256"
+msgid "Choose the right TMDb title"
+msgstr "Juiste TMDb-titel kiezen"
+
+msgctxt "#33257"
+msgid "Other search term..."
+msgstr "Andere zoekterm..."
+
+msgctxt "#33258"
+msgid "TMDb title set; details and artwork are updated"
+msgstr "TMDb-titel ingesteld; gegevens en plaatjes worden bijgewerkt"
+
+msgctxt "#33259"
+msgid "Folders"
+msgstr "Mappen"
+
+msgctxt "#33260"
+msgid "Lists to the library"
+msgstr "Lijsten naar de bibliotheek"
+
+msgctxt "#33261"
+msgid "Automatic updates"
+msgstr "Automatisch bijwerken"
+
+msgctxt "#33262"
+msgid "Maintenance"
+msgstr "Onderhoud"
+
+msgctxt "#33263"
+msgid "Send watched status to NLZiet"
+msgstr "Kijkstatus naar NLZiet sturen"
+
+msgctxt "#33264"
+msgid "When you watch something (almost) to the end, or mark it as watched or unwatched in the Kodi library, NLZiet gets the same status."
+msgstr "Als je iets (bijna) helemaal uitkijkt, of het in de Kodi-bibliotheek als bekeken of niet bekeken markeert, krijgt NLZiet dezelfde status."
+
+msgctxt "#33265"
+msgid "Next episode (Up Next)"
+msgstr "Volgende aflevering (Up Next)"
+
+msgctxt "#33266"
+msgid "Shortly before the end, shows the next episode so it starts by itself. Needs the Up Next add-on."
+msgstr "Laat vlak voor het einde de volgende aflevering zien, die dan vanzelf start. Hiervoor is de Up Next-addon nodig."
+
+msgctxt "#33267"
+msgid "Install the Up Next add-on"
+msgstr "Up Next-addon installeren"
+
+msgctxt "#33268"
+msgid "Offer to skip intro and recap"
+msgstr "Intro en samenvatting overslaan"
+
+msgctxt "#33269"
+msgid "While watching, asks if you want to skip the intro or recap, when NLZiet sends those times."
+msgstr "Vraagt tijdens het kijken of je de intro of samenvatting wilt overslaan, als NLZiet die tijden meestuurt."
+
+msgctxt "#33270"
+msgid "Skip the intro?"
+msgstr "Intro overslaan?"
+
+msgctxt "#33271"
+msgid "Skip the recap?"
+msgstr "Samenvatting overslaan?"
+
+msgctxt "#33272"
+msgid "Widgets for the home screen"
+msgstr "Widgets voor je startscherm"
+
+msgctxt "#33273"
+msgid "Continue watching"
+msgstr "Verder kijken"
+
+msgctxt "#33274"
+msgid "Pick these lists as a widget in your skin settings."
+msgstr "Kies deze lijsten als widget in de instellingen van je skin."
+
+msgctxt "#33275"
+msgid "Save my lists (backup)"
+msgstr "Mijn lijsten bewaren (back-up)"
+
+msgctxt "#33276"
+msgid "Restore my lists"
+msgstr "Mijn lijsten terugzetten"
+
+msgctxt "#33277"
+msgid "Backup saved: {0}"
+msgstr "Back-up opgeslagen: {0}"
+
+msgctxt "#33278"
+msgid "Restored: {0}. Restart Kodi to be sure everything is reloaded."
+msgstr "Teruggezet: {0}. Herstart Kodi voor de zekerheid, dan is alles opnieuw geladen."
+
+msgctxt "#33279"
+msgid "Choose a backup"
+msgstr "Kies een back-up"
+
+msgctxt "#33280"
+msgid "No backup found in the backup folder."
+msgstr "Geen back-up gevonden in de back-upmap."
+
+msgctxt "#33281"
+msgid "Daily automatic check"
+msgstr "Dagelijkse automatische controle"
+
+msgctxt "#33282"
+msgid "Once a day the add-on checks in the background whether everything works, and tells you if something needs attention."
+msgstr "De addon controleert één keer per dag op de achtergrond of alles werkt, en meldt het als er iets aandacht nodig heeft."
+
+msgctxt "#33283"
+msgid "Needs attention: {0}. Open Settings > Library > Check everything."
+msgstr "Let op: {0}. Kies bij Instellingen > Bibliotheek > Onderhoud: Diagnose uitvoeren."
+
+msgctxt "#33284"
+msgid "Also search in Videoland"
+msgstr "Ook zoeken in Videoland"
+
+msgctxt "#33285"
+msgid "While watching"
+msgstr "Tijdens het kijken"
+
+msgctxt "#33286"
+msgid "Backup and restore"
+msgstr "Back-up en herstel"
+
+msgctxt "#33287"
+msgid "The backup contains My list, Watch later, My series, the library list and your settings (without password). It is saved in the add-on folder under 'backups'."
+msgstr "De back-up bevat Mijn lijst, Kijk later, Mijn series, de bibliotheeklijst en je instellingen (zonder wachtwoord). Hij staat in de addonmap onder 'backups'."
+
+msgctxt "#33288"
+msgid "Replace your current lists with this backup?"
+msgstr "Je huidige lijsten vervangen door deze back-up?"
+
+msgctxt "#33289"
+msgid "Episode {0}"
+msgstr "Aflevering {0}"
+
+msgctxt "#33290"
+msgid "Watched status sent to NLZiet"
+msgstr "Kijkstatus naar NLZiet gestuurd"

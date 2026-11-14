@@ -13,9 +13,12 @@ even when older episodes expire or NLZiet changes its own numbering.
 import json
 import os
 import re
+import shutil
 import time
 import urllib.parse
 from xml.sax.saxutils import escape
+
+from . import library_art, metadata
 
 try:
     import xbmc
@@ -31,9 +34,10 @@ except ImportError:  # pragma: no cover - only outside Kodi
 ADDON_ID = 'plugin.video.nlziet'
 DEFAULT_TV_PATH = 'special://profile/addon_data/{}/library/TV Shows'.format(ADDON_ID)
 DEFAULT_MOVIES_PATH = 'special://profile/addon_data/{}/library/Movies'.format(ADDON_ID)
-# Default used by versions up to 1.6.4. Still honoured when that folder exists
-# so existing Android installs keep exporting to the folder Kodi already scans.
-LEGACY_TV_PATH = '/storage/emulated/0/KodiNLZietLibrary/TV Shows'
+# Default used by versions up to 1.6.4. Files found there are moved once into
+# the add-on's own data folder (see Library.migrate_legacy_folder).
+LEGACY_ROOT = '/storage/emulated/0/KodiNLZietLibrary'
+LEGACY_TV_PATH = LEGACY_ROOT + '/TV Shows'
 
 STORE_VERSION = 1
 UNDATED = '9999-12-31'
@@ -259,7 +263,13 @@ class LibraryStore:
 
 
 class Library:
-    def __init__(self, api, addon, episode_fetcher, store=None, fs=None, now=None):
+    def __init__(self, api, addon, episode_fetcher, store=None, fs=None, now=None, enricher=None,
+                 downloader=None, art_picker=None):
+        """``art_picker(item)`` returns ``(poster_url, fanart_url)`` for an API item;
+        ``downloader(url)`` returns image bytes (None: keep artwork as URLs)."""
+        self.enricher = enricher
+        self.downloader = downloader
+        self.art_picker = art_picker
         self.api = api
         self.addon = addon
         self.episode_fetcher = episode_fetcher
@@ -279,12 +289,68 @@ class Library:
 
     def tv_root(self):
         value = self._setting('library_path')
-        if not value or value == DEFAULT_TV_PATH:
-            # Keep using the old Android default when it is already in use.
-            if os.path.isdir(LEGACY_TV_PATH):
-                return LEGACY_TV_PATH
+        if not value or value.rstrip('/') == LEGACY_TV_PATH:
             value = DEFAULT_TV_PATH
         return translate_path(value)
+
+    def migrate_legacy_folder(self, legacy_root=LEGACY_ROOT):
+        """Move series exported by 1.6.x out of KodiNLZietLibrary into the
+        add-on's own folder. Returns the number of moved show folders."""
+        if self._setting('library_path').rstrip('/') == LEGACY_TV_PATH:
+            try:
+                self.addon.setSetting('library_path', DEFAULT_TV_PATH)
+            except Exception:
+                pass
+        source = os.path.join(legacy_root, 'TV Shows')
+        if not os.path.isdir(source):
+            return 0
+        target = self.tv_root()
+        if '://' in str(target) or os.path.normcase(os.path.abspath(target)) == os.path.normcase(os.path.abspath(source)):
+            return 0
+        moved = 0
+        for name in sorted(os.listdir(source)):
+            src = os.path.join(source, name)
+            dst = os.path.join(target, name)
+            try:
+                if os.path.isdir(src):
+                    self._merge_move(src, dst)
+                    moved += 1
+                else:
+                    os.makedirs(target, exist_ok=True)
+                    shutil.move(src, dst)
+            except Exception as exc:
+                _log('could not move {}: {}'.format(src, exc))
+        for folder in (source, legacy_root):
+            try:
+                if os.path.isdir(folder) and not os.listdir(folder):
+                    os.rmdir(folder)
+            except OSError:
+                pass
+        if moved:
+            _log('moved {} series from {} to {}'.format(moved, source, target))
+        return moved
+
+    @staticmethod
+    def _merge_move(src, dst):
+        if not os.path.exists(dst):
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.move(src, dst)
+            return
+        for root, _dirs, files in os.walk(src):
+            rel = os.path.relpath(root, src)
+            out = os.path.join(dst, rel) if rel != '.' else dst
+            os.makedirs(out, exist_ok=True)
+            for name in files:
+                target = os.path.join(out, name)
+                if os.path.exists(target):
+                    os.remove(os.path.join(root, name))  # the new folder wins
+                else:
+                    shutil.move(os.path.join(root, name), target)
+        shutil.rmtree(src, ignore_errors=True)
+
+    def tmdb_art_first(self):
+        """Posters/backgrounds from TMDb before NLZiet's own (default on)."""
+        return self._setting('art_tmdb_first') not in ('false', '0')
 
     def movies_root(self):
         return translate_path(self._setting('library_movies_path') or DEFAULT_MOVIES_PATH)
@@ -307,9 +373,39 @@ class Library:
         return sorted(section.items(), key=lambda kv: str(kv[1].get('title') or '').lower())
 
     # ----------------------------------------------------------------- series
-    def add_series(self, series_id, title=None):
-        """Add (or refresh) a series. Returns a result dict."""
+    def add_series(self, series_id, title=None, poster=None, fanart=None):
+        """Add (or refresh) a series. ``poster``/``fanart`` come from the list
+        item the user picked and are used when the detail page has none."""
+        self._remember_hints('series', series_id, poster, fanart)
         return self._sync_series(str(series_id), title=title, is_update=False)
+
+    def _remember_hints(self, kind, item_id, poster, fanart):
+        if not (poster or fanart):
+            return
+        section = self.store.section(kind)
+        entry = section.setdefault(str(item_id), {}) if str(item_id) in section else None
+        hints = {'poster_hint': poster or '', 'fanart_hint': fanart or ''}
+        if entry is not None:
+            entry.update({k: v for k, v in hints.items() if v})
+        else:
+            self._pending_hints = getattr(self, '_pending_hints', {})
+            self._pending_hints[(kind, str(item_id))] = hints
+
+    def _hints(self, kind, item_id, entry):
+        pending = getattr(self, '_pending_hints', {}).pop((kind, str(item_id)), {})
+        for key, value in pending.items():
+            if value:
+                entry[key] = value
+        return entry.get('poster_hint') or '', entry.get('fanart_hint') or ''
+
+    def _pick_art(self, item):
+        if self.art_picker is not None:
+            try:
+                poster, fanart = self.art_picker(item or {})
+                return poster or '', fanart or ''
+            except Exception:
+                pass
+        return '', ''
 
     def _numbering_mode(self, episodes):
         numbered = [ep for ep in episodes if _int_or_none(ep.get('season_number')) is not None
@@ -375,7 +471,10 @@ class Library:
         section = self.store.section('series')
         entry = dict(section.get(series_id) or {})
         detail = self.api.get_series_detail(series_id) or {}
-        series_title = detail.get('title') or entry.get('title') or title or series_id
+        if title:
+            entry['card_title'] = metadata.clean_title(title)
+        series_title = (metadata.clean_title(detail.get('title')) or entry.get('card_title')
+                        or entry.get('title') or series_id)
         episodes = [ep for ep in (self.episode_fetcher(self.api, series_id, detail) or []) if ep.get('id')]
         if not episodes:
             # Never delete files because of a failed or empty API answer.
@@ -387,15 +486,31 @@ class Library:
 
         entry['title'] = series_title
         entry.setdefault('added', int(self.now()))
-        thumb = detail.get('thumb') or _image(detail.get('raw') or {}, 'posterUrl', 'image')
-        if thumb:
-            entry['thumb'] = thumb
+        hint_poster, hint_fanart = self._hints('series', series_id, entry)
+        picked_poster, picked_fanart = self._pick_art(detail.get('raw') or detail)
+        thumb = (picked_poster or detail.get('thumb') or hint_poster
+                 or _image(detail.get('raw') or {}, 'posterUrl', 'image'))
+        show_data = {
+            'plot': detail.get('description') or '',
+            'poster': thumb or '',
+            'fanart': (picked_fanart or hint_fanart
+                       or _image(detail.get('raw') or {}, 'backdropUrl', 'landscapeUrl', 'heroUrl') or ''),
+        }
+        show_data = self._enrich_show(entry, series_title, show_data)
+        if show_data.get('poster'):
+            entry['thumb'] = show_data['poster']
         show_dir = self._show_folder(entry, series_title)
 
-        self.fs.write(self.fs.join(show_dir, 'tvshow.nfo'), self._tvshow_nfo(series_id, series_title, detail, thumb))
+        self.fs.write(self.fs.join(show_dir, 'tvshow.nfo'), self._tvshow_nfo(series_id, series_title, show_data))
+        _saved = library_art.save_art(self, entry, show_dir,
+                                      {k: show_data.get(k) for k in ('poster', 'fanart', 'clearlogo')},
+                                      library_art.art_names('series', entry['folder']), self.downloader)
+        entry['clearlogo'] = _saved.get('clearlogo') or show_data.get('clearlogo') or ''
 
         wanted = set()
+        seasons_used = set()
         for ep, season, number, airdate in self._assign_numbers(entry, episodes):
+            seasons_used.add(season)
             ep_title = ep.get('subtitle') or ep.get('title') or 'Episode {}'.format(number)
             base = '{} S{:02d}E{:02d}'.format(safe_filename(entry['folder']), season, number)
             season_dir = self.fs.join(show_dir, 'Season {}'.format(season))
@@ -414,7 +529,14 @@ class Library:
             }
             if self.fs.write(strm_path, self.plugin_url(query) + '\n'):
                 result['added'] += 1
-            self.fs.write(nfo_path, self._episode_nfo(ep, ep_title, series_title, season, number, airdate))
+            ep_data = {
+                'title': ep_title,
+                'plot': ep.get('description') or '',
+                'thumb': ep.get('thumb') or _image(ep, 'posterUrl', 'image') or '',
+                'aired': '' if airdate == UNDATED else airdate,
+            }
+            ep_data = self._enrich_episode(entry, ep_data, season, number)
+            self.fs.write(nfo_path, self._episode_nfo(ep, ep_data, series_title, season, number))
 
         # Remove episodes that are no longer offered (and old export files).
         for path in list(self.fs.walk_files(show_dir)):
@@ -426,6 +548,9 @@ class Library:
                     result['removed'] += 1
         self.fs.remove_empty_dirs(show_dir)
 
+        library_art.save_season_posters(self, entry, show_dir, show_data.get('season_posters'),
+                                        seasons_used, self.downloader)
+        self._save_metadata()
         entry['updated'] = int(self.now())
         entry['last_checked'] = int(self.now())
         entry['episode_count'] = len(episodes)
@@ -433,40 +558,80 @@ class Library:
         result.update({'ok': True, 'total': len(episodes), 'title': series_title})
         return result
 
-    def _tvshow_nfo(self, series_id, title, detail, thumb):
+    # --------------------------------------------------------------- metadata
+    def _enrich_show(self, entry, title, local):
+        if self.enricher is None:
+            return local
+        try:
+            extra = self.enricher.show(title, known=entry.get('ids'))
+            card_title = entry.get('card_title')
+            if not (extra.get('ids') or {}).get('tmdb') and card_title and card_title != title:
+                # The series page title can differ from the card the user picked.
+                second = self.enricher.show(card_title, known=entry.get('ids'))
+                if (second.get('ids') or {}).get('tmdb'):
+                    extra = second
+        except Exception as exc:
+            _log('metadata lookup failed for {}: {}'.format(title, exc))
+            return local
+        ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
+        _log("metadata for '{}': tmdb={} tvmaze={}".format(title, ids.get('tmdb', '-'), ids.get('tvmaze', '-')))
+        if ids:
+            entry['ids'] = ids
+        return metadata.merge_art_first(local, extra, self.tmdb_art_first())
+
+    def _enrich_episode(self, entry, local, season, number):
+        if self.enricher is None or not entry.get('ids'):
+            return local
+        try:
+            extra = self.enricher.episode(entry['ids'], season, number, local.get('aired') or None,
+                                          by_number=entry.get('numbering') == 'api')
+        except Exception:
+            return local
+        return metadata.merge(local, extra)
+
+    def _save_metadata(self):
+        if self.enricher is not None:
+            try:
+                self.enricher.save()
+            except Exception:
+                pass
+
+    def _tvshow_nfo(self, series_id, title, data):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<tvshow>',
                  '  <title>{}</title>'.format(escape(title)),
-                 '  <plot>{}</plot>'.format(escape(detail.get('description') or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(series_id)))]
-        if thumb:
-            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(thumb)))
-        fanart = _image(detail.get('raw') or {}, 'backdropUrl', 'landscapeUrl', 'heroUrl')
-        if fanart:
-            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(fanart)))
+        if data.get('year'):
+            parts.append('  <year>{}</year>'.format(data['year']))
+        if data.get('poster'):
+            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(data['poster'])))
+        if data.get('fanart'):
+            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(data['fanart'])))
+        parts += metadata.nfo_extra_lines(data, escape)
         parts.append('</tvshow>')
         return '\n'.join(parts) + '\n'
 
-    def _episode_nfo(self, ep, ep_title, series_title, season, number, airdate):
+    def _episode_nfo(self, ep, data, series_title, season, number):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<episodedetails>',
-                 '  <title>{}</title>'.format(escape(ep_title)),
+                 '  <title>{}</title>'.format(escape(data.get('title') or 'Episode {}'.format(number))),
                  '  <showtitle>{}</showtitle>'.format(escape(series_title)),
                  '  <season>{}</season>'.format(season),
                  '  <episode>{}</episode>'.format(number),
-                 '  <aired>{}</aired>'.format('' if airdate == UNDATED else airdate),
-                 '  <plot>{}</plot>'.format(escape(ep.get('description') or '')),
+                 '  <aired>{}</aired>'.format(escape(data.get('aired') or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(ep.get('id'))))]
         duration = _int_or_none(ep.get('duration'))
         if duration:
             minutes = duration // 60 if duration > 600 else duration
             parts.append('  <runtime>{}</runtime>'.format(minutes))
-        thumb = ep.get('thumb') or _image(ep, 'posterUrl', 'image')
-        if thumb:
-            parts.append('  <thumb>{}</thumb>'.format(escape(thumb)))
+        if data.get('thumb'):
+            parts.append('  <thumb>{}</thumb>'.format(escape(data['thumb'])))
         parts.append('</episodedetails>')
         return '\n'.join(parts) + '\n'
 
     # ----------------------------------------------------------------- movies
-    def add_movie(self, movie_id, title=None, item=None):
+    def add_movie(self, movie_id, title=None, item=None, poster=None, fanart=None):
+        self._remember_hints('movie', movie_id, poster, fanart)
         return self._sync_movie(str(movie_id), title=title, item=item, is_update=False)
 
     def _sync_movie(self, movie_id, title=None, item=None, is_update=False):
@@ -495,6 +660,26 @@ class Library:
                             or raw.get('releaseYear') or raw.get('productionYear'))
         if year and not 1900 <= year <= 2100:
             year = None
+        hint_poster, hint_fanart = self._hints('movie', movie_id, entry)
+        picked_poster, picked_fanart = self._pick_art(raw or detail)
+        movie_data = {
+            'plot': detail.get('description') or item.get('description') or '',
+            'poster': (picked_poster or detail.get('thumb') or item.get('thumb') or item.get('posterUrl')
+                       or hint_poster or ''),
+            'fanart': picked_fanart or hint_fanart or '',
+            'year': year,
+        }
+        if self.enricher is not None:
+            try:
+                extra = self.enricher.movie(movie_title, year, known=entry.get('ids'))
+                ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
+                if ids:
+                    entry['ids'] = ids
+                movie_data = metadata.merge_art_first(movie_data, extra, self.tmdb_art_first())
+            except Exception as exc:
+                _log('metadata lookup failed for {}: {}'.format(movie_title, exc))
+            self._save_metadata()
+        year = _int_or_none(movie_data.get('year'))
         if not entry.get('folder'):
             entry['folder'] = safe_filename('{} ({})'.format(movie_title, year) if year else movie_title)
         movie_dir = self.fs.join(self.movies_root(), entry['folder'])
@@ -504,8 +689,12 @@ class Library:
             query['year'] = str(year)
         if self.fs.write(base + '.strm', self.plugin_url(query) + '\n'):
             result['added'] = 1
-        thumb = detail.get('thumb') or item.get('thumb') or item.get('posterUrl')
-        self.fs.write(base + '.nfo', self._movie_nfo(movie_id, movie_title, detail.get('description') or item.get('description') or '', year, thumb))
+        thumb = movie_data.get('poster')
+        self.fs.write(base + '.nfo', self._movie_nfo(movie_id, movie_title, movie_data, year))
+        _saved = library_art.save_art(self, entry, movie_dir,
+                                      {k: movie_data.get(k) for k in ('poster', 'fanart', 'clearlogo')},
+                                      library_art.art_names('movie', entry['folder']), self.downloader)
+        entry['clearlogo'] = _saved.get('clearlogo') or movie_data.get('clearlogo') or ''
 
         entry.update({'title': movie_title, 'updated': int(self.now()), 'last_checked': int(self.now())})
         entry.setdefault('added', int(self.now()))
@@ -517,15 +706,18 @@ class Library:
         result.update({'ok': True, 'total': 1, 'title': movie_title})
         return result
 
-    def _movie_nfo(self, movie_id, title, plot, year, thumb):
+    def _movie_nfo(self, movie_id, title, data, year):
         parts = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', '<movie>',
                  '  <title>{}</title>'.format(escape(title)),
-                 '  <plot>{}</plot>'.format(escape(plot or '')),
+                 '  <plot>{}</plot>'.format(escape(data.get('plot') or '')),
                  '  <uniqueid type="nlziet" default="true">{}</uniqueid>'.format(escape(str(movie_id)))]
         if year:
             parts.append('  <year>{}</year>'.format(year))
-        if thumb:
-            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(thumb)))
+        if data.get('poster'):
+            parts.append('  <thumb aspect="poster">{}</thumb>'.format(escape(data['poster'])))
+        if data.get('fanart'):
+            parts.append('  <fanart><thumb>{}</thumb></fanart>'.format(escape(data['fanart'])))
+        parts += metadata.nfo_extra_lines(data, escape, kind='movie')
         parts.append('</movie>')
         return '\n'.join(parts) + '\n'
 
@@ -586,17 +778,83 @@ class Library:
         return (self.now() - last) >= hours * 3600
 
 
+def scan_flag_path():
+    return os.path.join(translate_path("special://profile/addon_data/plugin.video.nlziet") or "", "scan_pending.json")
+
+
 def run_library_jobs(scan=True, clean=False):
-    """Ask Kodi to clean and/or scan the video library without dialogs."""
-    if xbmc is None:
-        return
-    calls = []
-    if clean:
-        calls.append({'jsonrpc': '2.0', 'method': 'VideoLibrary.Clean', 'params': {'showdialogs': False}, 'id': 1})
-    if scan:
-        calls.append({'jsonrpc': '2.0', 'method': 'VideoLibrary.Scan', 'params': {'showdialogs': False}, 'id': 2})
-    for call in calls:
-        try:
-            xbmc.executeJSONRPC(json.dumps(call))
-        except Exception as exc:
-            _log('library job failed: {}'.format(exc))
+    """Ask Kodi to clean and/or scan the video library without dialogs. When
+    Kodi is already scanning, the request waits until that scan is done."""
+    library_art.request_scan(scan_flag_path(), scan=scan, clean=clean)
+
+
+def next_library_episode(store, content_id):
+    """Find the episode after ``content_id`` in a library series.
+
+    Returns ``(series_id, entry, (season, episode), next_id, (season, episode))``
+    or ``None`` when the episode is not in the library or is the last one.
+    """
+    content_id = str(content_id or '')
+    if not content_id:
+        return None
+    for series_id, entry in (store.section('series') or {}).items():
+        episodes = entry.get('episodes') or {}
+        if content_id not in episodes:
+            continue
+        numbered = []
+        for ep_id, value in episodes.items():
+            try:
+                numbered.append(((int(value[0]), int(value[1])), str(ep_id)))
+            except (TypeError, ValueError, IndexError):
+                continue
+        numbered.sort()
+        ids = [ep_id for _n, ep_id in numbered]
+        if content_id not in ids:
+            return None
+        index = ids.index(content_id)
+        if index + 1 >= len(numbered):
+            return None
+        current = numbered[index][0]
+        following, next_id = numbered[index + 1]
+        return series_id, entry, current, next_id, following
+    return None
+
+
+def next_from_surrounding(data, content_id):
+    """Pick the next episode from NLZiet's ``surroundingepisodes`` answer.
+
+    The exact shape is not documented, so this accepts a ``next``-like key
+    holding an item, or a list of episodes in order. Returns the item dict
+    (with at least ``id``) or ``None``.
+    """
+    content_id = str(content_id or '')
+
+    def item_id(value):
+        if not isinstance(value, dict):
+            return ''
+        inner = value.get('content') if isinstance(value.get('content'), dict) else value
+        return str(inner.get('id') or '')
+
+    def unwrap(value):
+        return value.get('content') if isinstance(value.get('content'), dict) else value
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if 'next' in str(key).lower():
+                if isinstance(value, list):
+                    value = value[0] if value else None
+                if item_id(value) and item_id(value) != content_id:
+                    return unwrap(value)
+        for key in ('data', 'items', 'episodes', 'surroundingEpisodes'):
+            if isinstance(data.get(key), (list, dict)):
+                found = next_from_surrounding(data[key], content_id)
+                if found:
+                    return found
+        return None
+    if isinstance(data, list):
+        ids = [item_id(value) for value in data]
+        if content_id in ids:
+            index = ids.index(content_id)
+            if index + 1 < len(data) and ids[index + 1]:
+                return unwrap(data[index + 1])
+    return None

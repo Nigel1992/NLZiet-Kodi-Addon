@@ -18,8 +18,9 @@ def make_color_tag(color_raw, text):
 
 
 def pick_menu_icon(addon_path, name):
-    """Prefer menu_{name}.png, then .svg, then fall back to the addon icon."""
+    """Prefer media/menu/{name}.png, then menu_{name}.png/.svg, then the addon icon."""
     candidates = [
+        os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.svg'),
         os.path.join(addon_path, 'icon.png'),
@@ -34,13 +35,15 @@ def pick_menu_icon(addon_path, name):
 
 
 def pick_menu_png(addon_path, name):
-    """Explicit PNG-first picker (prefer exact menu_{name}.png when available)."""
-    try:
-        png = os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')
-        if png and os.path.exists(png):
-            return png
-    except Exception:
-        pass
+    """Explicit PNG-first picker (media/menu/{name}.png, a new path so Kodi's
+    texture cache never shows the older icons that used the same file names)."""
+    for png in (os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
+                os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')):
+        try:
+            if png and os.path.exists(png):
+                return png
+        except Exception:
+            pass
     return pick_menu_icon(addon_path, name)
 
 
@@ -52,6 +55,7 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        add_to_library_label='Add to library',
                        remove_from_library_label='Remove from library',
                        library_check=None,
+                       extra_art=None,
                        mylist_add_label='Add to My List',
                        mylist_remove_label='Remove from My List',
                        watch_later_add_label='Add to Watch Later',
@@ -76,6 +80,11 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
         # Use smart artwork assignment to respect aspect ratios
         # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
         set_smart_artwork(li, content, thumb=thumb)
+    if extra_art:
+        try:
+            li.setArt(dict(extra_art))
+        except Exception:
+            pass
 
     item_info = dict(info or {})
 
@@ -249,6 +258,15 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 lib_title = (content.get('title') if isinstance(content, dict) else None) or title
                 if lib_title:
                     cm_query['title'] = lib_title
+                if isinstance(content, dict):
+                    lib_poster = pick_portrait_thumb(content)
+                    lib_fanart = pick_landscape_thumb(content)
+                    if lib_poster:
+                        cm_query['poster'] = lib_poster
+                    if lib_fanart:
+                        cm_query['fanart'] = lib_fanart
+                elif thumb:
+                    cm_query['poster'] = thumb
                 label = remove_from_library_label if in_library else add_to_library_label
                 context_items.append((label, f"RunPlugin({build_url_func(cm_query)})"))
             except Exception:

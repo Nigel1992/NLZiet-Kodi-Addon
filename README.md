@@ -45,7 +45,7 @@ Both Kijk Later and My Series can optionally **synchronise both ways with your N
 N) parsing, with season mapping.  
 **Kijk Later** additionally shows the episode number and the remaining availability as compact, subtly coloured lines in the item description.  
 - **Search**: Find series, movies, and episodes by title.  
-- **Kodi library**: add series and movies to the Kodi library through the context menu ("Add to library"). The addon writes `.strm` + `.nfo` files, keeps episode numbers stable, adds new episodes and removes expired ones automatically (Settings → Library), and can scan/clean the Kodi library afterwards. The **Library** menu shows everything you added. Add the TV shows and movies folders once as Kodi video sources with the scraper "Local information only".  
+- **Kodi library**: add series and movies to the Kodi library through the context menu ("Add to library"). The addon writes `.strm` + `.nfo` files, keeps episode numbers stable, adds new episodes and removes expired ones automatically (Settings → Library), and can scan/clean the Kodi library afterwards. The **Library** menu shows everything you added. Add the TV shows and movies folders once as Kodi video sources with the scraper "Local information only". Missing details (description, artwork, genres, episode titles) are filled in from TMDb (free API key, optional) and TVmaze; NLZiet's own data always comes first.  
 - **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion.  
 The Trakt add-on must be installed and authorized separately.  
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.  
@@ -85,12 +85,12 @@ scripts/run-addon-check-local.sh --branch omega
 
 ## 🛣️ Roadmap / Coming Soon
 
-- **Kids Profile Support**: Full kids mode and parental controls.  
-- **Improved Search**: Filter by genre, year, release date, and more.  
-- **Playback History UI**: Show Trakt-backed watched status directly inside NLZiet menus.  
-- **Advanced Sorting**: Sort series by newest, oldest, alphabetical, popularity.  
-- **UI Polish**: Enhanced skins integration, custom info dialogs, and animations.  
-- **Automated Testing**: CI/CD pipeline for code quality and automated releases.  
+- ✅ **Parental control**: PIN for chosen profiles and optionally for live tv; kids profiles are marked (v1.8.0).  
+- ✅ **Improved search**: filter results by period and genre (v1.8.0).  
+- ✅ **Trakt watched status in menus**: opt-in, uses the account connected in script.trakt (v1.8.0).  
+- ✅ **Sorting**: Kodi's sort menu (default order, title, year, episode) on list pages (v1.7.4).  
+- ✅ **Automated testing**: GitHub Actions run the tests and build the zip; `v*` tags publish a release (v1.7.4).  
+- **UI polish**: new icon set done (v1.7.3). Custom info dialogs and animations are left to the skin: Kodi's own info screen shows the data, and a custom window would look different in every skin.  
 
 ---
 
@@ -100,12 +100,16 @@ scripts/run-addon-check-local.sh --branch omega
 - [X] **Episodes use episode title instead of count** (show SxxExx or Afl.  
 N when possible)  
 - [X] **Fix subfolders in series option** (better season/episode navigation)  
-- [ ] **Improve error messages and user feedback**  
-- [ ] **Better artwork and fanart for all content**  
+- [X] **Improve error messages and user feedback** (one clear sentence per problem, details in the log)  
+- [X] **Better artwork and fanart for all content** (library posters/backgrounds, TMDb/TVmaze fill-in)  
 - [X] **Settings: allow custom API endpoint for advanced users**  
-- [ ] **Add more debug and diagnostic tools**  
-- [ ] **Accessibility improvements for screen readers**  
+- [X] **Add more debug and diagnostic tools** (Settings → Library → Run diagnostics)  
+- [X] **Accessibility improvements for screen readers** (text instead of emoji/colour-only markers, status words in diagnostics)  
 - [X] **Add unit tests for routing, playback metadata, and Trakt scrobbling**  
+
+## 🧑‍💻 Development
+
+Some modules are shared with the Videoland add-on (`metadata.py`, `library_art.py`, `errors.py`, `diagnostics.py`, `search_filters.py`, `logo_cache.py` in `resources/lib/`). After changing one, copy it to the other add-on with `python3 scripts/sync-shared.py <path to the other add-on>`; `tests/test_shared_modules.py` fails until you do. Menu icons are rebuilt with `python3 scripts/build-menu-icons.py`, the installable zip with `python3 scripts/build-release.py`.
 
 ## 💖 Support the Project
 
@@ -154,7 +158,7 @@ Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren
 N)-parsing, met seizoensmapping.  
 **Kijk Later** toont daarnaast het afleveringsnummer en de resterende beschikbaarheid als compacte, subtiel gekleurde regels in de itembeschrijving.  
 - **Zoeken**: Vind series, films en afleveringen op titel.  
-- **Kodi-bibliotheek**: voeg series en films toe aan de Kodi-bibliotheek via het contextmenu ("Toevoegen aan bibliotheek"). De addon schrijft `.strm`- en `.nfo`-bestanden, houdt afleveringsnummers vast, voegt nieuwe afleveringen automatisch toe en ruimt verlopen afleveringen op (Instellingen → Bibliotheek), en kan daarna de Kodi-bibliotheek scannen en opschonen. Het menu **Bibliotheek** toont alles wat je hebt toegevoegd. Voeg de mappen voor series en films één keer toe als videobron in Kodi, met de scraper "Lokale informatie".  
+- **Kodi-bibliotheek**: voeg series en films toe aan de Kodi-bibliotheek via het contextmenu ("Toevoegen aan bibliotheek"). De addon schrijft `.strm`- en `.nfo`-bestanden, houdt afleveringsnummers vast, voegt nieuwe afleveringen automatisch toe en ruimt verlopen afleveringen op (Instellingen → Bibliotheek), en kan daarna de Kodi-bibliotheek scannen en opschonen. Het menu **Bibliotheek** toont alles wat je hebt toegevoegd. Voeg de mappen voor series en films één keer toe als videobron in Kodi, met de scraper "Lokale informatie". Ontbrekende gegevens (beschrijving, plaatjes, genres, afleveringstitels) worden aangevuld via TMDb (gratis API-sleutel, optioneel) en TVmaze; de gegevens van NLZiet gaan altijd voor.  
 - **Trakt Scrobbling**: Films en afleveringen tonen afspeelmetadata aan de officiële Kodi `script.trakt`-add-on, met film titel/jaar-resolutie, benoemde-aflevering-matching, herstel van gecachte URL's en expliciete live-TV-uitsluiting.  
 De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.  
 - **Robuuste Handshake**: Automatische manifest/license-extractie en fallback-logica.  
@@ -196,12 +200,12 @@ scripts/run-addon-check-local.sh --branch omega
 
 ## 🛣️ Roadmap / Binnenkort
 
-- **Kids Profile Support**: Volledige kids-modus en ouderlijk toezicht.
-- **Verbeterd zoeken**: Filteren op genre, jaar, releasedatum en meer.
-- **Afspeelgeschiedenis-UI**: Toon Trakt-backed kijkstatus direct in NLZiet-menu's.
-- **Geavanceerd sorteren**: Sorteer series op nieuwste, oudste, alfabetisch, populariteit.
-- **UI Polish**: Verbeterde skin-integratie, aangepaste infodialogen en animaties.
-- **Geautomatiseerd testen**: CI/CD-pipeline voor codekwaliteit en geautomatiseerde releases.
+- ✅ **Ouderlijk toezicht**: pincode voor gekozen profielen en optioneel voor live tv; kinderprofielen worden gemarkeerd (v1.8.0).
+- ✅ **Verbeterd zoeken**: resultaten filteren op periode en genre (v1.8.0).
+- ✅ **Trakt-kijkstatus in de menu's**: optioneel, via het account dat in script.trakt is gekoppeld (v1.8.0).
+- ✅ **Sorteren**: Kodi's sorteermenu (standaardvolgorde, titel, jaar, aflevering) in lijsten (v1.7.4).
+- ✅ **Geautomatiseerd testen**: GitHub Actions draaien de tests en bouwen de zip; een `v*`-tag publiceert een release (v1.7.4).
+- **UI polish**: nieuwe pictogrammen klaar (v1.7.3). Eigen infoschermen en animaties laten we aan de skin: Kodi's eigen infoscherm toont de gegevens, en een eigen venster ziet er in elke skin anders uit.
 
 ---
 
@@ -210,11 +214,11 @@ scripts/run-addon-check-local.sh --branch omega
 - [X] **Fix issue waarbij maar 50 films/series worden getoond** (paginering/limit-afhandeling)
 - [X] **Afleveringen gebruiken afleveringstitel in plaats van telling** (toon SxxExx of Afl. N indien mogelijk)
 - [X] **Fix submappen in series-optie** (betere seizoen/aflevering-navigatie)
-- [ ] **Verbeter foutmeldingen en gebruikersfeedback**
-- [ ] **Betere artwork en fanart voor alle content**
+- [X] **Verbeter foutmeldingen en gebruikersfeedback** (één duidelijke zin per probleem, details in het logboek)
+- [X] **Betere artwork en fanart voor alle content** (posters en achtergronden in de bibliotheek, aanvulling via TMDb/TVmaze)
 - [X] **Instellingen: aangepast API-endpoint toestaan voor gevorderde gebruikers**
-- [ ] **Meer debug- en diagnostische tools toevoegen**
-- [ ] **Toegankelijkheidsverbeteringen voor schermlezers**
+- [X] **Meer debug- en diagnostische tools toevoegen** (Instellingen → Bibliotheek → Diagnose uitvoeren)
+- [X] **Toegankelijkheidsverbeteringen voor schermlezers** (tekst in plaats van emoji of alleen kleur, statuswoorden in de diagnose)
 - [X] **Unit tests voor routing, afspeelmetadata en Trakt scrobbling**
 
 ## 💖 Steun het project

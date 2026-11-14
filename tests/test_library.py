@@ -258,3 +258,198 @@ def test_background_update_skips_while_playing(wired, monkeypatch):
     default.library_update(background=True)
 
     assert called == []
+
+
+def test_legacy_android_folder_is_moved_into_addon_folder(tmp_path):
+    legacy = tmp_path / 'KodiNLZietLibrary'
+    (legacy / 'TV Shows' / 'Show' / 'Season 2026').mkdir(parents=True)
+    (legacy / 'TV Shows' / 'Show' / 'tvshow.nfo').write_text('<tvshow/>')
+    (legacy / 'TV Shows' / 'Show' / 'Season 2026' / 'Show S2026E01.strm').write_text('plugin://x\n')
+    # A show that also exists in the new folder: the new files win, old extras move.
+    (tmp_path / 'TV Shows' / 'Both').mkdir(parents=True)
+    (tmp_path / 'TV Shows' / 'Both' / 'tvshow.nfo').write_text('new')
+    (legacy / 'TV Shows' / 'Both').mkdir()
+    (legacy / 'TV Shows' / 'Both' / 'tvshow.nfo').write_text('old')
+    (legacy / 'TV Shows' / 'Both' / 'extra.strm').write_text('old extra')
+
+    class Addon:
+        def __init__(self):
+            self.settings = {'library_path': library.LEGACY_TV_PATH}
+
+        def getSetting(self, key):
+            return {'library_path': self.settings['library_path'] if self.settings['library_path'] != library.DEFAULT_TV_PATH else str(tmp_path / 'TV Shows')}.get(key, '')
+
+        def setSetting(self, key, value):
+            self.settings[key] = value
+
+        def getAddonInfo(self, key):
+            return {'id': 'plugin.video.nlziet', 'profile': str(tmp_path / 'profile')}.get(key, '')
+
+    addon = Addon()
+    lib = library.Library(FakeAPI(), addon, fetcher)
+
+    moved = lib.migrate_legacy_folder(str(legacy))
+
+    assert moved == 2
+    assert addon.settings['library_path'] == library.DEFAULT_TV_PATH
+    assert _files(tmp_path / 'TV Shows') == [
+        'Both/extra.strm', 'Both/tvshow.nfo', 'Show/Season 2026/Show S2026E01.strm', 'Show/tvshow.nfo']
+    assert (tmp_path / 'TV Shows' / 'Both' / 'tvshow.nfo').read_text() == 'new'
+    assert not legacy.exists()
+    assert lib.migrate_legacy_folder(str(legacy)) == 0
+
+
+def test_old_legacy_setting_never_used_as_target(tmp_path):
+    class Addon:
+        def getSetting(self, key):
+            return library.LEGACY_TV_PATH if key == 'library_path' else ''
+
+        def getAddonInfo(self, key):
+            return str(tmp_path) if key == 'profile' else 'plugin.video.nlziet'
+
+    lib = library.Library(FakeAPI(), Addon(), fetcher)
+    assert lib.tv_root() != library.LEGACY_TV_PATH
+
+
+# --- artwork ----------------------------------------------------------------
+
+from resources.lib import library_art
+
+
+def test_poster_comes_from_hint_and_is_saved_as_file(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show', 'description': ''}  # detail without any image
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    downloads = []
+
+    def downloader(url):
+        downloads.append(url)
+        return b'IMG:' + url.encode()
+
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=downloader)
+    lib.add_series('s1', poster='https://img/p.jpg?width=3840', fanart='https://img/f.jpg')
+
+    show = tmp_path / 'TV Shows' / 'Show'
+    assert (show / 'poster.jpg').read_bytes() == b'IMG:https://img/p.jpg?width=3840'
+    assert (show / 'fanart.jpg').exists()
+    assert '<thumb aspect="poster">https://img/p.jpg?width=3840</thumb>' in (show / 'tvshow.nfo').read_text()
+
+    # An update keeps the hint and does not download again.
+    lib.update_all()
+    assert len(downloads) == 2
+
+
+def test_art_picker_beats_detail_thumb(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show', 'thumb': 'https://raw/logo.png', 'raw': {'image': {'portraitUrl': 'x'}}}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    lib = library.Library(api, Addon(tmp_path), fetcher,
+                          art_picker=lambda item: ('https://img/portrait.jpg?width=3840', 'https://img/land.jpg'))
+    lib.add_series('s1')
+    nfo = (tmp_path / 'TV Shows' / 'Show' / 'tvshow.nfo').read_text()
+    assert 'portrait.jpg' in nfo and 'land.jpg' in nfo
+
+
+def test_movie_art_files_use_movie_name(tmp_path):
+    api = FakeAPI()
+    api.content['m1'] = {'title': 'Film', 'raw': {'year': 2020}}
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_movie('m1', poster='https://img/m.jpg')
+    assert (tmp_path / 'Movies' / 'Film (2020)' / 'Film (2020)-poster.jpg').exists()
+
+
+def test_repair_fills_only_missing_art(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show'}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    api.content['m1'] = {'title': 'Film', 'raw': {}}
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_series('s1', poster='https://img/p.jpg')
+    lib.add_movie('m1', poster='https://img/m.jpg', fanart='https://img/mf.jpg')
+    tv = str(tmp_path / 'TV Shows')
+    calls = []
+
+    def rpc(payload):
+        calls.append(payload)
+        method = payload['method']
+        if method == 'VideoLibrary.GetTVShows':
+            return {'result': {'tvshows': [
+                {'tvshowid': 1, 'file': tv + '/Show/', 'art': {}},
+                {'tvshowid': 2, 'file': '/other/Show/', 'art': {}},
+            ]}}
+        if method == 'VideoLibrary.GetMovies':
+            return {'result': {'movies': [
+                {'movieid': 9, 'file': 'special://profile/addon_data/plugin.video.nlziet/library/Movies/Film/Film.strm',
+                 'art': {'poster': 'chosen-by-user'}},
+            ]}}
+        return {'result': 'OK'}
+
+    fixed = library_art.repair_kodi_art(lib, marker='plugin.video.nlziet/library', rpc=rpc)
+
+    sets = [c for c in calls if c['method'].startswith('VideoLibrary.Set')]
+    assert fixed == 2
+    assert sets[0]['params']['tvshowid'] == 1
+    assert sets[0]['params']['art']['poster'] == 'https://img/p.jpg'
+    assert sets[1]['params']['movieid'] == 9
+    assert 'poster' not in sets[1]['params']['art']  # the user's own choice stays
+    assert sets[1]['params']['art']['fanart'] == 'https://img/mf.jpg'
+
+
+def test_lists_sync_adds_series_and_films(wired, monkeypatch):
+    default, api, lib, tmp, jobs, rec = wired
+
+    class ListAPI:
+        def get_my_series(self):
+            return [{'id': 's1', 'title': 'Show', 'type': 'series'}]
+
+        def get_watch_later(self):
+            return [{'id': 'm1', 'title': 'Film', 'type': 'movie'},
+                    {'id': 'e9', 'title': 'Show', 'type': 'episode', 'seriesId': 's1'},
+                    {'id': 'e7', 'title': 'Other', 'type': 'episode', 'raw': {'seriesId': 's2'}}]
+
+    api.series.update({'s1': {'title': 'Show'}, 's2': {'title': 'Other'}})
+    api.episodes.update({'s1': [_daily('a', '2026-01-01')], 's2': [_daily('b', '2026-01-02')]})
+    api.content['m1'] = {'title': 'Film', 'raw': {}}
+    monkeypatch.setattr(default, '_setting_on', lambda name, default_value=False: name == 'library_lists_remove')
+    lib.store.section('series')['gone'] = {'title': 'Weg', 'source': 'lists'}
+
+    added, removed, failed = default.sync_lists_to_library(lib, api=ListAPI())
+
+    assert (added, removed, failed) == (3, 1, 0)
+    assert lib.is_in_library('series', 's1') and lib.is_in_library('series', 's2')
+    assert lib.is_in_library('movie', 'm1') and not lib.is_in_library('series', 'gone')
+    assert lib.store.get('series', 's1')['source'] == 'lists'
+
+
+
+def test_repair_replaces_art_the_addon_set_but_not_the_users(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show'}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_series('s1', poster='https://videoland/old.jpg')
+    # A better poster arrives (e.g. TMDb first): the old one becomes "ours".
+    lib.add_series('s1', poster='https://videoland/old.jpg')
+    entry = lib.store.get('series', 's1')
+    library_art.save_art(lib, entry, str(tmp_path / 'TV Shows' / 'Show'), {'poster': 'https://tmdb/new.jpg'},
+                         {'poster': 'poster.jpg'}, lambda url: b'y')
+    lib.store.section('series')['s1'] = entry
+    tv = str(tmp_path / 'TV Shows')
+    shows = [{'tvshowid': 1, 'file': tv + '/Show/', 'art': {'poster': 'image://https%3a%2f%2fvideoland%2fold.jpg/'}}]
+    calls = []
+
+    def rpc(payload):
+        calls.append(payload)
+        if payload['method'] == 'VideoLibrary.GetTVShows':
+            return {'result': {'tvshows': shows}}
+        return {'result': {}}
+
+    library_art.repair_kodi_art(lib, rpc=rpc)
+    sets = [c for c in calls if c['method'] == 'VideoLibrary.SetTVShowDetails']
+    assert sets[0]['params']['art']['poster'] == 'https://tmdb/new.jpg'
+
+    calls.clear()
+    shows[0]['art'] = {'poster': 'image://https%3a%2f%2fmy%2fown-choice.jpg/'}
+    library_art.repair_kodi_art(lib, rpc=rpc)
+    assert not [c for c in calls if c['method'] == 'VideoLibrary.SetTVShowDetails'
+                and 'poster' in c['params']['art']]

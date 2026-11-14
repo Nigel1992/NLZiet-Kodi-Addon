@@ -25,6 +25,16 @@ from resources.lib.kodi import ui as kodi_ui
 from resources.lib.router import Router
 from resources.lib import tvmaze
 from resources.lib import library as library_mod
+from resources.lib import metadata as metadata_mod
+from resources.lib import library_art
+from resources.lib import errors as errors_mod
+from resources.lib import diagnostics as diagnostics_mod
+from resources.lib import search_filters
+from resources.lib import parental as parental_mod
+from resources.lib import trakt_status
+from resources.lib import logo_cache as logo_cache_mod
+from resources.lib import playback_extras
+from resources.lib import watch_sync
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -210,6 +220,34 @@ TRANSLATIONS = {
     'library_update_now': {'nl': 'Bibliotheek nu bijwerken', 'en': 'Update library now'},
     'library_empty': {'nl': 'De bibliotheek is nog leeg', 'en': 'The library is empty'},
     'library': {'nl': 'Bibliotheek', 'en': 'Library'},
+    'tmdb_check_ok': {'nl': 'TMDb-sleutel werkt', 'en': 'TMDb key works'},
+    'tmdb_check_failed': {'nl': 'TMDb accepteert deze sleutel niet. Controleer of je de API Key (32 tekens) of het API Read Access Token volledig hebt geplakt.', 'en': 'TMDb does not accept this key. Check that you pasted the complete API Key (32 characters) or API Read Access Token.'},
+    'library_moved': {'nl': '{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi.', 'en': '{} series moved to the NLZiet folder. Add that folder as a source in Kodi.'},
+    'library_art_fixed': {'nl': 'Posters bijgewerkt voor {} titels', 'en': 'Artwork updated for {} titles'},
+    'tmdb_check_missing': {'nl': 'Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om de instellingen op te slaan en test daarna opnieuw.', 'en': 'No TMDb key is saved yet. Enter the key, press OK to save the settings and test again.'},
+    'tmdb_check_offline': {'nl': 'TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest.', 'en': 'TMDb could not be reached. Check your internet connection; the key itself was not tested.'},
+    'parental_enter_pin': {'nl': 'Voer de pincode in', 'en': 'Enter the PIN'},
+    'parental_enter_current_pin': {'nl': 'Voer de huidige pincode in', 'en': 'Enter the current PIN'},
+    'parental_new_pin': {'nl': 'Kies een nieuwe pincode (minimaal 4 cijfers)', 'en': 'Choose a new PIN (at least 4 digits)'},
+    'parental_repeat_pin': {'nl': 'Herhaal de nieuwe pincode', 'en': 'Repeat the new PIN'},
+    'parental_pin_too_short': {'nl': 'De pincode moet minimaal 4 cijfers hebben.', 'en': 'The PIN needs at least 4 digits.'},
+    'parental_pin_mismatch': {'nl': 'De twee pincodes zijn niet gelijk. Probeer het opnieuw.', 'en': 'The two PINs are not the same. Please try again.'},
+    'parental_pin_set': {'nl': 'Pincode ingesteld. Kies nu bij Profielen (lang indrukken) welke profielen een pincode nodig hebben.', 'en': 'PIN set. Now choose in Profiles (long press) which profiles need the PIN.'},
+    'parental_pin_removed': {'nl': 'Pincode verwijderd', 'en': 'PIN removed'},
+    'parental_wrong_pin': {'nl': 'Onjuiste pincode', 'en': 'Wrong PIN'},
+    'parental_set_pin_first': {'nl': 'Stel eerst een pincode in.', 'en': 'Set a PIN first.'},
+    'parental_lock_profile': {'nl': 'Pincode vereisen voor dit profiel', 'en': 'Require the PIN for this profile'},
+    'parental_unlock_profile': {'nl': 'Geen pincode meer voor dit profiel', 'en': 'No longer require the PIN for this profile'},
+    'parental_profile_locked': {'nl': 'Dit profiel vraagt nu om de pincode', 'en': 'This profile now asks for the PIN'},
+    'parental_profile_unlocked': {'nl': 'Dit profiel vraagt niet meer om de pincode', 'en': 'This profile no longer asks for the PIN'},
+    'parental_kids': {'nl': 'Kids', 'en': 'Kids'},
+    'parental_pin_tag': {'nl': 'pincode', 'en': 'PIN'},
+    'library_lists_busy': {'nl': 'Mijn series en Kijk later naar de bibliotheek...', 'en': 'Adding My Series and Watch Later to the library...'},
+    'library_lists_done': {'nl': 'Lijsten: {} toegevoegd, {} verwijderd, {} mislukt', 'en': 'Lists: {} added, {} removed, {} failed'},
+    'library_lists_now': {'nl': 'Mijn series en Kijk later nu naar de bibliotheek', 'en': 'Add My Series and Watch Later to the library now'},
+    'choose_tmdb': {'nl': 'Juiste TMDb-titel kiezen', 'en': 'Choose the right TMDb title'},
+    'choose_tmdb_other': {'nl': 'Andere zoekterm...', 'en': 'Other search term...'},
+    'choose_tmdb_done': {'nl': 'TMDb-titel ingesteld; gegevens en plaatjes worden bijgewerkt', 'en': 'TMDb title set; details and artwork are updated'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -298,6 +336,22 @@ TRANSLATIONS = {
     'group_count': {'nl': '{} ({})', 'en': '{} ({})'},
     'group_result_title': {'nl': '{}: {}', 'en': '{}: {}'},
     'not_allowed': {'nl': 'Niet toegestaan', 'en': 'Not allowed'},
+    'skip_intro_question': {'nl': 'Intro overslaan?', 'en': 'Skip the intro?'},
+    'skip_recap_question': {'nl': 'Samenvatting overslaan?', 'en': 'Skip the recap?'},
+    'widgets': {'nl': 'Widgets voor je startscherm', 'en': 'Widgets for the home screen'},
+    'continue_watching': {'nl': 'Verder kijken', 'en': 'Continue watching'},
+    'widgets_help': {'nl': 'Kies deze lijsten als widget in de instellingen van je skin.', 'en': 'Pick these lists as a widget in your skin settings.'},
+    'backup_lists': {'nl': 'Mijn lijsten bewaren (back-up)', 'en': 'Save my lists (backup)'},
+    'restore_lists': {'nl': 'Mijn lijsten terugzetten', 'en': 'Restore my lists'},
+    'backup_saved': {'nl': 'Back-up opgeslagen: {0}', 'en': 'Backup saved: {0}'},
+    'restore_done': {'nl': 'Teruggezet: {0}. Herstart Kodi voor de zekerheid, dan is alles opnieuw geladen.', 'en': 'Restored: {0}. Restart Kodi to be sure everything is reloaded.'},
+    'restore_choose': {'nl': 'Kies een back-up', 'en': 'Choose a backup'},
+    'restore_none': {'nl': 'Geen back-up gevonden in de back-upmap.', 'en': 'No backup found in the backup folder.'},
+    'daily_check_problem': {'nl': 'Let op: {0}. Kies bij Instellingen > Bibliotheek > Onderhoud: Diagnose uitvoeren.', 'en': 'Needs attention: {0}. Open Settings > Library > Maintenance: Run diagnostics.'},
+    'search_other_service': {'nl': 'Ook zoeken in Videoland', 'en': 'Also search in Videoland'},
+    'restore_confirm': {'nl': 'Je huidige lijsten vervangen door deze back-up?', 'en': 'Replace your current lists with this backup?'},
+    'episode_label': {'nl': 'Aflevering {0}', 'en': 'Episode {0}'},
+    'watched_sent': {'nl': 'Kijkstatus naar NLZiet gestuurd', 'en': 'Watched status sent to NLZiet'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -382,6 +436,34 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'choose_tmdb': 33256,
+    'choose_tmdb_other': 33257,
+    'choose_tmdb_done': 33258,
+    'library_lists_busy': 33245,
+    'library_lists_done': 33246,
+    'library_lists_now': 33247,
+    'parental_enter_pin': 33222,
+    'parental_enter_current_pin': 33223,
+    'parental_new_pin': 33224,
+    'parental_repeat_pin': 33225,
+    'parental_pin_too_short': 33226,
+    'parental_pin_mismatch': 33227,
+    'parental_pin_set': 33228,
+    'parental_pin_removed': 33229,
+    'parental_wrong_pin': 33230,
+    'parental_set_pin_first': 33231,
+    'parental_lock_profile': 33232,
+    'parental_unlock_profile': 33233,
+    'parental_profile_locked': 33234,
+    'parental_profile_unlocked': 33235,
+    'parental_kids': 33236,
+    'parental_pin_tag': 33237,
+    'tmdb_check_missing': 33218,
+    'tmdb_check_offline': 33219,
+    'library_art_fixed': 33208,
+    'library_moved': 33207,
+    'tmdb_check_ok': 33210,
+    'tmdb_check_failed': 33211,
     'diagnostics_exported': 33069,
     'diagnostics_failed': 33070,
     'subtitle_cache_cleared': 33159,
@@ -479,6 +561,22 @@ STRING_IDS = {
     'list_item_not_playable': 33181,
     'list_item_repeat_playable': 33182,
     'list_item_airing': 33183,
+    'skip_intro_question': 33270,
+    'skip_recap_question': 33271,
+    'widgets': 33272,
+    'continue_watching': 33273,
+    'widgets_help': 33274,
+    'backup_lists': 33275,
+    'restore_lists': 33276,
+    'backup_saved': 33277,
+    'restore_done': 33278,
+    'restore_choose': 33279,
+    'restore_none': 33280,
+    'daily_check_problem': 33283,
+    'search_other_service': 33284,
+    'restore_confirm': 33288,
+    'episode_label': 33289,
+    'watched_sent': 33290,
 }
 
 
@@ -532,6 +630,49 @@ def _make_color_tag(color_raw, text):
     emoji marker as a fallback (see code below).
     """
     return kodi_ui.make_color_tag(color_raw, text)
+
+
+# Lists where Kodi's sort menu (title, year, episode) makes sense. The first
+# sort option is always NLZiet's own order.
+_SORTABLE_MODES = {
+    'series', 'browse_series_genre', 'browse_movie_genre', 'browse_tv_genre', 'browse',
+    'search_group', 'my_list_group', 'watch_later', 'my_series', 'placement_row', 'browse_library',
+}
+_EPISODE_MODES = {'series_season', 'watch_later_collection'}
+
+
+def _current_mode():
+    try:
+        query = sys.argv[2] if len(sys.argv) > 2 else ''
+        return dict(urllib.parse.parse_qsl(query.lstrip('?'))).get('mode') or ''
+    except Exception:
+        return ''
+
+
+def _add_sort_methods(mode=None):
+    mode = _current_mode() if mode is None else mode
+    if mode not in _SORTABLE_MODES and mode not in _EPISODE_MODES:
+        return
+    names = ['SORT_METHOD_UNSORTED']
+    if mode in _EPISODE_MODES:
+        names += ['SORT_METHOD_EPISODE', 'SORT_METHOD_DATE']
+    names += ['SORT_METHOD_LABEL_IGNORE_THE', 'SORT_METHOD_VIDEO_YEAR']
+    for name in names:
+        method = getattr(xbmcplugin, name, None)
+        if method is None:
+            continue
+        try:
+            xbmcplugin.addSortMethod(HANDLE, method)
+        except Exception:
+            pass
+
+
+def _end_directory():
+    """endOfDirectory with Kodi's sort options for list pages."""
+    _add_sort_methods()
+    xbmcplugin.endOfDirectory(HANDLE)
+    if _LOGO_CACHE:
+        _LOGO_CACHE.flush()
 
 
 def build_url(query):
@@ -1089,6 +1230,88 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
             list_item.setProperty('TotalTime', '3600')
 
 
+_LOGOS = None
+
+
+_LOGO_CACHE = None
+
+
+def _browse_logo_cache():
+    """Logo cache for titles outside the library (needs a TMDb key)."""
+    global _LOGO_CACHE
+    if _LOGO_CACHE is None:
+        if not (_setting_on('browse_logos', True) and _setting_on('library_enrich', True)
+                and (ADDON.getSetting('tmdb_api_key') or '').strip()):
+            _LOGO_CACHE = False
+        else:
+            folder = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+            _LOGO_CACHE = logo_cache_mod.LogoCache(folder)
+    return _LOGO_CACHE or None
+
+
+def _library_logo(query, content=None, group=None, title=None, metadata=None):
+    """Clearlogo for browse lists: from the library, else from the logo cache."""
+    global _LOGOS
+    if not isinstance(query, dict):
+        return None
+    mode = query.get('mode')
+    if mode == 'series_detail':
+        key = ('series', str(query.get('series_id') or ''))
+    elif mode == 'play' and query.get('fmt') not in ('live', 'epg'):
+        ctype = str((content or {}).get('type') or '').lower() if isinstance(content, dict) else ''
+        if not (str(group or '').lower() == 'movies' or 'movie' in ctype or 'film' in ctype):
+            return None
+        key = ('movie', str(query.get('id') or ''))
+    else:
+        return None
+    if _LOGOS is None:
+        try:
+            profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+            _LOGOS = library_art.logo_index(library_mod.LibraryStore(os.path.join(profile, 'library.json')))
+        except Exception:
+            _LOGOS = {}
+    logo = _LOGOS.get(key)
+    if logo:
+        return logo
+    cache = _browse_logo_cache()
+    if cache is None:
+        return None
+    if key[0] == 'movie':
+        name = (metadata or {}).get('title') or title
+        year = (metadata or {}).get('year')
+    else:
+        name = ((content or {}).get('title') if isinstance(content, dict) else None) or title
+        year = None
+    try:
+        return cache.get(key[0], name, year) or None
+    except Exception:
+        return None
+
+
+_TRAKT_INDEX = None
+_TRAKT_LOADED = False
+
+
+def _trakt_watched(metadata):
+    """True when Trakt says this film/episode was watched (opt-in setting)."""
+    global _TRAKT_INDEX, _TRAKT_LOADED
+    if not _setting_on('trakt_watched_status', False):
+        return False
+    if not _TRAKT_LOADED:
+        _TRAKT_LOADED = True
+        try:
+            token = trakt_status.access_token(xbmcaddon.Addon('script.trakt'))
+            cache = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'trakt_watched.json')
+            _TRAKT_INDEX = trakt_status.load_index(cache, token, _official_trakt_client_id())
+        except Exception as e:
+            xbmc.log(f"NLZiet Trakt watched status unavailable: {e}", xbmc.LOGINFO)
+            _TRAKT_INDEX = None
+    try:
+        return bool(_TRAKT_INDEX and _TRAKT_INDEX.watched(metadata))
+    except Exception:
+        return False
+
+
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None, extra_context_items=None):
     query = _add_trakt_metadata_to_query(query, title, info, content)
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
@@ -1108,7 +1331,10 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     playback_state = _playback_state(content) if not is_live else {}
     for key, value in playback_state.items():
         item_info.setdefault(key, value)
+    if trakt_metadata and not item_info.get('playcount') and _trakt_watched(trakt_metadata):
+        item_info['playcount'] = 1
 
+    logo = _library_logo(query, content, group, title, trakt_metadata)
     return kodi_ui.add_directory_item(
         ADDON,
         HANDLE,
@@ -1125,6 +1351,7 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         is_live=is_live,
         group=group,
         extra_context_items=extra_context_items,
+        extra_art={'clearlogo': logo} if logo else None,
         add_to_library_label=get_string('add_to_library'),
         remove_from_library_label=get_string('remove_from_library'),
         library_check=is_in_library,
@@ -1266,28 +1493,26 @@ def main_menu():
         except Exception:
             xbmc.log('NLZiet: failed to show login notification', xbmc.LOGDEBUG)
 
-    # Show Login or Sign Out button based on auth status
-    if logged_in:
-        explicit_logout_icon = os.path.join(addon_path, 'resources', 'media', 'menu_logout.png')
-        logout_icon = explicit_logout_icon if explicit_logout_icon and os.path.exists(explicit_logout_icon) else _pick_png('logout')
-        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=logout_icon, is_folder=False, is_playable=False)
-    else:
+    if not logged_in:
         add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'), is_folder=False, is_playable=False)
-    
+
     if logged_in:
-        add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        # Order: find and browse, the user's own lists, live tv, account last.
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
-        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
-        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
-        # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
+        add_directory_item(get_string('continue_watching'), {'mode': 'widget', 'list': 'continue'}, thumb=_pick_png('continue'))
+        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
+        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
+        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
+        add_directory_item(get_string('widgets'), {'mode': 'widgets'}, thumb=_pick_png('widgets'))
+        add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'), is_folder=False, is_playable=False)
     
     # Set background image for the container
     try:
@@ -1297,7 +1522,7 @@ def main_menu():
     except Exception:
         xbmc.log('NLZiet: failed to set background image', xbmc.LOGDEBUG)
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
     if logged_in:
         _run_after_directory(_maybe_run_auto_add)
         _run_after_directory(_maybe_run_expiry_check)
@@ -1314,7 +1539,7 @@ def browse_series_categories():
         name = genre.get('name')
         genre_param = genre.get('genre')
         add_directory_item(name, {'mode': 'browse_series_genre', 'genre': genre_param or 'all'}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_series_genre(genre=None):
@@ -1337,7 +1562,7 @@ def browse_series_genre(genre=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -1356,7 +1581,7 @@ def browse_series_genre(genre=None):
             # Episodes would be playable - but shouldn't appear at top level in genre view
             pass
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_series():
@@ -1399,7 +1624,7 @@ def browse_series():
                 add_directory_item(comp_title, query, is_folder=True)
             except Exception:
                 continue
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
 
     # Fallback: simple series list when placements are unavailable
@@ -1415,7 +1640,7 @@ def browse_series():
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -1427,7 +1652,7 @@ def browse_series():
         except Exception:
             info = None
         add_directory_item(item.get('title') or item.get('id') or get_string('group_series'), {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item, group='series')
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def show_series_detail(series_id):
@@ -1454,7 +1679,7 @@ def show_series_detail(series_id):
         for s in seasons:
             title = s.get('title') or f"{get_string('season')} {s.get('id')}"
             add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id'), 'episodes_url': s.get('episodes_url') or '', 'series_title': series_title, 'season_number': s.get('season_number') or ''}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _get_series_season_episodes(api, series_id, season_id=None, episodes_url=None, limit=400):
@@ -1603,7 +1828,7 @@ def show_series_season(series_id, season_id, episodes_url=None, series_title=Non
         if playback_content.get('season_number') is None and str(season_id or '').isdigit():
             playback_content['season_number'] = season_id
         add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=playback_content)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _write_text(path, text):
@@ -1640,10 +1865,45 @@ def _library_episode_fetcher(api, series_id, detail):
 _LIBRARY = None
 
 
+def _library_enricher():
+    """Metadata helper that fills gaps from TMDb/TVmaze, or None when turned off."""
+    if not _setting_on('library_enrich', True):
+        return None
+    try:
+        profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+    except Exception:
+        profile = ''
+    language = 'nl-NL'
+    try:
+        if not str(xbmc.getLanguage(xbmc.ISO_639_1) or 'nl').lower().startswith('nl'):
+            language = 'en-US'
+    except Exception:
+        pass
+    return metadata_mod.Enricher(
+        os.path.join(profile or '', 'metadata_cache.json'),
+        tmdb_key=ADDON.getSetting('tmdb_api_key') or '',
+        language=language,
+        user_agent='plugin.video.nlziet',
+    )
+
+
 def _get_library():
     global _LIBRARY
     if _LIBRARY is None:
-        _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher)
+        _LIBRARY = library_mod.Library(
+            get_api_instance(), ADDON, _library_episode_fetcher,
+            enricher=_library_enricher(),
+            downloader=lambda url: library_art.http_download(url, 'plugin.video.nlziet'),
+            art_picker=lambda item: (kodi_ui.pick_portrait_thumb(item), kodi_ui.pick_landscape_thumb(item)),
+        )
+        try:
+            moved = _LIBRARY.migrate_legacy_folder()
+        except Exception as e:
+            xbmc.log(f"NLZiet library folder move failed: {e}", xbmc.LOGWARNING)
+            moved = 0
+        if moved:
+            xbmcgui.Dialog().notification('NLZiet', get_string('library_moved', moved), xbmcgui.NOTIFICATION_INFO, 8000)
+            library_mod.run_library_jobs(scan=True, clean=True)
     return _LIBRARY
 
 
@@ -1665,7 +1925,7 @@ def _after_library_change(scan=True, clean=False):
         library_mod.run_library_jobs(scan=False, clean=True)
 
 
-def library_add(kind, item_id, title=None):
+def library_add(kind, item_id, title=None, poster=None, fanart=None):
     kind = _library_kind(kind)
     if not item_id:
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
@@ -1676,9 +1936,9 @@ def library_add(kind, item_id, title=None):
         if progress is not None:
             progress.create('NLZiet', get_string('library_adding', title or ''))
         if kind == 'series':
-            result = lib.add_series(item_id, title=title)
+            result = lib.add_series(item_id, title=title, poster=poster, fanart=fanart)
         else:
-            result = lib.add_movie(item_id, title=title)
+            result = lib.add_movie(item_id, title=title, poster=poster, fanart=fanart)
         if not result.get('ok'):
             if result.get('reason') == 'no_episodes':
                 xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
@@ -1718,12 +1978,26 @@ def library_remove(kind, item_id, title=None):
         xbmcgui.Dialog().notification('NLZiet', get_string('library_not_found'), xbmcgui.NOTIFICATION_INFO)
 
 
-def library_toggle(kind, item_id, title=None):
+def library_toggle(kind, item_id, title=None, poster=None, fanart=None):
     if is_in_library(kind, item_id):
         library_remove(kind, item_id, title)
     else:
-        library_add(kind, item_id, title)
+        library_add(kind, item_id, title, poster, fanart)
         xbmc.executebuiltin('Container.Refresh')
+
+
+def repair_library_art(background=True):
+    """Give library titles Kodi already scanned their missing posters."""
+    try:
+        fixed = library_art.repair_kodi_art(_get_library(), marker='plugin.video.nlziet/library')
+    except Exception as e:
+        xbmc.log(f"NLZiet library art repair failed: {e}", xbmc.LOGWARNING)
+        fixed = 0
+    if fixed:
+        xbmc.log(f"NLZiet library: artwork set for {fixed} titles", xbmc.LOGINFO)
+    if not background:
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_art_fixed', fixed), xbmcgui.NOTIFICATION_INFO)
+    return fixed
 
 
 def export_series_library(series_id):
@@ -1731,11 +2005,117 @@ def export_series_library(series_id):
     library_add('series', series_id)
 
 
+def _list_library_titles(api):
+    """Series and films from My Series and Watch Later as
+    [(kind, id, title, poster)]; an episode in Watch Later adds its series."""
+    titles, seen = [], set()
+
+    def add(kind, item_id, title, poster):
+        key = (kind, str(item_id or ''))
+        if key[1] and key not in seen:
+            seen.add(key)
+            titles.append((kind, key[1], title or '', poster or ''))
+
+    for item in api.get_my_series() or []:
+        if isinstance(item, dict):
+            add('series', item.get('id'), _item_title(item), item.get('thumb') or kodi_ui.pick_portrait_thumb(item))
+    for item in api.get_watch_later() or []:
+        if not isinstance(item, dict):
+            continue
+        group = _content_group(item)
+        if group == 'movies':
+            add('movie', item.get('id'), _item_title(item), item.get('thumb') or kodi_ui.pick_portrait_thumb(item))
+        elif group in ('episodes', 'series'):
+            raw = item.get('raw') if isinstance(item.get('raw'), dict) else {}
+            collection = item.get('collection') if isinstance(item.get('collection'), dict) else {}
+            series_id = (item.get('seriesId') or raw.get('seriesId') or collection.get('id')
+                         or (item.get('id') if group == 'series' else None))
+            if not series_id:
+                try:
+                    series_id = _find_series_id_by_title(api, _item_title(item))
+                except Exception:
+                    series_id = None
+            add('series', series_id, _item_title(item), '')
+    return titles
+
+
+def sync_lists_to_library(lib, api=None, progress=None):
+    """Add My Series and Watch Later titles that are not in the library yet;
+    optionally remove titles that came from these lists and left them.
+    Returns (added, removed, failed)."""
+    api = api or get_api_instance()
+    titles = _list_library_titles(api)
+    added = removed = failed = 0
+    wanted = set()
+    for index, (kind, item_id, title, poster) in enumerate(titles):
+        wanted.add((kind, item_id))
+        if lib.is_in_library(kind, item_id):
+            continue
+        if progress is not None:
+            progress(index, len(titles), title)
+        try:
+            if kind == 'series':
+                result = lib.add_series(item_id, title=title, poster=poster or None)
+            else:
+                result = lib.add_movie(item_id, title=title, poster=poster or None)
+        except Exception as e:
+            xbmc.log(f"NLZiet list title {item_id} not added: {e}", xbmc.LOGWARNING)
+            result = {}
+        if result.get('ok'):
+            entry = lib.store.get(kind, item_id)
+            if entry is not None:
+                entry['source'] = 'lists'
+            added += 1
+        else:
+            failed += 1
+    if _setting_on('library_lists_remove', False) and titles:
+        for kind in ('series', 'movie'):
+            for item_id, entry in list(lib.items(kind)):
+                if entry.get('source') == 'lists' and (kind, item_id) not in wanted:
+                    if lib.remove(kind, item_id, save=False):
+                        removed += 1
+    lib.store.save()
+    return added, removed, failed
+
+
+def library_from_lists(background=False):
+    """Menu/settings action: put My Series and Watch Later in the Kodi library."""
+    if background and xbmc.Player().isPlaying():
+        return
+    lib = _get_library()
+    dialog = None
+    if not background and hasattr(xbmcgui, 'DialogProgressBG'):
+        dialog = xbmcgui.DialogProgressBG()
+        dialog.create('NLZiet', get_string('library_lists_busy'))
+
+    def report(index, total, title):
+        if dialog is not None and total:
+            dialog.update(int(index * 100 / total), 'NLZiet', title)
+
+    try:
+        added, removed, failed = sync_lists_to_library(lib, progress=report)
+    finally:
+        if dialog is not None:
+            dialog.close()
+    if added or removed:
+        library_mod.run_library_jobs(scan=True, clean=bool(removed) and _setting_on('library_clean_after', True))
+    if not background or (added or removed):
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_lists_done', added, removed, failed),
+                                      xbmcgui.NOTIFICATION_INFO)
+    if not background:
+        xbmc.executebuiltin('Container.Refresh')
+
+
 def library_update(background=False):
     """Refresh every series and movie in the library."""
     if background and xbmc.Player().isPlaying():
         return
     lib = _get_library()
+    if _setting_on('library_lists_sync', False):
+        try:
+            sync_lists_to_library(lib)
+        except Exception as e:
+            xbmc.log(f"NLZiet list sync skipped: {e}", xbmc.LOGWARNING)
     progress = None
     if not background and hasattr(xbmcgui, 'DialogProgressBG'):
         progress = xbmcgui.DialogProgressBG()
@@ -1761,8 +2141,10 @@ def library_update(background=False):
             except Exception:
                 pass
     changed = bool(totals.get('added') or totals.get('removed'))
-    if changed:
-        _after_library_change(scan=True, clean=bool(totals.get('removed')))
+    if changed or not background:
+        # A manual update always scans, so titles a busy Kodi skipped get in too.
+        library_mod.run_library_jobs(scan=True, clean=bool(totals.get('removed')) and _setting_on('library_clean_after', True))
+    repair_library_art()
     if not background or (changed and _setting_on('background_sync_notify', True)):
         xbmcgui.Dialog().notification(
             'NLZiet',
@@ -1771,35 +2153,95 @@ def library_update(background=False):
         )
 
 
+def check_tmdb_key():
+    """Settings button: test the saved TMDb key and say exactly what is wrong."""
+    status, detail = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))
+    if detail:
+        xbmc.log(f"NLZiet TMDb key test: {status} ({detail})", xbmc.LOGINFO)
+    messages = {
+        'ok': 'tmdb_check_ok',
+        'missing': 'tmdb_check_missing',
+        'invalid': 'tmdb_check_failed',
+        'offline': 'tmdb_check_offline',
+    }
+    xbmcgui.Dialog().ok('NLZiet', get_string(messages[status]))
+
+
+def choose_tmdb(kind, item_id):
+    """Library menu: pick the right TMDb series/film for a title by hand."""
+    kind = _library_kind(kind)
+    lib = _get_library()
+    entry = lib.store.get(kind, item_id)
+    enricher = _library_enricher()
+    if entry is None:
+        return
+    if enricher is None or not enricher.tmdb_key:
+        xbmcgui.Dialog().ok('NLZiet', get_string('tmdb_check_missing'))
+        return
+    query = entry.get('title') or ''
+    while True:
+        found = enricher.search_candidates(kind, query)
+        labels = [get_string('choose_tmdb_other')] + [
+            '{} ({})'.format(name, year) if year else name for _id, name, year in found]
+        picked = xbmcgui.Dialog().select(get_string('choose_tmdb'), labels)
+        if picked < 0:
+            return
+        if picked == 0:
+            query = xbmcgui.Dialog().input(get_string('choose_tmdb_other'), query)
+            if not query:
+                return
+            continue
+        tmdb_id = found[picked - 1][0]
+        break
+    entry['ids'] = {'tmdb': str(tmdb_id)}  # other ids are looked up again from TMDb
+    lib.store.section(kind)[str(item_id)] = entry
+    if kind == 'series':
+        lib.add_series(item_id, title=entry.get('title'))
+    else:
+        lib.add_movie(item_id, title=entry.get('title'))
+    lib.store.save()
+    repair_library_art()
+    xbmcgui.Dialog().notification('NLZiet', get_string('choose_tmdb_done'), xbmcgui.NOTIFICATION_INFO)
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def browse_library():
     """List everything that is in the Kodi library."""
     lib = _get_library()
     add_directory_item(get_string('library_update_now'), {'mode': 'library_update'}, is_folder=False, is_playable=False)
+    add_directory_item(get_string('library_lists_now'), {'mode': 'library_from_lists'}, is_folder=False, is_playable=False,
+                       thumb=_pick_menu_png_any('myseries'))
     series = lib.items('series')
     movies = lib.items('movie')
     for sid, entry in series:
         title = entry.get('title') or sid
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('series'))
         remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
-            build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title})))]
+            build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title}))),
+                  (get_string('choose_tmdb'), 'RunPlugin({})'.format(
+            build_url({'mode': 'choose_tmdb', 'kind': 'series', 'id': sid})))]
         kodi_ui.add_directory_item(
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=entry.get('thumb'),
             extra_context_items=remove, library_check=None,
+            extra_art={'clearlogo': entry['clearlogo']} if entry.get('clearlogo') else None,
         )
     for mid, entry in movies:
         title = entry.get('title') or mid
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('movies'))
         remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
-            build_url({'mode': 'library_remove', 'kind': 'movie', 'id': mid, 'title': title})))]
+            build_url({'mode': 'library_remove', 'kind': 'movie', 'id': mid, 'title': title}))),
+                  (get_string('choose_tmdb'), 'RunPlugin({})'.format(
+            build_url({'mode': 'choose_tmdb', 'kind': 'movie', 'id': mid})))]
         kodi_ui.add_directory_item(
             ADDON, HANDLE, build_url, get_api_instance, label,
             {'mode': 'play', 'id': mid}, is_folder=False, thumb=entry.get('thumb'),
             extra_context_items=remove, library_check=None,
+            extra_art={'clearlogo': entry['clearlogo']} if entry.get('clearlogo') else None,
         )
     if not series and not movies:
         xbmcgui.Dialog().notification('NLZiet', get_string('library_empty'), xbmcgui.NOTIFICATION_INFO)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_tv_shows():
@@ -1810,7 +2252,7 @@ def browse_tv_shows():
     for genre in genres:
         query = {'mode': 'browse_tv_genre', 'genre': genre.get('genre') or 'all'}
         add_directory_item(genre.get('name'), query, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_tv_genre(genre=None):
@@ -1855,7 +2297,7 @@ def browse_tv_genre(genre=None):
             if date_info:
                 parts.append(date_info)
             if expiry_text:
-                marker = '🔶 '
+                marker = ''  # text only: readable by screen readers and every skin
                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                 parts.append(colored)
             if desc:
@@ -1868,7 +2310,7 @@ def browse_tv_genre(genre=None):
             if date_info:
                 po_parts.append(date_info)
             if expiry_text:
-                marker = '🔶 '
+                marker = ''  # text only: readable by screen readers and every skin
                 po_parts.append(f"{marker}{expiry_text}")
             if truncated:
                 po_parts.append(truncated)
@@ -1896,7 +2338,7 @@ def browse_tv_genre(genre=None):
             is_folder = True
         
         add_directory_item(display_title, query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group='tvshows')
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_movie_categories():
@@ -1908,7 +2350,7 @@ def browse_movie_categories():
         name = genre.get('name')
         genre_param = genre.get('genre')
         add_directory_item(name, {'mode': 'browse_movie_genre', 'genre': genre_param or 'all'}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_movie_genre(genre=None):
@@ -1930,7 +2372,7 @@ def browse_movie_genre(genre=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -1945,7 +2387,7 @@ def browse_movie_genre(genre=None):
         # Movies are playable items
         add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item, group='movies')
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
@@ -2003,7 +2445,7 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -2016,7 +2458,7 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
                 add_directory_item(title, {'mode': 'play', 'id': src.get('playUrl') or src.get('streamUrl') or src.get('id')}, is_folder=False, thumb=thumb, info=info, content=src)
         except Exception:
             continue
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _extract_max_devices(summary):
@@ -2418,6 +2860,50 @@ def export_diagnostics():
         xbmcgui.Dialog().notification('NLZiet', get_string('diagnostics_failed'), xbmcgui.NOTIFICATION_ERROR)
 
 
+def _collect_diagnostics(t):
+    """All diagnostic checks (used by the settings button and the daily check)."""
+    try:
+        api = get_api_instance()
+        base_url = getattr(api, 'base_url', '') or 'https://api.nlziet.nl/'
+    except Exception:
+        base_url = 'https://api.nlziet.nl/'
+    endpoints = [('NLZiet', base_url), ('TMDb', 'https://api.themoviedb.org/3/'),
+                 ('TVmaze', 'https://api.tvmaze.com/')]
+    tmdb_status = None
+    if _setting_on('library_enrich', True):
+        tmdb_status = metadata_mod.test_tmdb_key(ADDON.getSetting('tmdb_api_key'))[0]
+    try:
+        lib = _get_library()
+    except Exception:
+        lib = None
+    return diagnostics_mod.run_checks(
+        t, ADDON.getAddonInfo('version'), _is_logged_in(), endpoints, library=lib,
+        library_special=(library_mod.DEFAULT_TV_PATH, library_mod.DEFAULT_MOVIES_PATH),
+        tmdb_status=tmdb_status,
+        kodi_counts=library_art.kodi_counts(lib, 'plugin.video.nlziet/library') if lib else None)
+
+
+def run_diagnostics():
+    """Settings button: check everything playback and the library need."""
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    t = diagnostics_mod.texts(language)
+    progress = xbmcgui.DialogProgress()
+    progress.create('NLZiet', t['title'] + '...')
+    try:
+        checks = _collect_diagnostics(t)
+        text = diagnostics_mod.render(t, checks)
+        folder = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'diagnostics')
+        log_lines = diagnostics_mod.kodi_log_excerpt(['nlziet'], _redact_diagnostic_text)
+        path = diagnostics_mod.save_report(folder, 'nlziet', _redact_diagnostic_text(text), log_lines)
+        text = diagnostics_mod.render(t, checks, path)
+    finally:
+        progress.close()
+    xbmcgui.Dialog().textviewer('NLZiet - ' + t['title'], text)
+
+
 def clear_subtitle_cache():
     """Remove cached, cleaned subtitle files from the addon profile."""
     try:
@@ -2805,6 +3291,75 @@ def do_login():
             return
 
 
+def _parental():
+    try:
+        window = xbmcgui.Window(10000)
+    except Exception:
+        window = None
+    return parental_mod.Parental(ADDON, window)
+
+
+def _ask_pin(heading_key='parental_enter_pin'):
+    try:
+        return xbmcgui.Dialog().numeric(0, get_string(heading_key), '', True)
+    except TypeError:
+        return xbmcgui.Dialog().numeric(0, get_string(heading_key))
+
+
+def _pin_ok(profile_id=None, live=False):
+    """Ask for the parental PIN when this action needs it."""
+    guard = _parental()
+    if not guard.needs_pin(profile_id=profile_id, live=live):
+        return True
+    if guard.ask(_ask_pin):
+        return True
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+    return False
+
+
+def parental_set_pin():
+    guard = _parental()
+    if guard.has_pin() and not guard.ask(lambda: _ask_pin('parental_enter_current_pin')):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    first = _ask_pin('parental_new_pin')
+    if not first or len(first) < 4:
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_too_short'))
+        return
+    if _ask_pin('parental_repeat_pin') != first:
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_mismatch'))
+        return
+    guard.set_pin(first)
+    xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_set'))
+
+
+def parental_clear_pin():
+    guard = _parental()
+    if not guard.has_pin():
+        return
+    if not guard.ask(lambda: _ask_pin('parental_enter_current_pin')):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    guard.clear_pin()
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_pin_removed'), xbmcgui.NOTIFICATION_INFO)
+
+
+def toggle_profile_lock(profile_id):
+    guard = _parental()
+    if not guard.has_pin():
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_set_pin_first'))
+        parental_set_pin()
+        if not guard.has_pin():
+            return
+    elif not guard.ask(_ask_pin):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    locked = guard.toggle_profile(profile_id)
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_profile_locked' if locked else 'parental_profile_unlocked'),
+                                  xbmcgui.NOTIFICATION_INFO)
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def manage_profiles():
     """List available profiles and let the user switch the active profile.
 
@@ -2884,10 +3439,21 @@ def manage_profiles():
             thumb = inactive_icon
             info_obj = None
 
+        guard = _parental()
+        tags = []
+        if parental_mod.is_kids_profile(p):
+            tags.append(get_string('parental_kids'))
+        if guard.is_profile_protected(pid):
+            tags.append(get_string('parental_pin_tag'))
+        if tags:
+            title = '{}  ({})'.format(title, ', '.join(tags))
+        lock_label = get_string('parental_unlock_profile' if guard.is_profile_protected(pid) else 'parental_lock_profile')
+        lock_menu = [(lock_label, 'RunPlugin({})'.format(build_url({'mode': 'toggle_profile_lock', 'profile_id': str(pid)})))]
         # Selecting an item triggers the 'select_profile' route with the profile id
-        add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj)
+        add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj,
+                           extra_context_items=lock_menu)
 
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _get_list_api():
@@ -3298,7 +3864,7 @@ def browse_my_list():
 
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
         return
     # Group My List items by category so the My List top-level shows one folder
@@ -3320,7 +3886,7 @@ def browse_my_list():
 
     if not any_folder:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
     _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
@@ -3337,10 +3903,10 @@ def _browse_saved_group(group):
     if not filtered:
         message = get_string('no_items_for_group', _group_label(group))
         xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
     else:
         _render_list_items(filtered)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
     _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
@@ -3789,7 +4355,7 @@ def browse_watch_later():
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
     else:
         _render_watch_later_top(items, api)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
     _run_after_directory(
@@ -3820,7 +4386,7 @@ def browse_watch_later_collection(collection_id=None, season=None):
     members = _order_watch_later([itm for itm in items if _watch_later_collection_id(itm) == str(collection_id)])
     if not members:
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
 
     by_season = {}
@@ -3849,7 +4415,7 @@ def browse_watch_later_collection(collection_id=None, season=None):
         _render_list_items(unknown, **labels)
     else:
         _render_list_items(members, **labels)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
     _run_after_directory(
@@ -3948,7 +4514,7 @@ def browse_my_series():
         # which is slow. Do it in the background so the list renders immediately;
         # highlight/refresh happen after the directory has been shown.
         _render_list_items(items, sync_mode='sync_my_series' if _my_series_sync_enabled() else None)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
     _run_after_directory(_check_my_series_new_episodes, api, list(items))
@@ -4353,6 +4919,10 @@ def select_profile(profile_id):
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_profile_id'), xbmcgui.NOTIFICATION_ERROR)
         return
 
+    if str(profile_id) != str(ADDON.getSetting('profile_id') or '') and not _pin_ok(profile_id=profile_id):
+        xbmc.executebuiltin('Container.Update(%s,replace)' % build_url({'mode': 'profiles'}))
+        return
+
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for faster profile switching
@@ -4511,11 +5081,12 @@ def _choose_search_query():
     return query
 
 
-def do_search():
-    query = _choose_search_query()
+def do_search(query=None):
+    query = (query or '').strip() or _choose_search_query()
     if not query:
         return
     _remember_search(query)
+    _add_other_service_search(query)
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for search
@@ -4565,7 +5136,7 @@ def do_search():
             results = fb
         else:
             xbmcgui.Dialog().notification('NLZiet', get_string('no_results', query), xbmcgui.NOTIFICATION_INFO)
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
             return
     # Group search results by their detected type so we can present grouped
     # folders (e.g. "Series" and "Movies") when multiple groups are found.
@@ -4606,8 +5177,12 @@ def do_search():
             except Exception:
                 thumb = None
             add_directory_item(_group_folder_label(g, len(items_for_group)), {'mode': 'search_group', 'q': query, 'group': g}, is_folder=True, thumb=thumb)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
+
+    # One group only: show it with the filter entry on top.
+    if search_filters.options(results) != ([], []):
+        return search_group(query, non_empty[0] if non_empty else 'all')
 
     # Otherwise fall back to presenting each result individually (previous behavior)
     for item in results:
@@ -4624,7 +5199,7 @@ def do_search():
                 # plotoutline (label2): plain expiry prefix + truncated plot for default skin
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4646,7 +5221,7 @@ def do_search():
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4701,10 +5276,13 @@ def do_search():
                 add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
                 add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_category(content_type):
+    if str(content_type).lower() == 'channels' and not _pin_ok(live=True):
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+        return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for faster menu navigation
@@ -4734,7 +5312,7 @@ def browse_category(content_type):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4757,7 +5335,7 @@ def browse_category(content_type):
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4835,10 +5413,100 @@ def browse_category(content_type):
                 item['type'] = 'channel'
         
         add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group=add_group)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
-def search_group(q, group):
+def _search_language():
+    try:
+        return xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        return 'nl'
+
+
+def _filtered_search_results(results, q, group, period=None, genre=None):
+    """Apply period/genre filters and put a Filter entry on top of the list.
+
+    Returns the filtered results, or None when nothing is left (the listing
+    is then already finished with a message).
+    """
+    t = search_filters.texts(_search_language())
+    in_group = [item for item in results
+                if str(group or 'all').lower() == 'all'
+                or _search_group_key(str(item.get('type') or '').lower(), item) == str(group).lower()]
+    periods, genres = search_filters.options(in_group)
+    if periods or genres or period or genre:
+        label = '{}  [{}]'.format(t['filter'], search_filters.describe(t, period, genre))
+        query = {'mode': 'search_filter', 'q': q, 'group': group or 'all'}
+        if period:
+            query['period'] = period
+        if genre:
+            query['genre'] = genre
+        add_directory_item(label, query, is_folder=False, is_playable=False, thumb=_pick_menu_png_any('search'))
+    filtered = search_filters.apply(results, period, genre)
+    if (period or genre) and not filtered:
+        xbmcgui.Dialog().notification('NLZiet', t['empty'], xbmcgui.NOTIFICATION_INFO)
+        _end_directory()
+        return None
+    return filtered
+
+
+def _pick_menu_png_any(name):
+    try:
+        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ''
+    except Exception:
+        addon_path = ''
+    return kodi_ui.pick_menu_png(addon_path, name)
+
+
+def search_filter(q, group='all', period=None, genre=None):
+    """Ask for a period or genre and reopen the search results with it."""
+    t = search_filters.texts(_search_language())
+    api = get_api_instance()
+    results = api.search(q) or []
+    in_group = [item for item in results
+                if str(group or 'all').lower() == 'all'
+                or _search_group_key(str(item.get('type') or '').lower(), item) == str(group).lower()]
+    periods, genres = search_filters.options(in_group)
+    if not periods and not genres:
+        xbmcgui.Dialog().ok('NLZiet', t['no_data'])
+        return
+    choices, actions = [], []
+    if periods:
+        choices.append(t['period'])
+        actions.append('period')
+    if genres:
+        choices.append(t['genre'])
+        actions.append('genre')
+    if period or genre:
+        choices.append(t['clear'])
+        actions.append('clear')
+    picked = xbmcgui.Dialog().select(t['filter'], choices)
+    if picked < 0:
+        return
+    action = actions[picked]
+    if action == 'period':
+        labels = [t['all']] + [t[key] for key in periods]
+        index = xbmcgui.Dialog().select(t['period'], labels)
+        if index < 0:
+            return
+        period = periods[index - 1] if index > 0 else None
+    elif action == 'genre':
+        labels = [t['all']] + genres
+        index = xbmcgui.Dialog().select(t['genre'], labels)
+        if index < 0:
+            return
+        genre = genres[index - 1] if index > 0 else None
+    else:
+        period, genre = None, None
+    query = {'mode': 'search_group', 'q': q, 'group': group or 'all'}
+    if period:
+        query['period'] = period
+    if genre:
+        query['genre'] = genre
+    xbmc.executebuiltin('Container.Update({},replace)'.format(build_url(query)))
+
+
+def search_group(q, group, period=None, genre=None):
     """Show search results filtered to a single group (e.g. 'Series' or 'Movies').
 
     This re-runs the search (or fallback) and presents only items that match
@@ -4896,8 +5564,12 @@ def search_group(q, group):
             results = fb
         else:
             xbmcgui.Dialog().notification('NLZiet', get_string('no_results', q), xbmcgui.NOTIFICATION_INFO)
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
             return
+
+    results = _filtered_search_results(results, q, group, period, genre)
+    if results is None:
+        return
 
     # Present only items that match the requested group
     for item in results:
@@ -4911,7 +5583,7 @@ def search_group(q, group):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4929,7 +5601,7 @@ def search_group(q, group):
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4952,7 +5624,7 @@ def search_group(q, group):
         # compute group and skip items that don't match
         group_name = _search_group_key(itype_l, item)
 
-        if str(group_name).lower() != str(group or '').lower():
+        if str(group or 'all').lower() != 'all' and str(group_name).lower() != str(group or '').lower():
             continue
 
         title = item.get('title') or item.get('name') or content_id or get_string('result_label')
@@ -4976,7 +5648,7 @@ def search_group(q, group):
                 add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
                 add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def filter_manifest_subtitles(manifest_url):
@@ -5774,6 +6446,8 @@ def _epg_wait_for_playback_end():
 def browse_epg():
     """Show the custom EPG window, falling back to a directory list."""
     global _epg_playback_active
+    if not _pin_ok(live=True):
+        return
     # Install the 'D' hotkey keymap for the EPG day selector (best-effort).
     try:
         import shutil
@@ -5820,7 +6494,7 @@ def browse_epg():
     except Exception as exc:
         xbmc.log('NLZiet browse_epg failed: {0}'.format(exc), xbmc.LOGERROR)
         try:
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
         except Exception:
             pass
 
@@ -5885,7 +6559,7 @@ def _browse_epg_impl():
                 add_directory_item(label, {'mode': 'play', 'id': _extract_id_from_stream(stream)}, is_folder=False, thumb=thumb, info=info)
             else:
                 add_directory_item(label, {'mode': 'browse_epg'}, is_folder=False, thumb=thumb, info=info)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _extract_id_from_stream(stream):
@@ -5901,7 +6575,151 @@ def _extract_id_from_stream(stream):
     return ''
 
 
+# ------------------------------------------------- while a video plays ---
+
+def _after_playback_started(api, content_id, fmt, metadata, stream_info):
+    """Things that run next to playback: watched status, skip intro, Up Next.
+
+    Nothing here may delay or break playback, so every part is guarded.
+    """
+    if fmt == 'live' or not content_id:
+        return
+    try:
+        # The background service follows playback and sends "watched" to
+        # NLZiet when this video is (almost) finished.
+        xbmcgui.Window(10000).setProperty(
+            watch_sync.PLAYING_PROPERTY.format('nlziet'), watch_sync.playing_value(content_id))
+    except Exception:
+        pass
+    if fmt == 'epg':
+        return
+    markers = {}
+    try:
+        chapters = api.get_chapters(content_id)
+        markers = playback_extras.markers_from_chapters(chapters)
+        if not markers:
+            markers = playback_extras.find_markers(stream_info)
+        xbmc.log('NLZiet {}: chapters {} -> markers found: {}'.format(
+            content_id, playback_extras.chapter_titles(chapters)[:12],
+            playback_extras.marker_summary(markers)), xbmc.LOGINFO)
+    except Exception as exc:
+        xbmc.log('NLZiet chapters failed: {}'.format(exc), xbmc.LOGINFO)
+    if markers and _setting_on('skip_markers', True):
+        def ask(kind):
+            text = get_string('skip_recap_question' if kind == 'recap' else 'skip_intro_question')
+            return xbmcgui.Dialog().yesno('NLZiet', text, autoclose=8000)
+        try:
+            playback_extras.start_skip_watcher(markers, ask)
+        except Exception as exc:
+            xbmc.log('NLZiet skip watcher failed: {}'.format(exc), xbmc.LOGINFO)
+    if _setting_on('upnext', True) and playback_extras.upnext_available():
+        playback_extras.start_background(
+            lambda: _announce_next_episode(api, content_id, metadata or {}, stream_info, markers),
+            'NLZietUpNext')
+
+
+def _next_episode_for(api, content_id, metadata, stream_info):
+    """(current_info, next_info, play_query) for Up Next, or None.
+
+    Order of sources: the Kodi library (exact numbering), the series
+    episode list from NLZiet, then NLZiet's surrounding-episodes answer.
+    """
+    showtitle = metadata.get('showtitle') or ''
+    try:
+        found = library_mod.next_library_episode(_get_library().store, content_id)
+    except Exception:
+        found = None
+    if found:
+        _sid, entry, (cur_s, cur_e), next_id, (next_s, next_e) = found
+        showtitle = entry.get('title') or showtitle
+        current = playback_extras.episode_info(metadata.get('title') or '', showtitle, cur_s, cur_e,
+                                               episode_id=str(content_id))
+        art = {'thumb': entry.get('thumb') or '', 'tvshow.poster': entry.get('thumb') or ''}
+        following = playback_extras.episode_info(
+            get_string('episode_label', next_e),
+            showtitle, next_s, next_e, art=art, episode_id=str(next_id))
+        query = {'mode': 'play', 'id': next_id, 'media_type': 'episode', 'showtitle': showtitle,
+                 'season': str(next_s), 'episode': str(next_e)}
+        return current, following, query
+    if not showtitle and not metadata.get('season'):
+        return None   # not an episode
+    content = _handshake_metadata_content(stream_info) or {}
+    series_id = content.get('seriesId') or content.get('series_id')
+    following = None
+    if series_id:
+        try:
+            episodes = api.get_series_episodes(series_id, limit=400) or []
+            ids = [str(ep.get('id') or '') for ep in episodes]
+            if str(content_id) in ids:
+                index = ids.index(str(content_id))
+                following = episodes[index + 1] if index + 1 < len(episodes) else None
+                if following is None:
+                    return None
+        except Exception as exc:
+            xbmc.log('NLZiet Up Next: episode list failed: {}'.format(exc), xbmc.LOGINFO)
+    if following is None:
+        following = library_mod.next_from_surrounding(api.get_surrounding_episodes(content_id), content_id)
+    if not following or not following.get('id'):
+        return None
+    try:
+        cur_s, cur_e = int(metadata.get('season') or 0), int(metadata.get('episode') or 0)
+    except (TypeError, ValueError):
+        cur_s, cur_e = 0, 0
+    next_s = following.get('season') or following.get('seasonNumber') or cur_s
+    next_e = following.get('episode') or following.get('episodeNumber') or (cur_e + 1 if cur_e else 0)
+    current = playback_extras.episode_info(metadata.get('title') or '', showtitle, cur_s, cur_e,
+                                           episode_id=str(content_id))
+    thumb = _pick_landscape_thumb(following) or ''
+    nxt = playback_extras.episode_info(
+        following.get('subtitle') or following.get('title') or '', showtitle, next_s, next_e,
+        plot=following.get('description') or '', art={'thumb': thumb}, episode_id=str(following['id']))
+    query = {'mode': 'play', 'id': following['id']}
+    return current, nxt, query
+
+
+def _announce_next_episode(api, content_id, metadata, stream_info, markers):
+    try:
+        found = _next_episode_for(api, content_id, metadata, stream_info)
+        if not found:
+            xbmc.log('NLZiet Up Next: no next episode for {}'.format(content_id), xbmc.LOGINFO)
+            return
+        current, following, query = found
+        player = xbmc.Player()
+        if not playback_extras.wait_for_playback(player):
+            return
+        notify_at = None
+        credits = markers.get('credits') if markers else None
+        if credits and credits[0]:
+            try:
+                total = player.getTotalTime()
+                if total > credits[0]:
+                    notify_at = total - credits[0]
+            except Exception:
+                pass
+        sent = playback_extras.send_upnext(ADDON.getAddonInfo('id'), current, following,
+                                           build_url(query), notify_at)
+        xbmc.log('NLZiet Up Next: next episode {} announced={}'.format(query.get('id'), sent), xbmc.LOGINFO)
+    except Exception as exc:
+        xbmc.log('NLZiet Up Next skipped: {}'.format(exc), xbmc.LOGINFO)
+
+
+def remote_watched(content_id, watched='1', background=False):
+    """Tell NLZiet an episode/film was watched (or not). Started by the service."""
+    if not content_id or not _setting_on('watched_to_service', True) or not _is_logged_in():
+        return
+    flag = str(watched) not in ('0', 'false', '')
+    ok = get_api_instance().set_watched(content_id, flag)
+    xbmc.log('NLZiet: watched status {} for {} sent to NLZiet: {}'.format(
+        'on' if flag else 'off', content_id, 'ok' if ok else 'failed'),
+        xbmc.LOGINFO if ok else xbmc.LOGWARNING)
+    if not background and ok:
+        xbmcgui.Dialog().notification('NLZiet', get_string('watched_sent'), xbmcgui.NOTIFICATION_INFO, 3000)
+
+
 def play_item(content_id, fmt=None, **kwargs):
+    if fmt in ('live', 'epg') and not _pin_ok(live=True):
+        xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance - still makes the stream info call but avoids object init overhead
@@ -6268,6 +7086,7 @@ def play_item(content_id, fmt=None, **kwargs):
 
         li.setMimeType('application/dash+xml')
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
+        _after_playback_started(api, content_id, fmt, playback_metadata, info)
     else:
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
@@ -6322,6 +7141,216 @@ def play_item(content_id, fmt=None, **kwargs):
             xbmc.log(f"NLZiet exception in non-DRM subtitle handling: {e}", xbmc.LOGINFO)
         
         xbmcplugin.setResolvedUrl(HANDLE, True, li)
+        _after_playback_started(api, content_id, fmt, playback_metadata, info)
+
+
+# ----------------------------------------------- search both services ---
+
+OTHER_SERVICE_ID = 'plugin.video.videoland.nl'
+
+
+def _add_other_service_search(query):
+    """Top line in the search results: the same search in Videoland."""
+    try:
+        if not xbmc.getCondVisibility('System.HasAddon({})'.format(OTHER_SERVICE_ID)):
+            return
+    except Exception:
+        return
+    target = 'plugin://{}/?{}'.format(OTHER_SERVICE_ID, urllib.parse.urlencode({'action': 'search', 'query': query}))
+    li = xbmcgui.ListItem(label='[B]{}[/B]: {}'.format(get_string('search_other_service'), query))
+    li.setArt({'icon': 'special://home/addons/{}/icon.png'.format(OTHER_SERVICE_ID),
+               'thumb': 'special://home/addons/{}/icon.png'.format(OTHER_SERVICE_ID)})
+    xbmcplugin.addDirectoryItem(HANDLE, target, li, isFolder=True)
+
+
+# ----------------------------------------------------------- widgets ---
+
+WIDGET_LISTS = (
+    ('continue', 'continue_watching', 'continue'),
+    ('watch_later', 'watch_later', 'watchlater'),
+    ('my_series', 'my_series', 'myseries'),
+    ('my_list', 'my_list', 'mylist'),
+)
+
+
+def widgets_menu():
+    """Ready-made lists for the skin's home screen widgets."""
+    for name, label_key, icon in WIDGET_LISTS:
+        add_directory_item(get_string(label_key), {'mode': 'widget', 'list': name},
+                           is_folder=True, thumb=_pick_menu_png_any(icon),
+                           info={'plot': get_string('widgets_help')})
+    _end_directory()
+
+
+def widget_list(name):
+    """One widget list: only the titles, fast, and never a pop-up."""
+    items = []
+    try:
+        if name == 'continue':
+            items = get_api_instance().get_continue_watching() or []
+        else:
+            api = _get_list_api()
+            getter = {'watch_later': api.get_watch_later, 'my_series': api.get_my_series,
+                      'my_list': api.get_my_list}.get(name)
+            items = (getter() if getter else []) or []
+    except Exception as exc:
+        xbmc.log('NLZiet widget {} failed: {}'.format(name, exc), xbmc.LOGWARNING)
+    for item in items:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        group = str(item.get('group') or '').lower()
+        kind = str(item.get('type') or '').lower()
+        title = item.get('title') or ''
+        info = {'title': title, 'plot': item.get('description') or ''}
+        thumb = item.get('thumb') or item.get('posterUrl') or _pick_landscape_thumb(item)
+        if group == 'series' or 'series' in kind and 'episode' not in kind:
+            add_directory_item(title, {'mode': 'series_detail', 'series_id': item['id']},
+                               is_folder=True, thumb=thumb, info=info, content=item)
+        elif group == 'channels':
+            continue
+        else:
+            add_directory_item(title, {'mode': 'play', 'id': item['id']}, is_folder=False,
+                               thumb=thumb, info=info, content=item)
+    _end_directory()
+
+
+# ------------------------------------------------- backup and restore ---
+
+BACKUP_SETTINGS_SKIP = ('password', 'username', 'parental_pin', 'tmdb_api_key')
+
+
+def _backup_folder():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'backups')
+
+
+def _backup_sources(api):
+    """Name -> file path of everything a backup keeps."""
+    profile = xbmcvfs.translatePath(ADDON.getAddonInfo('profile'))
+    files = {
+        'mylist.json': getattr(api, 'mylist_file', None),
+        'watchlater.json': getattr(api, 'watchlater_file', None),
+        'myseries.json': getattr(api, 'myseries_file', None),
+        'library.json': os.path.join(profile, 'library.json'),
+        'search_history.json': os.path.join(profile, 'search_history.json'),
+    }
+    return {name: path for name, path in files.items() if path}
+
+
+def _settings_snapshot():
+    """Plain settings (not the password or PIN) from settings.xml."""
+    values = {}
+    path = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'settings.xml')
+    try:
+        import xml.etree.ElementTree as ET
+        for node in ET.parse(path).getroot().iter('setting'):
+            key = node.get('id')
+            if key and not any(word in key for word in BACKUP_SETTINGS_SKIP):
+                values[key] = node.text or ''
+    except Exception:
+        pass
+    return values
+
+
+def backup_lists():
+    import zipfile
+    api = _get_list_api()
+    folder = _backup_folder()
+    os.makedirs(folder, exist_ok=True)
+    name = 'nlziet-backup-{}.zip'.format(time.strftime('%Y%m%d-%H%M'))
+    path = os.path.join(folder, name)
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for arcname, source in _backup_sources(api).items():
+            if os.path.isfile(source):
+                archive.write(source, arcname)
+        archive.writestr('settings.json', json.dumps(_settings_snapshot(), indent=1, ensure_ascii=False))
+        archive.writestr('backup.json', json.dumps({'addon': ADDON.getAddonInfo('id'),
+                                                    'version': ADDON.getAddonInfo('version'),
+                                                    'created': int(time.time())}))
+    # Keep the 10 newest backups.
+    old = sorted(f for f in os.listdir(folder) if f.startswith('nlziet-backup-') and f.endswith('.zip'))
+    for stale in old[:-10]:
+        try:
+            os.remove(os.path.join(folder, stale))
+        except OSError:
+            pass
+    xbmcgui.Dialog().ok('NLZiet', get_string('backup_saved', path))
+
+
+def restore_lists():
+    import zipfile
+    folder = _backup_folder()
+    try:
+        names = sorted((f for f in os.listdir(folder) if f.endswith('.zip')), reverse=True)
+    except OSError:
+        names = []
+    if not names:
+        xbmcgui.Dialog().ok('NLZiet', get_string('restore_none'))
+        return
+    choice = xbmcgui.Dialog().select(get_string('restore_choose'), names)
+    if choice < 0 or not xbmcgui.Dialog().yesno('NLZiet', get_string('restore_confirm')):
+        return
+    api = _get_list_api()
+    targets = _backup_sources(api)
+    restored = []
+    with zipfile.ZipFile(os.path.join(folder, names[choice])) as archive:
+        members = set(archive.namelist())
+        for arcname, target in targets.items():
+            if arcname not in members:
+                continue
+            data = archive.read(arcname)
+            json.loads(data.decode('utf-8'))   # only restore valid JSON
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            tmp = target + '.tmp'
+            with open(tmp, 'wb') as handle:
+                handle.write(data)
+            os.replace(tmp, target)
+            restored.append(arcname.replace('.json', ''))
+        if 'settings.json' in members:
+            settings = json.loads(archive.read('settings.json').decode('utf-8'))
+            for key, value in settings.items():
+                try:
+                    ADDON.setSetting(key, value)
+                except Exception:
+                    pass
+            restored.append('settings')
+    global _LIBRARY
+    _LIBRARY = None
+    xbmcgui.Dialog().ok('NLZiet', get_string('restore_done', ', '.join(restored)))
+    if 'library' in restored:
+        xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=library_update&background=1)')
+
+
+# ------------------------------------------------------- daily check ---
+
+def daily_check():
+    """Run the diagnostics quietly; one notification when something is wrong."""
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    t = diagnostics_mod.texts(language)
+    checks = _collect_diagnostics(t)
+    problems = diagnostics_mod.problem_labels(checks)
+    xbmc.log('NLZiet daily check: {}'.format(', '.join(problems) or 'all OK'), xbmc.LOGINFO)
+    # Say it when something new goes wrong; repeat an unchanged problem weekly.
+    state_path = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'daily_check.json')
+    try:
+        with open(state_path, 'r', encoding='utf-8') as handle:
+            state = json.load(handle) or {}
+    except (OSError, ValueError):
+        state = {}
+    now = time.time()
+    changed = sorted(problems) != sorted(state.get('problems') or [])
+    if problems and (changed or now - float(state.get('notified') or 0) >= 7 * 86400):
+        xbmcgui.Dialog().notification('NLZiet', get_string('daily_check_problem', ', '.join(problems[:3])),
+                                      xbmcgui.NOTIFICATION_WARNING, 10000)
+        state['notified'] = now
+    state['problems'] = problems
+    try:
+        with open(state_path, 'w', encoding='utf-8') as handle:
+            json.dump(state, handle)
+    except OSError:
+        pass
 
 
 def select_iptv_channels():
@@ -6383,6 +7412,7 @@ def get_route_handlers():
         'clear_subtitle_cache': clear_subtitle_cache,
         'clear_all_cache': clear_all_cache,
         'search_group': search_group,
+        'search_filter': search_filter,
         'show_series_detail': show_series_detail,
         'show_series_season': show_series_season,
         'export_series_library': export_series_library,
@@ -6390,6 +7420,20 @@ def get_route_handlers():
         'library_remove': library_remove,
         'library_update': library_update,
         'browse_library': browse_library,
+        'check_tmdb_key': check_tmdb_key,
+        'repair_library_art': repair_library_art,
+        'run_diagnostics': run_diagnostics,
+        'widgets_menu': widgets_menu,
+        'widget_list': widget_list,
+        'backup_lists': backup_lists,
+        'restore_lists': restore_lists,
+        'daily_check': daily_check,
+        'remote_watched': remote_watched,
+        'library_from_lists': library_from_lists,
+        'choose_tmdb': choose_tmdb,
+        'parental_set_pin': parental_set_pin,
+        'parental_clear_pin': parental_clear_pin,
+        'toggle_profile_lock': toggle_profile_lock,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,
@@ -6409,6 +7453,32 @@ def router(paramstring):
     Router(context, get_route_handlers()).dispatch(paramstring)
 
 
-if __name__ == '__main__':
+def _show_friendly_error(exc, paramstring=''):
+    """Log the full error and show the user one clear sentence."""
+    xbmc.log('NLZiet: unexpected error\n' + errors_mod.log_text(exc), xbmc.LOGERROR)
+    params = dict(urllib.parse.parse_qsl((paramstring or '').lstrip('?')))
+    if params.get('mode') == 'play':
+        try:
+            xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        except Exception:
+            pass
+    if params.get('background') == '1':
+        return
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    xbmcgui.Dialog().notification('NLZiet', errors_mod.user_message(exc, 'NLZiet', language),
+                                  xbmcgui.NOTIFICATION_ERROR, 7000)
+
+
+def run():
     context = AddonContext.from_kodi()
-    Router(context, get_route_handlers()).dispatch()
+    try:
+        Router(context, get_route_handlers()).dispatch()
+    except Exception as exc:
+        _show_friendly_error(exc, context.paramstring)
+
+
+if __name__ == '__main__':
+    run()
