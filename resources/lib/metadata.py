@@ -46,6 +46,9 @@ def clean_title(title):
     """Title without a trailing year or season note, e.g. "Show (2021)",
     "Show - Seizoen 2", which services add but TMDb does not use."""
     text = str(title or "").strip()
+    # Page titles like "Show - Kijk online bij Videoland" or "Show | NLZiet".
+    text = re.sub(r"\s*[-|:]\s*(?:(?:kijk|bekijk|watch|stream)\b.*|.*\b(?:videoland|nlziet)\b.*)$", "", text,
+                  flags=re.IGNORECASE)
     text = re.sub(r"\s*\((?:19|20)\d{2}\)\s*$", "", text)
     text = re.sub(r"\s*[-:]\s*(?:seizoen|season|serie)\s*\d+\s*$", "", text, flags=re.IGNORECASE)
     return text.strip()

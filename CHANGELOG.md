@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v1.9.1 (November 14, 2026)
+> **Latest Version:** v1.9.2 (November 14, 2026)
+
+## [1.9.2] - 2026-11-14
+
+### Fixed
+- **No TMDb match for some series**: site suffixes such as " - Kijk online ..." and trailing years are stripped before searching TMDb; the Kodi log shows per series which match was found ("metadata for ...").
 
 ## [1.9.1] - 2026-11-14
 

@@ -471,7 +471,7 @@ class Library:
         section = self.store.section('series')
         entry = dict(section.get(series_id) or {})
         detail = self.api.get_series_detail(series_id) or {}
-        series_title = detail.get('title') or entry.get('title') or title or series_id
+        series_title = metadata.clean_title(detail.get('title')) or entry.get('title') or title or series_id
         episodes = [ep for ep in (self.episode_fetcher(self.api, series_id, detail) or []) if ep.get('id')]
         if not episodes:
             # Never delete files because of a failed or empty API answer.
@@ -565,6 +565,7 @@ class Library:
             _log('metadata lookup failed for {}: {}'.format(title, exc))
             return local
         ids = {k: str(v) for k, v in (extra.get('ids') or {}).items() if v}
+        _log("metadata for '{}': tmdb={} tvmaze={}".format(title, ids.get('tmdb', '-'), ids.get('tvmaze', '-')))
         if ids:
             entry['ids'] = ids
         return metadata.merge_art_first(local, extra, self.tmdb_art_first())
