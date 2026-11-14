@@ -289,7 +289,7 @@ def repair_dateadded_once():
     date, so "recently added" widgets order by when an episode aired (newest on
     top) instead of leaving older imports there. Updates Kodi's database
     directly, so it also fixes episodes that were already scanned."""
-    if _setting_on('dateadded_repaired', False):
+    if _setting_on('dateadded_repaired_v2', False):
         return
     marker = 'plugin.video.nlziet/library'
     try:
@@ -313,7 +313,7 @@ def repair_dateadded_once():
         except Exception:
             pass
     try:
-        ADDON.setSetting('dateadded_repaired', 'true')
+        ADDON.setSetting('dateadded_repaired_v2', 'true')
     except Exception:
         pass
     xbmc.log('NLZiet service: dateadded repaired for {} episodes'.format(changed), xbmc.LOGINFO)
@@ -346,7 +346,7 @@ def main():
             continue
         last_minute = now
 
-        if now - started >= LIBRARY_STARTUP_DELAY and not _setting_on('dateadded_repaired', False):
+        if now - started >= LIBRARY_STARTUP_DELAY and not _setting_on('dateadded_repaired_v2', False):
             try:
                 repair_dateadded_once()
             except Exception as exc:

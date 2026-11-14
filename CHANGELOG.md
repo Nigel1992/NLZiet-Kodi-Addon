@@ -1,7 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.4.3 (November 14, 2026)
+> **Latest Version:** v2.4.4 (November 14, 2026)
 
+## [2.4.4] - 2026-11-14
+
+### Fixed
+- **Datum-reparatie draait één keer opnieuw met de melding.** In 2.4.2 draaide de reparatie al stil en zette zichzelf op "klaar", waardoor 2.4.3 geen melding toonde. Hij draait nu nog één keer en toont dan "Bibliotheekdatums bijgewerkt (N afleveringen)".
 ## [2.4.3] - 2026-11-14
 
 ### Added
