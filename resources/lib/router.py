@@ -113,13 +113,16 @@ class Router:
         elif mode == 'export_series_library':
             self.handlers['export_series_library'](params.get('series_id'))
         elif mode == 'library_toggle':
-            self.handlers['library_toggle'](params.get('kind'), params.get('id'), params.get('title'))
+            self.handlers['library_toggle'](params.get('kind'), params.get('id'), params.get('title'),
+                                            params.get('poster'), params.get('fanart'))
         elif mode == 'library_remove':
             self.handlers['library_remove'](params.get('kind'), params.get('id'), params.get('title'))
         elif mode == 'library_update':
             self.handlers['library_update'](**self._sync_options(params))
         elif mode == 'browse_library':
             self.handlers['browse_library']()
+        elif mode == 'repair_library_art':
+            self.handlers['repair_library_art'](background=params.get('background') == '1')
         elif mode == 'check_tmdb_key':
             self.handlers['check_tmdb_key']()
         elif mode == 'placement_row':

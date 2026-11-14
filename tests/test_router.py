@@ -21,7 +21,7 @@ EXPECTED_HANDLER_NAMES = {
     'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
     'clear_all_cache', 'browse_epg',
     'library_toggle', 'library_remove', 'library_update', 'browse_library',
-    'check_tmdb_key',
+    'check_tmdb_key', 'repair_library_art',
 }
 
 
@@ -194,7 +194,7 @@ def test_library_routes_dispatch():
     router.dispatch('mode=browse_library')
 
     assert calls == [
-        ('library_toggle', ('movie', 'm1', 'Film'), {}),
+        ('library_toggle', ('movie', 'm1', 'Film', None, None), {}),
         ('library_remove', ('series', 's1', 'Show'), {}),
         ('library_update', (), {'background': True}),
         ('library_update', (), {}),

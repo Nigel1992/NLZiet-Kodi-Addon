@@ -249,6 +249,15 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 lib_title = (content.get('title') if isinstance(content, dict) else None) or title
                 if lib_title:
                     cm_query['title'] = lib_title
+                if isinstance(content, dict):
+                    lib_poster = pick_portrait_thumb(content)
+                    lib_fanart = pick_landscape_thumb(content)
+                    if lib_poster:
+                        cm_query['poster'] = lib_poster
+                    if lib_fanart:
+                        cm_query['fanart'] = lib_fanart
+                elif thumb:
+                    cm_query['poster'] = thumb
                 label = remove_from_library_label if in_library else add_to_library_label
                 context_items.append((label, f"RunPlugin({build_url_func(cm_query)})"))
             except Exception:

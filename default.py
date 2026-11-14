@@ -26,6 +26,7 @@ from resources.lib.router import Router
 from resources.lib import tvmaze
 from resources.lib import library as library_mod
 from resources.lib import metadata as metadata_mod
+from resources.lib import library_art
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -214,6 +215,7 @@ TRANSLATIONS = {
     'tmdb_check_ok': {'nl': 'TMDb-sleutel werkt', 'en': 'TMDb key works'},
     'tmdb_check_failed': {'nl': 'TMDb-sleutel werkt niet. Controleer de sleutel.', 'en': 'TMDb key does not work. Check the key.'},
     'library_moved': {'nl': '{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi.', 'en': '{} series moved to the NLZiet folder. Add that folder as a source in Kodi.'},
+    'library_art_fixed': {'nl': 'Posters bijgewerkt voor {} titels', 'en': 'Artwork updated for {} titles'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -386,6 +388,7 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'library_art_fixed': 33208,
     'library_moved': 33207,
     'tmdb_check_ok': 33210,
     'tmdb_check_failed': 33211,
@@ -1273,28 +1276,24 @@ def main_menu():
         except Exception:
             xbmc.log('NLZiet: failed to show login notification', xbmc.LOGDEBUG)
 
-    # Show Login or Sign Out button based on auth status
-    if logged_in:
-        explicit_logout_icon = os.path.join(addon_path, 'resources', 'media', 'menu_logout.png')
-        logout_icon = explicit_logout_icon if explicit_logout_icon and os.path.exists(explicit_logout_icon) else _pick_png('logout')
-        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=logout_icon, is_folder=False, is_playable=False)
-    else:
+    if not logged_in:
         add_directory_item(get_string('login'), {'mode': 'login'}, thumb=_pick_png('login'), is_folder=False, is_playable=False)
-    
+
     if logged_in:
-        add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        # Order: find and browse, the user's own lists, live tv, account last.
         add_directory_item(get_string('search'), {'mode': 'search'}, thumb=_pick_png('search'))
-        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
-        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
-        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('series'), {'mode': 'browse_series_categories'}, thumb=_pick_png('series'))
         add_directory_item(get_string('tv_shows'), {'mode': 'browse_tv_shows'}, thumb=_pick_png('tvshows'))
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
-        # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
+        add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
+        add_directory_item(get_string('watch_later'), {'mode': 'watch_later'}, thumb=_pick_png('watchlater'))
+        add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
+        add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
+        add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'), is_folder=False, is_playable=False)
     
     # Set background image for the container
     try:
@@ -1672,8 +1671,12 @@ def _library_enricher():
 def _get_library():
     global _LIBRARY
     if _LIBRARY is None:
-        _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher,
-                                       enricher=_library_enricher())
+        _LIBRARY = library_mod.Library(
+            get_api_instance(), ADDON, _library_episode_fetcher,
+            enricher=_library_enricher(),
+            downloader=lambda url: library_art.http_download(url, 'plugin.video.nlziet'),
+            art_picker=lambda item: (kodi_ui.pick_portrait_thumb(item), kodi_ui.pick_landscape_thumb(item)),
+        )
         try:
             moved = _LIBRARY.migrate_legacy_folder()
         except Exception as e:
@@ -1703,7 +1706,7 @@ def _after_library_change(scan=True, clean=False):
         library_mod.run_library_jobs(scan=False, clean=True)
 
 
-def library_add(kind, item_id, title=None):
+def library_add(kind, item_id, title=None, poster=None, fanart=None):
     kind = _library_kind(kind)
     if not item_id:
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
@@ -1714,9 +1717,9 @@ def library_add(kind, item_id, title=None):
         if progress is not None:
             progress.create('NLZiet', get_string('library_adding', title or ''))
         if kind == 'series':
-            result = lib.add_series(item_id, title=title)
+            result = lib.add_series(item_id, title=title, poster=poster, fanart=fanart)
         else:
-            result = lib.add_movie(item_id, title=title)
+            result = lib.add_movie(item_id, title=title, poster=poster, fanart=fanart)
         if not result.get('ok'):
             if result.get('reason') == 'no_episodes':
                 xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
@@ -1756,12 +1759,26 @@ def library_remove(kind, item_id, title=None):
         xbmcgui.Dialog().notification('NLZiet', get_string('library_not_found'), xbmcgui.NOTIFICATION_INFO)
 
 
-def library_toggle(kind, item_id, title=None):
+def library_toggle(kind, item_id, title=None, poster=None, fanart=None):
     if is_in_library(kind, item_id):
         library_remove(kind, item_id, title)
     else:
-        library_add(kind, item_id, title)
+        library_add(kind, item_id, title, poster, fanart)
         xbmc.executebuiltin('Container.Refresh')
+
+
+def repair_library_art(background=True):
+    """Give library titles Kodi already scanned their missing posters."""
+    try:
+        fixed = library_art.repair_kodi_art(_get_library(), marker='plugin.video.nlziet/library')
+    except Exception as e:
+        xbmc.log(f"NLZiet library art repair failed: {e}", xbmc.LOGWARNING)
+        fixed = 0
+    if fixed:
+        xbmc.log(f"NLZiet library: artwork set for {fixed} titles", xbmc.LOGINFO)
+    if not background:
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_art_fixed', fixed), xbmcgui.NOTIFICATION_INFO)
+    return fixed
 
 
 def export_series_library(series_id):
@@ -1801,6 +1818,7 @@ def library_update(background=False):
     changed = bool(totals.get('added') or totals.get('removed'))
     if changed:
         _after_library_change(scan=True, clean=bool(totals.get('removed')))
+    repair_library_art()
     if not background or (changed and _setting_on('background_sync_notify', True)):
         xbmcgui.Dialog().notification(
             'NLZiet',
@@ -6438,6 +6456,7 @@ def get_route_handlers():
         'library_update': library_update,
         'browse_library': browse_library,
         'check_tmdb_key': check_tmdb_key,
+        'repair_library_art': repair_library_art,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,

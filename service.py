@@ -7,7 +7,21 @@ import xbmcaddon
 from resources.lib import library as library_mod
 
 ADDON = xbmcaddon.Addon()
-MONITOR = xbmc.Monitor()
+
+
+class LibraryMonitor(xbmc.Monitor):
+    """Notices when Kodi finished a video library scan."""
+
+    def __init__(self):
+        super().__init__()
+        self.scan_finished = False
+
+    def onScanFinished(self, library):
+        if library == 'video':
+            self.scan_finished = True
+
+
+MONITOR = LibraryMonitor()
 
 # Give Kodi time to finish starting before the first library update.
 LIBRARY_STARTUP_DELAY = 120
@@ -76,6 +90,13 @@ def main():
             break
 
         now = time.time()
+        if MONITOR.scan_finished:
+            MONITOR.scan_finished = False
+            library_file = os.path.join(library_mod.translate_path(ADDON.getAddonInfo('profile')) or '', 'library.json')
+            if os.path.isfile(library_file):
+                # New titles were just scanned: give them their posters.
+                xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=repair_library_art&background=1)')
+
         interval = _int_setting('auto_sync_interval', 0)
         if interval > 0 and now - last_sync >= interval * 60:
             last_sync = now

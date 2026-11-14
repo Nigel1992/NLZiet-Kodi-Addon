@@ -168,6 +168,13 @@
             <close>false</close>
           </control>
         </setting>
+        <setting id="library_repair_art" type="action" label="33209" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=repair_library_art)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
       </group>
       <group id="3" label="33212">
         <setting id="library_enrich" type="boolean" label="33213" help="33214">

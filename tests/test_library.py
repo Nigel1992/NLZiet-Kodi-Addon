@@ -309,3 +309,87 @@ def test_old_legacy_setting_never_used_as_target(tmp_path):
 
     lib = library.Library(FakeAPI(), Addon(), fetcher)
     assert lib.tv_root() != library.LEGACY_TV_PATH
+
+
+# --- artwork ----------------------------------------------------------------
+
+from resources.lib import library_art
+
+
+def test_poster_comes_from_hint_and_is_saved_as_file(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show', 'description': ''}  # detail without any image
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    downloads = []
+
+    def downloader(url):
+        downloads.append(url)
+        return b'IMG:' + url.encode()
+
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=downloader)
+    lib.add_series('s1', poster='https://img/p.jpg?width=3840', fanart='https://img/f.jpg')
+
+    show = tmp_path / 'TV Shows' / 'Show'
+    assert (show / 'poster.jpg').read_bytes() == b'IMG:https://img/p.jpg?width=3840'
+    assert (show / 'fanart.jpg').exists()
+    assert '<thumb aspect="poster">https://img/p.jpg?width=3840</thumb>' in (show / 'tvshow.nfo').read_text()
+
+    # An update keeps the hint and does not download again.
+    lib.update_all()
+    assert len(downloads) == 2
+
+
+def test_art_picker_beats_detail_thumb(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show', 'thumb': 'https://raw/logo.png', 'raw': {'image': {'portraitUrl': 'x'}}}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    lib = library.Library(api, Addon(tmp_path), fetcher,
+                          art_picker=lambda item: ('https://img/portrait.jpg?width=3840', 'https://img/land.jpg'))
+    lib.add_series('s1')
+    nfo = (tmp_path / 'TV Shows' / 'Show' / 'tvshow.nfo').read_text()
+    assert 'portrait.jpg' in nfo and 'land.jpg' in nfo
+
+
+def test_movie_art_files_use_movie_name(tmp_path):
+    api = FakeAPI()
+    api.content['m1'] = {'title': 'Film', 'raw': {'year': 2020}}
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_movie('m1', poster='https://img/m.jpg')
+    assert (tmp_path / 'Movies' / 'Film (2020)' / 'Film (2020)-poster.jpg').exists()
+
+
+def test_repair_fills_only_missing_art(tmp_path):
+    api = FakeAPI()
+    api.series['s1'] = {'title': 'Show'}
+    api.episodes['s1'] = [_daily('e1', '2026-01-01')]
+    api.content['m1'] = {'title': 'Film', 'raw': {}}
+    lib = library.Library(api, Addon(tmp_path), fetcher, downloader=lambda url: b'x')
+    lib.add_series('s1', poster='https://img/p.jpg')
+    lib.add_movie('m1', poster='https://img/m.jpg', fanart='https://img/mf.jpg')
+    tv = str(tmp_path / 'TV Shows')
+    calls = []
+
+    def rpc(payload):
+        calls.append(payload)
+        method = payload['method']
+        if method == 'VideoLibrary.GetTVShows':
+            return {'result': {'tvshows': [
+                {'tvshowid': 1, 'file': tv + '/Show/', 'art': {}},
+                {'tvshowid': 2, 'file': '/other/Show/', 'art': {}},
+            ]}}
+        if method == 'VideoLibrary.GetMovies':
+            return {'result': {'movies': [
+                {'movieid': 9, 'file': 'special://profile/addon_data/plugin.video.nlziet/library/Movies/Film/Film.strm',
+                 'art': {'poster': 'chosen-by-user'}},
+            ]}}
+        return {'result': 'OK'}
+
+    fixed = library_art.repair_kodi_art(lib, marker='plugin.video.nlziet/library', rpc=rpc)
+
+    sets = [c for c in calls if c['method'].startswith('VideoLibrary.Set')]
+    assert fixed == 2
+    assert sets[0]['params']['tvshowid'] == 1
+    assert sets[0]['params']['art']['poster'].endswith('poster.jpg')
+    assert sets[1]['params']['movieid'] == 9
+    assert 'poster' not in sets[1]['params']['art']  # the user's own choice stays
+    assert sets[1]['params']['art']['fanart'].endswith('-fanart.jpg')

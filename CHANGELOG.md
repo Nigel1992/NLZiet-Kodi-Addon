@@ -1,6 +1,16 @@
 # Changelog
 
-> **Latest Version:** v1.7.2 (November 14, 2026)
+> **Latest Version:** v1.7.3 (November 14, 2026)
+
+## [1.7.3] - 2026-11-14
+
+### Changed
+- **Menu icons**: a new consistent icon set: coloured tiles per menu group (blue = browse, purple = your own lists, red = live tv, grey = account) with white line glyphs. No text is baked into the images any more, so labels are not shown twice and follow Kodi's language. The unused Live TV image was removed; `scripts/build-menu-icons.py` rebuilds the set.
+- **Main menu order**: search and browsing first, then your own lists and the library, then profiles and sign out at the bottom.
+
+### Fixed
+- **Library posters**: series and films now get their poster and background in Kodi's library. The images are picked the same way as when browsing, the poster of the item you added is remembered when the detail page has none, and the images are saved as `poster.jpg`/`fanart.jpg` (films: `<name>-poster.jpg`/`<name>-fanart.jpg`) next to the files, which Kodi always uses.
+- **Library posters**: titles Kodi had already scanned without artwork get their poster and background filled in after every library update and after every Kodi library scan. Artwork you chose yourself in Kodi is never replaced. Settings → Library has a "Repair artwork in the Kodi library" button.
 
 ## [1.7.2] - 2026-11-14
 

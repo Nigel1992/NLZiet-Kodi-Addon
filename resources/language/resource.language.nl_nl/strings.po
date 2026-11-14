@@ -974,3 +974,11 @@ msgstr "TMDb-sleutel testen"
 msgctxt "#33207"
 msgid "{} series moved to the NLZiet folder. Add that folder as a source in Kodi."
 msgstr "{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi."
+
+msgctxt "#33208"
+msgid "Artwork updated for {} titles"
+msgstr "Posters bijgewerkt voor {} titels"
+
+msgctxt "#33209"
+msgid "Repair artwork in the Kodi library"
+msgstr "Posters in Kodi-bibliotheek herstellen"
