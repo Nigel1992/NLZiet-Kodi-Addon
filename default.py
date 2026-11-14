@@ -363,6 +363,21 @@ TRANSLATIONS = {
     'history_empty': {'nl': 'Nog niets gekeken', 'en': 'Nothing watched yet'},
     'history_clear': {'nl': 'Kijkgeschiedenis wissen', 'en': 'Clear watch history'},
     'history_cleared': {'nl': 'Kijkgeschiedenis gewist', 'en': 'Watch history cleared'},
+    'mark_series_watched': {'nl': 'Hele serie als bekeken markeren', 'en': 'Mark whole series as watched'},
+    'mark_series_done': {'nl': '{0} afleveringen als bekeken gemarkeerd', 'en': '{0} episodes marked as watched'},
+    'mark_series_busy': {'nl': 'Bezig met markeren...', 'en': 'Marking as watched...'},
+    'new_episode_notice': {'nl': 'Nieuwe aflevering: {0}', 'en': 'New episode: {0}'},
+    'new_season_notice': {'nl': 'Nieuw seizoen van {0}', 'en': 'New season of {0}'},
+    'recommended': {'nl': 'Aanbevolen voor jou', 'en': 'Recommended for you'},
+    'new_on_service': {'nl': 'Nieuw op NLZiet', 'en': 'New on NLZiet'},
+    'expiring_soon': {'nl': 'Verloopt binnenkort', 'en': 'Leaving soon'},
+    'expiring_days': {'nl': 'Nog {0} dagen', 'en': '{0} days left'},
+    'expiring_tomorrow': {'nl': 'Verloopt morgen', 'en': 'Leaves tomorrow'},
+    'expiring_today': {'nl': 'Verloopt vandaag', 'en': 'Leaves today'},
+    'expiring_empty': {'nl': 'Er verloopt binnenkort niets', 'en': 'Nothing is leaving the service soon'},
+    'favourite_channels': {'nl': 'Favoriete kanalen', 'en': 'Favourite channels'},
+    'both_continue': {'nl': 'Verder kijken (beide diensten)', 'en': 'Continue watching (both services)'},
+    'open_videoland_continue': {'nl': 'Open Videoland: Verder kijken', 'en': 'Open Videoland: Continue watching'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -598,6 +613,21 @@ STRING_IDS = {
     'history_empty': 33300,
     'history_clear': 33301,
     'history_cleared': 33302,
+    'mark_series_watched': 33311,
+    'mark_series_done': 33312,
+    'mark_series_busy': 33313,
+    'new_episode_notice': 33314,
+    'new_season_notice': 33315,
+    'recommended': 33318,
+    'new_on_service': 33319,
+    'expiring_soon': 33320,
+    'expiring_days': 33321,
+    'expiring_tomorrow': 33322,
+    'expiring_today': 33323,
+    'expiring_empty': 33324,
+    'favourite_channels': 33325,
+    'both_continue': 33326,
+    'open_videoland_continue': 33327,
 }
 
 
@@ -1525,6 +1555,7 @@ def main_menu():
         add_directory_item(get_string('documentary'), {'mode': 'browse', 'type': 'documentary'}, thumb=_pick_png('documentary'))
         add_directory_item(get_string('movies'), {'mode': 'browse_movie_categories'}, thumb=_pick_png('movies'))
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
+        add_directory_item(get_string('favourite_channels'), {'mode': 'favourite_channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
         add_directory_item(get_string('continue_watching'), {'mode': 'widget', 'list': 'continue'}, thumb=_pick_png('continue'))
         add_directory_item(get_string('my_list'), {'mode': 'my_list'}, thumb=_pick_png('mylist'))
@@ -1533,6 +1564,7 @@ def main_menu():
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
         add_directory_item(get_string('widgets'), {'mode': 'widgets'}, thumb=_pick_png('widgets'))
         add_directory_item(get_string('watch_history'), {'mode': 'history'}, thumb=_pick_png('continue'))
+        add_directory_item(get_string('expiring_soon'), {'mode': 'expiring'}, thumb=_pick_png('watchlater'))
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'), is_folder=False, is_playable=False)
     
@@ -2240,6 +2272,8 @@ def browse_library():
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('series'))
         remove = [(get_string('shuffle_episode'), 'RunPlugin({})'.format(
             build_url({'mode': 'shuffle', 'series_id': sid}))),
+                  (get_string('mark_series_watched'), 'RunPlugin({})'.format(
+            build_url({'mode': 'mark_series_watched', 'series_id': sid}))),
                   (get_string('remove_from_library'), 'RunPlugin({})'.format(
             build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title}))),
                   (get_string('choose_tmdb'), 'RunPlugin({})'.format(
@@ -6625,6 +6659,14 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
             'thumb': meta.get('thumb') or '', 'media_type': meta.get('media_type') or ''})
     except Exception:
         pass
+    try:
+        meta = metadata or {}
+        xbmcgui.Window(10000).setProperty('nlziet.now_meta', json.dumps({
+            'showtitle': meta.get('showtitle') or '', 'season': meta.get('season') or '',
+            'episode': meta.get('episode') or '', 'title': meta.get('title') or '',
+            'year': meta.get('year') or ''}))
+    except Exception:
+        pass
     markers = {}
     try:
         chapters = api.get_chapters(content_id)
@@ -6849,6 +6891,65 @@ def remote_watched(content_id, watched='1', background=False):
         xbmc.LOGINFO if ok else xbmc.LOGWARNING)
     if not background and ok:
         xbmcgui.Dialog().notification('NLZiet', get_string('watched_sent'), xbmcgui.NOTIFICATION_INFO, 3000)
+
+
+def mark_series_watched(series_id, background=False):
+    """Send a watched status to NLZiet for every episode of a series."""
+    if not series_id or not _setting_on('watched_to_service', True) or not _is_logged_in():
+        return
+    api = get_api_instance()
+    try:
+        _title, episodes = _collect_series_episodes(api, series_id)
+    except Exception:
+        episodes = []
+    ids = [str(ep['id']) for ep in episodes if isinstance(ep, dict) and ep.get('id')]
+    if not ids:
+        if not background:
+            xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
+        return
+    progress = None
+    if not background:
+        progress = xbmcgui.DialogProgressBG()
+        progress.create('NLZiet', get_string('mark_series_busy'))
+    done = 0
+    for index, content_id in enumerate(ids):
+        if api.set_watched(content_id, True):
+            done += 1
+        if progress:
+            progress.update(int((index + 1) * 100 / len(ids)))
+    if progress:
+        progress.close()
+    if not background:
+        xbmcgui.Dialog().notification('NLZiet', get_string('mark_series_done', done), xbmcgui.NOTIFICATION_INFO, 4000)
+
+
+def notify_new(background=True):
+    """Show a Kodi notification for followed series with a new episode."""
+    if not _setting_on('notify_new_episodes', True) or not _is_logged_in():
+        return
+    api = _get_list_api()
+    try:
+        items = api.get_my_series() or []
+    except Exception:
+        return
+    try:
+        new_ids, state = _new_my_series_ids(api, items)
+    except Exception:
+        return
+    titles = {str(it.get('id')): (it.get('title') or '') for it in items if isinstance(it, dict)}
+    for series_id in list(new_ids)[:3]:
+        name = titles.get(str(series_id)) or ''
+        xbmcgui.Dialog().notification('NLZiet', get_string('new_episode_notice', name),
+                                      xbmcgui.NOTIFICATION_INFO, 7000)
+    try:
+        _save_my_series_state(api, state)
+    except Exception:
+        pass
+
+
+def mark_series_watched_route(series_id):
+    mark_series_watched(series_id, background=False)
+
 
 
 def play_item(content_id, fmt=None, **kwargs):
@@ -7302,11 +7403,188 @@ def _add_other_service_search(query):
 
 WIDGET_LISTS = (
     ('continue', 'continue_watching', 'continue'),
+    ('both_continue', 'both_continue', 'continue'),
+    ('expiring', 'expiring_soon', 'watchlater'),
+    ('recommended', 'recommended', 'series'),
+    ('new', 'new_on_service', 'series'),
     ('watch_later', 'watch_later', 'watchlater'),
     ('my_series', 'my_series', 'myseries'),
     ('my_list', 'my_list', 'mylist'),
     ('history', 'watch_history', 'continue'),
 )
+
+
+def _placement_items(api, placement_id, limit=40):
+    """A flat list of items from an NLZiet placement, best-effort and safe."""
+    try:
+        components = api.get_placement_rows(placement_id) or []
+    except Exception:
+        return []
+    items = []
+    for component in components:
+        if not isinstance(component, dict):
+            continue
+        row = component.get('items') or component.get('content') or component.get('data')
+        if isinstance(row, list):
+            for entry in row:
+                if isinstance(entry, dict):
+                    inner = entry.get('content') if isinstance(entry.get('content'), dict) else entry
+                    if inner.get('id'):
+                        items.append(inner)
+        url = component.get('url') or component.get('itemsUrl') or component.get('href')
+        if url and len(items) < limit:
+            try:
+                items.extend(api.get_items_from_url(url) or [])
+            except Exception:
+                pass
+        if len(items) >= limit:
+            break
+    seen, flat = set(), []
+    for item in items:
+        cid = str(item.get('id') or '')
+        if cid and cid not in seen:
+            seen.add(cid)
+            flat.append(item)
+    return flat[:limit]
+
+
+
+def _parse_expiry(value):
+    """A unix timestamp from an availableUntil value (ISO string or epoch)."""
+    if value in (None, ''):
+        return None
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    text = str(value).strip()
+    try:
+        return float(text)
+    except ValueError:
+        pass
+    text = text.replace('Z', '+00:00')
+    for fmt in (None,):
+        try:
+            from datetime import datetime
+            return datetime.fromisoformat(text).timestamp()
+        except Exception:
+            return None
+    return None
+
+
+def _expiring_items(items, now=None, days=14):
+    """Items that leave the service within ``days``, soonest first.
+
+    Each kept item gets an 'expires_days' (int, 0 = today). ``items`` are the
+    normalized list entries that carry 'expires_at'/'availableUntil'.
+    """
+    import time as _time
+    now = _time.time() if now is None else now
+    out = []
+    seen = set()
+    for item in items or []:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        when = _parse_expiry(item.get('expires_at') or item.get('availableUntil'))
+        if when is None:
+            continue
+        left = when - now
+        if left < 0 or left > days * 86400:
+            continue
+        cid = str(item['id'])
+        if cid in seen:
+            continue
+        seen.add(cid)
+        row = dict(item)
+        row['expires_days'] = int(left // 86400)
+        out.append((when, row))
+    out.sort(key=lambda pair: pair[0])
+    return [row for _when, row in out]
+
+
+def _expiry_label(days):
+    if days <= 0:
+        return get_string('expiring_today')
+    if days == 1:
+        return get_string('expiring_tomorrow')
+    return get_string('expiring_days', days)
+
+
+def _gather_list_items(api):
+    """All of the user's list items (for the 'leaving soon' view)."""
+    items = []
+    for getter in (getattr(api, 'get_continue_watching', None), getattr(api, 'get_watch_later', None),
+                   getattr(api, 'get_my_list', None)):
+        if callable(getter):
+            try:
+                items.extend(getter() or [])
+            except Exception:
+                pass
+    return items
+
+
+def browse_expiring():
+    """Titles from your lists that leave NLZiet soon."""
+    api = _get_list_api()
+    rows = _expiring_items(_gather_list_items(api))
+    if not rows:
+        add_directory_item(get_string('expiring_empty'), {'mode': 'expiring'}, is_folder=False, is_playable=False)
+    for row in rows:
+        title = row.get('title') or row.get('id')
+        label = '{}  [COLOR orange]({})[/COLOR]'.format(title, _expiry_label(row.get('expires_days', 0)))
+        group = str(row.get('group') or row.get('type') or '').lower()
+        info = {'title': title, 'plot': row.get('description') or ''}
+        if 'series' in group and 'episode' not in group:
+            add_directory_item(label, {'mode': 'series_detail', 'series_id': row['id']}, is_folder=True,
+                               thumb=_pick_landscape_thumb(row), info=info, content=row)
+        else:
+            add_directory_item(label, {'mode': 'play', 'id': row['id']}, is_folder=False,
+                               thumb=_pick_landscape_thumb(row), info=info, content=row)
+    _end_directory()
+
+
+def both_continue():
+    """NLZiet Continue watching, with a jump to Videoland's at the top."""
+    if xbmc.getCondVisibility('System.HasAddon(plugin.video.videoland.nl)'):
+        target = 'plugin://plugin.video.videoland.nl/?action=continue_watching'
+        li = xbmcgui.ListItem(label='[B]{}[/B]'.format(get_string('open_videoland_continue')))
+        icon = 'special://home/addons/plugin.video.videoland.nl/icon.png'
+        li.setArt({'icon': icon, 'thumb': icon})
+        xbmcplugin.addDirectoryItem(HANDLE, target, li, isFolder=True)
+    try:
+        items = get_api_instance().get_continue_watching() or []
+    except Exception:
+        items = []
+    for item in items:
+        if not isinstance(item, dict) or not item.get('id'):
+            continue
+        title = item.get('title') or ''
+        add_directory_item(title, {'mode': 'play', 'id': item['id']}, is_folder=False,
+                           thumb=_pick_landscape_thumb(item), info={'title': title}, content=item)
+    _end_directory()
+
+
+
+def favourite_channels():
+    """A quick list of your enabled (favourite) live channels, up front."""
+    from resources.lib.iptvmgr import read_enabled_channels
+    api = get_api_instance()
+    try:
+        channels = api.get_channels() or []
+    except Exception:
+        channels = []
+    enabled = read_enabled_channels(api)
+    ids = set(enabled) if enabled else None
+    favourites = [c for c in channels if ids is None or c.get('id') in ids]
+    if not favourites:
+        favourites = channels
+    for channel in favourites:
+        title = channel.get('title') or channel.get('name') or ''
+        thumb = _pick_landscape_thumb(channel) or channel.get('logo') or channel.get('image')
+        info = {'title': title}
+        channel.setdefault('type', 'channel')
+        add_directory_item(title, {'mode': 'play', 'id': channel.get('id'), 'fmt': 'live'},
+                           is_folder=False, thumb=thumb, info=info, content=channel, group='channels')
+    _end_directory()
+
 
 
 def widgets_menu():
@@ -7328,6 +7606,32 @@ def widget_list(name):
                 label = '{} - {}'.format(label, row['subtitle'])
             add_directory_item(label, {'mode': 'play', 'id': row.get('id')}, is_folder=False,
                                thumb=row.get('thumb'), info={'title': label})
+        _end_directory()
+        return
+    if name == 'expiring':
+        for row in _expiring_items(_gather_list_items(_get_list_api())):
+            title = row.get('title') or row.get('id')
+            label = '{}  [COLOR orange]({})[/COLOR]'.format(title, _expiry_label(row.get('expires_days', 0)))
+            add_directory_item(label, {'mode': 'play', 'id': row['id']}, is_folder=False,
+                               thumb=_pick_landscape_thumb(row), info={'title': title}, content=row)
+        _end_directory()
+        return
+    if name == 'both_continue':
+        both_continue()
+        return
+    if name in ('recommended', 'new'):
+        api = get_api_instance()
+        placement = 'explore-series' if name == 'new' else 'home'
+        for item in _placement_items(api, placement):
+            title = item.get('title') or ''
+            thumb = _pick_landscape_thumb(item)
+            group = str(item.get('type') or '').lower()
+            if 'series' in group and 'episode' not in group:
+                add_directory_item(title, {'mode': 'series_detail', 'series_id': item['id']},
+                                   is_folder=True, thumb=thumb, info={'title': title}, content=item)
+            else:
+                add_directory_item(title, {'mode': 'play', 'id': item['id']}, is_folder=False,
+                                   thumb=thumb, info={'title': title}, content=item)
         _end_directory()
         return
     try:
@@ -7580,6 +7884,11 @@ def get_route_handlers():
         'browse_history': browse_history,
         'clear_history': clear_history,
         'record_history': record_history,
+        'mark_series_watched_route': mark_series_watched_route,
+        'notify_new': notify_new,
+        'browse_expiring': browse_expiring,
+        'both_continue': both_continue,
+        'favourite_channels': favourite_channels,
         'library_from_lists': library_from_lists,
         'choose_tmdb': choose_tmdb,
         'parental_set_pin': parental_set_pin,

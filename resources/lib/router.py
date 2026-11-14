@@ -57,6 +57,16 @@ class Router:
             self.handlers['record_history'](params.get('id'), params.get('title', ''),
                                             params.get('subtitle', ''), params.get('thumb', ''),
                                             params.get('media_type', ''), params.get('background') == '1')
+        elif mode == 'mark_series_watched':
+            self.handlers['mark_series_watched_route'](params.get('series_id'))
+        elif mode == 'notify_new':
+            self.handlers['notify_new'](params.get('background') == '1')
+        elif mode == 'expiring':
+            self.handlers['browse_expiring']()
+        elif mode == 'both_continue':
+            self.handlers['both_continue']()
+        elif mode == 'favourite_channels':
+            self.handlers['favourite_channels']()
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
         elif mode == 'my_list':

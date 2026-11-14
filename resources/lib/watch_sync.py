@@ -118,9 +118,12 @@ class PlaybackWatch:
             if total and total > 0:
                 self.total = float(total)
 
-    def finish(self):
-        """Return the key when the video counts as watched, then forget it."""
-        key, done = self.key, watched_enough(self.position, self.total)
+    def finish(self, share=WATCHED_SHARE):
+        """Return the key when the video counts as watched, then forget it.
+
+        ``share`` is the fraction (0-1) of the video that must be seen.
+        """
+        key, done = self.key, watched_enough(self.position, self.total, share)
         self.key = None
         return key if done else None
 

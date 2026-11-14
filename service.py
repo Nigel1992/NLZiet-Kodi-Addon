@@ -11,6 +11,7 @@ from resources.lib import metadata as metadata_mod
 from resources.lib import watch_sync
 from resources.lib import diagnostics as diagnostics_mod
 from resources.lib import playback_extras
+from resources.lib import trakt_status
 
 ADDON = xbmcaddon.Addon()
 
@@ -101,6 +102,7 @@ class PlaybackFollower(xbmc.Player):
         window.clearProperty(prop)
         window.clearProperty('nlziet.stop_after')
         self.sample()
+        self._scrobble('start')
         # Preferred audio/subtitle language.
         audio = _setting('preferred_audio', 'off')
         sub = _setting('preferred_subtitle', 'off')
@@ -121,8 +123,13 @@ class PlaybackFollower(xbmc.Player):
             pass
 
     def _done(self, natural):
+        self._scrobble('stop')
         key = self.watch.key
-        watched = self.watch.finish()
+        try:
+            share = max(0.5, min(0.99, _int_setting('watched_threshold', 90) / 100.0))
+        except Exception:
+            share = 0.9
+        watched = self.watch.finish(share)
         if watched:
             _send_watched(watched, True)
         if natural and key:
@@ -133,6 +140,35 @@ class PlaybackFollower(xbmc.Player):
 
     def onPlayBackEnded(self):
         self._done(True)
+
+    def _scrobble(self, action):
+        if not _setting_on('trakt_scrobble', False):
+            return
+        try:
+            import json, xbmcaddon, xbmcgui
+            trakt_addon = xbmcaddon.Addon('script.trakt')
+        except Exception:
+            return
+        token = trakt_status.access_token(trakt_addon)
+        client_id = trakt_status.official_client_id(trakt_addon.getAddonInfo('path') or '')
+        if not token or not client_id:
+            return
+        raw = xbmcgui.Window(10000).getProperty('nlziet.now_meta')
+        try:
+            meta = json.loads(raw) if raw else {}
+        except ValueError:
+            meta = {}
+        media = trakt_status.scrobble_media(meta.get('showtitle'), meta.get('season'),
+                                            meta.get('episode'), meta.get('title'), meta.get('year'))
+        if not media:
+            return
+        progress = 0.0
+        if self.watch.total:
+            progress = max(0.0, min(100.0, self.watch.position / self.watch.total * 100.0))
+        try:
+            trakt_status.scrobble(token, client_id, action, media, progress)
+        except Exception:
+            pass
 
 
 MONITOR = LibraryMonitor()
@@ -212,6 +248,7 @@ def main():
     last_library_trigger = 0
     last_minute = 0
     last_daily = 0
+    last_notify = 0
     legacy_checked = False
     player = PlaybackFollower()
     while not MONITOR.abortRequested():
@@ -228,6 +265,11 @@ def main():
                 and not xbmc.Player().isPlaying() and _daily_check_due()):
             last_daily = now
             xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=daily_check&background=1)'.format(ADDON_ID))
+
+        if (now - started >= LIBRARY_STARTUP_DELAY and now - last_notify >= 3 * 3600
+                and not xbmc.Player().isPlaying() and _setting_on('notify_new_episodes', True)):
+            last_notify = now
+            xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=notify_new&background=1)'.format(ADDON_ID))
 
         # A scan asked for while Kodi was busy runs as soon as it is free.
         library_art.run_pending_scan(library_mod.scan_flag_path())

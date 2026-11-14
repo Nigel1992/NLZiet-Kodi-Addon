@@ -295,7 +295,31 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="notify_new_episodes" type="boolean" label="33316" help="33317">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="watched_threshold" type="integer" label="33328" help="33329">
+          <level>0</level>
+          <default>90</default>
+          <constraints>
+            <minimum>70</minimum>
+            <step>5</step>
+            <maximum>98</maximum>
+          </constraints>
+          <dependencies><dependency type="enable" setting="watched_to_service" operator="is">true</dependency></dependencies>
+          <control type="slider" format="percentage"/>
+        </setting>
         <setting id="trakt_watched_status" type="boolean" label="33243" help="33244">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool">System.HasAddon(script.trakt)</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
+        <setting id="trakt_scrobble" type="boolean" label="33330" help="33331">
           <level>0</level>
           <default>false</default>
           <dependencies>

@@ -1,7 +1,21 @@
 # Changelog
 
-> **Latest Version:** v2.1.0 (November 14, 2026)
+> **Latest Version:** v2.2.0 (November 14, 2026)
 
+## [2.2.0] - 2026-11-14
+
+### Added
+- **Hele serie als bekeken markeren**: contextmenu op een serie in je bibliotheek stuurt alle afleveringen als bekeken naar NLZiet.
+- **Melding bij nieuwe afleveringen**: een Kodi-melding als een serie die je volgt een nieuwe aflevering krijgt (Instellingen → Synchronisatie; achtergrondcontrole elke paar uur).
+- **Verloopt binnenkort**: een lijst en widget met titels uit je lijsten die binnenkort van NLZiet verdwijnen, met "nog X dagen".
+- **Favoriete kanalen**: een snelle lijst met je ingeschakelde kanalen vooraan, in het hoofdmenu.
+- **Aanbevolen / Nieuw-widgets**: lijsten op basis van NLZiet's eigen aanbevelingen en placement-rijen.
+- **Verder kijken (beide diensten)**: een widget die NLZiet's Verder kijken toont met een snelkoppeling naar die van Videoland.
+- **Instelbaar bekeken-percentage**: kies bij hoeveel procent een video als bekeken naar NLZiet gaat (Instellingen → Synchronisatie, standaard 90%).
+- **Live Trakt-scrobbelen**: geef Trakt tijdens het kijken live door wat er speelt (vereist de aangemelde Trakt-addon).
+
+### Development
+- Nieuwe gedeelde `watch_history` al in gebruik; extra Trakt-scrobble-helpers en tests.
 ## [2.1.0] - 2026-11-14
 
 ### Added

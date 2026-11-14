@@ -1354,3 +1354,87 @@ msgstr "Engels"
 msgctxt "#33310"
 msgid "Original"
 msgstr "Origineel"
+
+msgctxt "#33311"
+msgid "Mark whole series as watched"
+msgstr "Hele serie als bekeken markeren"
+
+msgctxt "#33312"
+msgid "{0} episodes marked as watched"
+msgstr "{0} afleveringen als bekeken gemarkeerd"
+
+msgctxt "#33313"
+msgid "Marking as watched..."
+msgstr "Bezig met markeren..."
+
+msgctxt "#33314"
+msgid "New episode: {0}"
+msgstr "Nieuwe aflevering: {0}"
+
+msgctxt "#33315"
+msgid "New season of {0}"
+msgstr "Nieuw seizoen van {0}"
+
+msgctxt "#33316"
+msgid "Notify about new episodes"
+msgstr "Melding bij nieuwe afleveringen"
+
+msgctxt "#33317"
+msgid "Show a Kodi notification when a series you follow gets a new episode or season."
+msgstr "Toon een Kodi-melding als een serie die je volgt een nieuwe aflevering of seizoen krijgt."
+
+msgctxt "#33318"
+msgid "Recommended for you"
+msgstr "Aanbevolen voor jou"
+
+msgctxt "#33319"
+msgid "New on NLZiet"
+msgstr "Nieuw op NLZiet"
+
+msgctxt "#33320"
+msgid "Leaving soon"
+msgstr "Verloopt binnenkort"
+
+msgctxt "#33321"
+msgid "{0} days left"
+msgstr "Nog {0} dagen"
+
+msgctxt "#33322"
+msgid "Leaves tomorrow"
+msgstr "Verloopt morgen"
+
+msgctxt "#33323"
+msgid "Leaves today"
+msgstr "Verloopt vandaag"
+
+msgctxt "#33324"
+msgid "Nothing is leaving the service soon"
+msgstr "Er verloopt binnenkort niets"
+
+msgctxt "#33325"
+msgid "Favourite channels"
+msgstr "Favoriete kanalen"
+
+msgctxt "#33326"
+msgid "Continue watching (both services)"
+msgstr "Verder kijken (beide diensten)"
+
+msgctxt "#33327"
+msgid "Open Videoland: Continue watching"
+msgstr "Open Videoland: Verder kijken"
+
+msgctxt "#33328"
+msgid "Counts as watched at"
+msgstr "Telt als bekeken bij"
+
+msgctxt "#33329"
+msgid "How much of a video you must see before it is sent to NLZiet as watched."
+msgstr "Hoeveel van een video je gezien moet hebben voordat die als bekeken naar NLZiet gaat."
+
+msgctxt "#33330"
+msgid "Live Trakt scrobbling"
+msgstr "Live Trakt-scrobbelen"
+
+msgctxt "#33331"
+msgid "Tell Trakt in real time what you are watching (needs the Trakt add-on signed in)."
+msgstr "Geef Trakt live door wat je kijkt (hiervoor moet de Trakt-addon aangemeld zijn)."

@@ -1337,3 +1337,87 @@ msgstr ""
 msgctxt "#33310"
 msgid "Original"
 msgstr ""
+
+msgctxt "#33311"
+msgid "Mark whole series as watched"
+msgstr ""
+
+msgctxt "#33312"
+msgid "{0} episodes marked as watched"
+msgstr ""
+
+msgctxt "#33313"
+msgid "Marking as watched..."
+msgstr ""
+
+msgctxt "#33314"
+msgid "New episode: {0}"
+msgstr ""
+
+msgctxt "#33315"
+msgid "New season of {0}"
+msgstr ""
+
+msgctxt "#33316"
+msgid "Notify about new episodes"
+msgstr ""
+
+msgctxt "#33317"
+msgid "Show a Kodi notification when a series you follow gets a new episode or season."
+msgstr ""
+
+msgctxt "#33318"
+msgid "Recommended for you"
+msgstr ""
+
+msgctxt "#33319"
+msgid "New on NLZiet"
+msgstr ""
+
+msgctxt "#33320"
+msgid "Leaving soon"
+msgstr ""
+
+msgctxt "#33321"
+msgid "{0} days left"
+msgstr ""
+
+msgctxt "#33322"
+msgid "Leaves tomorrow"
+msgstr ""
+
+msgctxt "#33323"
+msgid "Leaves today"
+msgstr ""
+
+msgctxt "#33324"
+msgid "Nothing is leaving the service soon"
+msgstr ""
+
+msgctxt "#33325"
+msgid "Favourite channels"
+msgstr ""
+
+msgctxt "#33326"
+msgid "Continue watching (both services)"
+msgstr ""
+
+msgctxt "#33327"
+msgid "Open Videoland: Continue watching"
+msgstr ""
+
+msgctxt "#33328"
+msgid "Counts as watched at"
+msgstr ""
+
+msgctxt "#33329"
+msgid "How much of a video you must see before it is sent to NLZiet as watched."
+msgstr ""
+
+msgctxt "#33330"
+msgid "Live Trakt scrobbling"
+msgstr ""
+
+msgctxt "#33331"
+msgid "Tell Trakt in real time what you are watching (needs the Trakt add-on signed in)."
+msgstr ""
