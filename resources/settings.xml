@@ -301,12 +301,6 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
-        <setting id="resume_ask" type="boolean" label="33348" help="33349">
-          <level>0</level>
-          <default>true</default>
-          <dependencies><dependency type="enable" setting="resume_playback" operator="is">true</dependency></dependencies>
-          <control type="toggle"/>
-        </setting>
       </group>
     </category>
 

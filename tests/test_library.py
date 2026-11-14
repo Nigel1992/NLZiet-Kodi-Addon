@@ -453,3 +453,18 @@ def test_repair_replaces_art_the_addon_set_but_not_the_users(tmp_path):
     library_art.repair_kodi_art(lib, rpc=rpc)
     assert not [c for c in calls if c['method'] == 'VideoLibrary.SetTVShowDetails'
                 and 'poster' in c['params']['art']]
+
+
+def test_inject_dateadded_new_and_existing():
+    from resources.lib.library import inject_dateadded
+    nfo = "<episodedetails>\n  <title>T</title>\n</episodedetails>\n"
+    # New file: gets a dateadded at the given time.
+    out = inject_dateadded(nfo, "", now=0)
+    assert "<dateadded>1970-01-01" in out
+    # Existing file with a dateadded: that value is kept, not refreshed.
+    existing = "<episodedetails>\n  <dateadded>2020-05-01 10:00:00</dateadded>\n</episodedetails>\n"
+    out2 = inject_dateadded(nfo, existing, now=0)
+    assert "<dateadded>2020-05-01 10:00:00</dateadded>" in out2
+    # Already present in the generated text: unchanged.
+    withdate = "<episodedetails>\n  <dateadded>x</dateadded>\n</episodedetails>\n"
+    assert inject_dateadded(withdate, "") == withdate

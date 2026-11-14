@@ -120,6 +120,27 @@ def _image(item, *keys):
     return None
 
 
+
+def inject_dateadded(nfo_text, existing_text='', now=None):
+    """Make sure an episode .nfo carries a <dateadded> so Kodi's "recently
+    added" views pick up new episodes. A freshly created .nfo (no existing
+    text) gets the current time; an existing one keeps its original value so
+    the file does not churn and old episodes stay where they are."""
+    import re as _re
+    import time as _time
+    if '<dateadded>' in nfo_text:
+        return nfo_text
+    match = _re.search(r'<dateadded>([^<]+)</dateadded>', existing_text or '')
+    if match:
+        value = match.group(1)
+    else:
+        value = _time.strftime('%Y-%m-%d %H:%M:%S', _time.localtime(now if now is not None else _time.time()))
+    line = '  <dateadded>{}</dateadded>\n'.format(value)
+    if '</episodedetails>' in nfo_text:
+        return nfo_text.replace('</episodedetails>', line + '</episodedetails>', 1)
+    return nfo_text
+
+
 class LocalFS:
     """Small file helper: plain ``os`` for local paths, ``xbmcvfs`` for
     network paths such as ``smb://`` or ``nfs://``."""
@@ -526,6 +547,7 @@ class Library:
                 'showtitle': series_title,
                 'season': str(season),
                 'episode': str(number),
+                'inlib': '1',
             }
             if self.fs.write(strm_path, self.plugin_url(query) + '\n'):
                 result['added'] += 1
@@ -536,7 +558,7 @@ class Library:
                 'aired': '' if airdate == UNDATED else airdate,
             }
             ep_data = self._enrich_episode(entry, ep_data, season, number)
-            self.fs.write(nfo_path, self._episode_nfo(ep, ep_data, series_title, season, number))
+            self.fs.write(nfo_path, inject_dateadded(self._episode_nfo(ep, ep_data, series_title, season, number), self.fs.read(nfo_path)))
 
         # Remove episodes that are no longer offered (and old export files).
         for path in list(self.fs.walk_files(show_dir)):
@@ -684,7 +706,7 @@ class Library:
             entry['folder'] = safe_filename('{} ({})'.format(movie_title, year) if year else movie_title)
         movie_dir = self.fs.join(self.movies_root(), entry['folder'])
         base = self.fs.join(movie_dir, entry['folder'])
-        query = {'mode': 'play', 'id': movie_id, 'media_type': 'movie', 'title': movie_title}
+        query = {'mode': 'play', 'id': movie_id, 'media_type': 'movie', 'title': movie_title, 'inlib': '1'}
         if year:
             query['year'] = str(year)
         if self.fs.write(base + '.strm', self.plugin_url(query) + '\n'):

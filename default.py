@@ -1227,7 +1227,7 @@ def _add_trakt_metadata_to_query(query, title, info=None, content=None):
     return query_copy
 
 
-def _apply_playback_metadata(list_item, metadata, fmt=None, content_id=None):
+def _apply_playback_metadata(list_item, metadata, fmt=None, content_id=None, from_library=False):
     """Publish metadata as Kodi VideoPlayer labels for script.trakt."""
     if fmt == 'live':
         # This is the exclusion property recognized by the official Trakt
@@ -1310,7 +1310,7 @@ def _apply_playback_metadata(list_item, metadata, fmt=None, content_id=None):
             list_item.setProperty('ResumeTime', '0')
             list_item.setProperty('TotalTime', '3600')
     elif fmt not in ('live', 'epg'):
-        _apply_resume(list_item, content_id)
+        _apply_resume(list_item, content_id, from_library=from_library)
 
 
 _LOGOS = None
@@ -6892,9 +6892,16 @@ def _resume_path():
     return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'resume.json')
 
 
-def _apply_resume(list_item, content_id):
-    """Set a Kodi resume point on a VOD item from the local resume store."""
-    if not content_id or not _setting_on('resume_playback', True):
+def _apply_resume(list_item, content_id, from_library=False):
+    """Carry the local resume position onto a VOD item.
+
+    The add-on no longer shows its own "Verder kijken?" dialog: Kodi (and your
+    skin) already offer a resume prompt, and a second dialog on top was
+    confusing. For library playback (inlib=1) Kodi owns the resume entirely, so
+    we don't touch it; for in-add-on playback we set the resume point so Kodi's
+    own prompt/auto-resume lands in the right place.
+    """
+    if from_library or not content_id or not _setting_on('resume_playback', True):
         return
     found = resume_store.get(_resume_path(), content_id)
     if not found:
@@ -6902,13 +6909,6 @@ def _apply_resume(list_item, content_id):
     position, total = found
     if position < resume_store.MIN_POSITION:
         return
-    if _setting_on('resume_ask', True):
-        label = resume_store.format_time(position)
-        choice = xbmcgui.Dialog().yesno('NLZiet', get_string('resume_from', label),
-                                        yeslabel=get_string('resume_yes'), nolabel=get_string('resume_no'))
-        if not choice:
-            resume_store.clear(_resume_path(), content_id)
-            return
     total = total if total > position else position + 1.0
     try:
         list_item.getVideoInfoTag().setResumePoint(float(position), float(total))
@@ -7106,6 +7106,9 @@ def mark_series_watched_route(series_id):
 
 
 def play_item(content_id, fmt=None, **kwargs):
+    # inlib=1 marks playback that started from a library .strm; there Kodi (and
+    # the skin) own the resume prompt, so the add-on stays out of it.
+    _from_library = str(kwargs.get('inlib') or '') == '1'
     if fmt in ('live', 'epg') and not _pin_ok(live=True):
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
         return
@@ -7310,7 +7313,7 @@ def play_item(content_id, fmt=None, **kwargs):
         if not is_helper:
             return
         li = xbmcgui.ListItem(path=manifest, offscreen=True)
-        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id, from_library=_from_library)
         # Use the inputstream addon resolved by InputStream Helper.
         try:
             inputstream_addon = is_helper.inputstream_addon
@@ -7480,7 +7483,7 @@ def play_item(content_id, fmt=None, **kwargs):
         # non-DRM: simply play the manifest URL
         xbmc.log(f"NLZiet non-DRM manifest: {manifest}", xbmc.LOGDEBUG)
         li = xbmcgui.ListItem(path=manifest)
-        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id)
+        _apply_playback_metadata(li, playback_metadata, fmt=fmt, content_id=content_id, from_library=_from_library)
         
         # Check subtitle setting once
         try:

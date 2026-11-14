@@ -1,7 +1,12 @@
 # Changelog
 
-> **Latest Version:** v2.4.0 (November 14, 2026)
+> **Latest Version:** v2.4.1 (November 14, 2026)
 
+## [2.4.1] - 2026-11-14
+
+### Fixed
+- **Dubbele "verder kijken"-vraag.** NLZiet toonde bij afspelen uit de bibliotheek z'n eigen hervat-vraag bovenop die van Kodi/de skin. De addon laat het hervatten nu volledig aan Kodi (en je skin) over: bibliotheek-.strm's zijn gemarkeerd (inlib=1) en in de addon zelf wordt de positie stil toegepast zonder eigen venster. Nog maar één keuze.
+- **Nieuwe afleveringen verschijnen in "recent toegevoegd".** Nieuw toegevoegde afleveringen krijgen nu een `dateadded` op het moment van toevoegen, zodat ze bovenaan komen in "recent toegevoegde afleveringen"-widgets. Bestaande afleveringen houden hun datum.
 ## [2.4.0] - 2026-11-14
 
 ### Changed
