@@ -295,3 +295,23 @@ def test_tmdb_art_first_only_for_posters_and_backgrounds():
     first = metadata.merge_art_first(local, extra, True)
     assert first == {'plot': 'Eigen', 'poster': 'https://tmdb/p.jpg', 'fanart': 'https://tmdb/f.jpg'}
     assert metadata.merge_art_first(local, extra, False)['poster'] == 'https://vl/landscape.jpg'
+
+
+def test_card_title_is_used_when_the_page_title_finds_nothing(tmp_path):
+    def search(params):
+        return {'results': [{'id': 94471, 'name': 'Chateau Meiland'}]} if params['query'] == ['Chateau Meiland'] else {'results': []}
+
+    routes = {
+        'themoviedb/search/tv': search,
+        'themoviedb/tv/94471': {'overview': 'De familie Meiland', 'poster_path': '/cm.jpg', 'external_ids': {}},
+        'themoviedb/tv/94471/images': {'logos': []},
+    }
+    enricher, _http = make(tmp_path, routes, key='abc')
+    api = FakeAPI()
+    api.series['cm'] = {'title': 'SBS6 Reality'}  # odd page title
+    api.episodes['cm'] = [{'id': 'e', 'title': 'Aflevering 1', 'aired_date': '2026-01-03'}]
+    lib = library.Library(api, Addon(tmp_path), lambda a, sid, d: a.episodes[sid], enricher=enricher)
+    lib.add_series('cm', title='Chateau Meiland')
+    assert lib.store.get('series', 'cm')['ids']['tmdb'] == '94471'
+    nfo = (tmp_path / 'TV' / 'SBS6 Reality' / 'tvshow.nfo').read_text()
+    assert 'https://image.tmdb.org/t/p/original/cm.jpg' in nfo

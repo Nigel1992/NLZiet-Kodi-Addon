@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v1.9.2 (November 14, 2026)
+> **Latest Version:** v1.9.3 (November 14, 2026)
+
+## [1.9.3] - 2026-11-14
+
+### Fixed
+- **No TMDb match for some series** (e.g. Chateau Meiland): when the title on NLZiet's series page finds nothing on TMDb, the title of the card you added the series from is tried as well.
 
 ## [1.9.2] - 2026-11-14
 
