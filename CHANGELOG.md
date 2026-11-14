@@ -1,6 +1,14 @@
 # Changelog
 
-> **Latest Version:** v1.7.5 (November 14, 2026)
+> **Latest Version:** v1.8.0 (November 14, 2026)
+
+## [1.8.0] - 2026-11-14
+
+### Added
+- **Parental control** (Settings → Parental control): set a PIN, choose per profile (Profiles → long press) whether switching to it needs the PIN, and optionally require the PIN for live tv and the TV guide. Kids profiles are marked. The PIN is stored only as a salted hash; after a correct PIN the lock stays open for 30 minutes.
+- **Search filters**: a Filter entry on top of search results narrows them by period (2020 and later, 2010s, 2000s, 1990s, before 1990) and genre, when NLZiet supplies that information.
+- **Trakt watched status in menus** (Settings → Synchronization, opt-in): films and episodes watched on Trakt show as watched, using the account connected in script.trakt. Episodes are matched by show title, season and episode number; nothing is guessed.
+- The diagnostics button moved to Settings → Library.
 
 ## [1.7.5] - 2026-11-14
 

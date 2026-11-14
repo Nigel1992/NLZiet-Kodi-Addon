@@ -998,3 +998,95 @@ msgstr "Diagnose uitvoeren"
 msgctxt "#33221"
 msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
 msgstr "Controleert aanmelding, InputStream Adaptive, Widevine, de verbinding met NLZiet, TMDb en TVmaze, en de bibliotheekmappen. Slaat een rapport zonder privégegevens op dat je bij een foutmelding kunt meesturen."
+
+msgctxt "#33238"
+msgid "Parental control"
+msgstr "Ouderlijk toezicht"
+
+msgctxt "#33239"
+msgid "Set or change PIN"
+msgstr "Pincode instellen of wijzigen"
+
+msgctxt "#33240"
+msgid "Remove PIN"
+msgstr "Pincode verwijderen"
+
+msgctxt "#33241"
+msgid "Live tv and TV guide only with PIN"
+msgstr "Live tv en TV Gids alleen met pincode"
+
+msgctxt "#33242"
+msgid "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+msgstr "Kies bij Profielen (lang indrukken op een profiel) welke profielen de pincode nodig hebben. Na een goede pincode blijft het slot 30 minuten open. Deze instellingen zelf kan Kodi niet vergrendelen; gebruik daarvoor de hoofdvergrendeling van Kodi."
+
+msgctxt "#33243"
+msgid "Show Trakt watched status in menus"
+msgstr "Trakt-kijkstatus tonen in de menu's"
+
+msgctxt "#33244"
+msgid "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+msgstr "Markeert films en afleveringen die je volgens Trakt hebt gezien als bekeken in de menu's van NLZiet. Gebruikt het Trakt-account dat in de Trakt-add-on (script.trakt) is gekoppeld; afleveringen worden herkend aan serietitel, seizoen en afleveringsnummer."
+
+msgctxt "#33222"
+msgid "Enter the PIN"
+msgstr "Voer de pincode in"
+
+msgctxt "#33223"
+msgid "Enter the current PIN"
+msgstr "Voer de huidige pincode in"
+
+msgctxt "#33224"
+msgid "Choose a new PIN (at least 4 digits)"
+msgstr "Kies een nieuwe pincode (minimaal 4 cijfers)"
+
+msgctxt "#33225"
+msgid "Repeat the new PIN"
+msgstr "Herhaal de nieuwe pincode"
+
+msgctxt "#33226"
+msgid "The PIN needs at least 4 digits."
+msgstr "De pincode moet minimaal 4 cijfers hebben."
+
+msgctxt "#33227"
+msgid "The two PINs are not the same. Please try again."
+msgstr "De twee pincodes zijn niet gelijk. Probeer het opnieuw."
+
+msgctxt "#33228"
+msgid "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+msgstr "Pincode ingesteld. Kies nu bij Profielen (lang indrukken) welke profielen een pincode nodig hebben."
+
+msgctxt "#33229"
+msgid "PIN removed"
+msgstr "Pincode verwijderd"
+
+msgctxt "#33230"
+msgid "Wrong PIN"
+msgstr "Onjuiste pincode"
+
+msgctxt "#33231"
+msgid "Set a PIN first."
+msgstr "Stel eerst een pincode in."
+
+msgctxt "#33232"
+msgid "Require the PIN for this profile"
+msgstr "Pincode vereisen voor dit profiel"
+
+msgctxt "#33233"
+msgid "No longer require the PIN for this profile"
+msgstr "Geen pincode meer voor dit profiel"
+
+msgctxt "#33234"
+msgid "This profile now asks for the PIN"
+msgstr "Dit profiel vraagt nu om de pincode"
+
+msgctxt "#33235"
+msgid "This profile no longer asks for the PIN"
+msgstr "Dit profiel vraagt niet meer om de pincode"
+
+msgctxt "#33236"
+msgid "Kids"
+msgstr "Kids"
+
+msgctxt "#33237"
+msgid "PIN"
+msgstr "pincode"

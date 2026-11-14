@@ -85,12 +85,12 @@ scripts/run-addon-check-local.sh --branch omega
 
 ## 🛣️ Roadmap / Coming Soon
 
-- **Kids Profile Support**: Full kids mode and parental controls.  
-- **Improved Search**: Filter by genre, year, release date, and more.  
-- **Playback History UI**: Show Trakt-backed watched status directly inside NLZiet menus.  
-- **Advanced Sorting**: Sort series by newest, oldest, alphabetical, popularity.  
-- **UI Polish**: Enhanced skins integration, custom info dialogs, and animations.  
-- **Automated Testing**: CI/CD pipeline for code quality and automated releases.  
+- ✅ **Parental control**: PIN for chosen profiles and optionally for live tv; kids profiles are marked (v1.8.0).  
+- ✅ **Improved search**: filter results by period and genre (v1.8.0).  
+- ✅ **Trakt watched status in menus**: opt-in, uses the account connected in script.trakt (v1.8.0).  
+- ✅ **Sorting**: Kodi's sort menu (default order, title, year, episode) on list pages (v1.7.4).  
+- ✅ **Automated testing**: GitHub Actions run the tests and build the zip; `v*` tags publish a release (v1.7.4).  
+- **UI polish**: new icon set done (v1.7.3). Custom info dialogs and animations are left to the skin: Kodi's own info screen shows the data, and a custom window would look different in every skin.  
 
 ---
 
@@ -100,11 +100,11 @@ scripts/run-addon-check-local.sh --branch omega
 - [X] **Episodes use episode title instead of count** (show SxxExx or Afl.  
 N when possible)  
 - [X] **Fix subfolders in series option** (better season/episode navigation)  
-- [ ] **Improve error messages and user feedback**  
-- [ ] **Better artwork and fanart for all content**  
+- [X] **Improve error messages and user feedback** (one clear sentence per problem, details in the log)  
+- [X] **Better artwork and fanart for all content** (library posters/backgrounds, TMDb/TVmaze fill-in)  
 - [X] **Settings: allow custom API endpoint for advanced users**  
-- [ ] **Add more debug and diagnostic tools**  
-- [ ] **Accessibility improvements for screen readers**  
+- [X] **Add more debug and diagnostic tools** (Settings → Library → Run diagnostics)  
+- [X] **Accessibility improvements for screen readers** (text instead of emoji/colour-only markers, status words in diagnostics)  
 - [X] **Add unit tests for routing, playback metadata, and Trakt scrobbling**  
 
 ## 💖 Support the Project
@@ -196,12 +196,12 @@ scripts/run-addon-check-local.sh --branch omega
 
 ## 🛣️ Roadmap / Binnenkort
 
-- **Kids Profile Support**: Volledige kids-modus en ouderlijk toezicht.
-- **Verbeterd zoeken**: Filteren op genre, jaar, releasedatum en meer.
-- **Afspeelgeschiedenis-UI**: Toon Trakt-backed kijkstatus direct in NLZiet-menu's.
-- **Geavanceerd sorteren**: Sorteer series op nieuwste, oudste, alfabetisch, populariteit.
-- **UI Polish**: Verbeterde skin-integratie, aangepaste infodialogen en animaties.
-- **Geautomatiseerd testen**: CI/CD-pipeline voor codekwaliteit en geautomatiseerde releases.
+- ✅ **Ouderlijk toezicht**: pincode voor gekozen profielen en optioneel voor live tv; kinderprofielen worden gemarkeerd (v1.8.0).
+- ✅ **Verbeterd zoeken**: resultaten filteren op periode en genre (v1.8.0).
+- ✅ **Trakt-kijkstatus in de menu's**: optioneel, via het account dat in script.trakt is gekoppeld (v1.8.0).
+- ✅ **Sorteren**: Kodi's sorteermenu (standaardvolgorde, titel, jaar, aflevering) in lijsten (v1.7.4).
+- ✅ **Geautomatiseerd testen**: GitHub Actions draaien de tests en bouwen de zip; een `v*`-tag publiceert een release (v1.7.4).
+- **UI polish**: nieuwe pictogrammen klaar (v1.7.3). Eigen infoschermen en animaties laten we aan de skin: Kodi's eigen infoscherm toont de gegevens, en een eigen venster ziet er in elke skin anders uit.
 
 ---
 
@@ -210,11 +210,11 @@ scripts/run-addon-check-local.sh --branch omega
 - [X] **Fix issue waarbij maar 50 films/series worden getoond** (paginering/limit-afhandeling)
 - [X] **Afleveringen gebruiken afleveringstitel in plaats van telling** (toon SxxExx of Afl. N indien mogelijk)
 - [X] **Fix submappen in series-optie** (betere seizoen/aflevering-navigatie)
-- [ ] **Verbeter foutmeldingen en gebruikersfeedback**
-- [ ] **Betere artwork en fanart voor alle content**
+- [X] **Verbeter foutmeldingen en gebruikersfeedback** (één duidelijke zin per probleem, details in het logboek)
+- [X] **Betere artwork en fanart voor alle content** (posters en achtergronden in de bibliotheek, aanvulling via TMDb/TVmaze)
 - [X] **Instellingen: aangepast API-endpoint toestaan voor gevorderde gebruikers**
-- [ ] **Meer debug- en diagnostische tools toevoegen**
-- [ ] **Toegankelijkheidsverbeteringen voor schermlezers**
+- [X] **Meer debug- en diagnostische tools toevoegen** (Instellingen → Bibliotheek → Diagnose uitvoeren)
+- [X] **Toegankelijkheidsverbeteringen voor schermlezers** (tekst in plaats van emoji of alleen kleur, statuswoorden in de diagnose)
 - [X] **Unit tests voor routing, afspeelmetadata en Trakt scrobbling**
 
 ## 💖 Steun het project

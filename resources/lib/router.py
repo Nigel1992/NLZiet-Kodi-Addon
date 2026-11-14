@@ -90,6 +90,12 @@ class Router:
             self.handlers['confirm_logout']()
         elif mode == 'account_summary':
             self.handlers['refresh_account_info']()
+        elif mode == 'parental_set_pin':
+            self.handlers['parental_set_pin']()
+        elif mode == 'parental_clear_pin':
+            self.handlers['parental_clear_pin']()
+        elif mode == 'toggle_profile_lock':
+            self.handlers['toggle_profile_lock'](params.get('profile_id'))
         elif mode == 'diagnostics':
             self.handlers['run_diagnostics']()
         elif mode == 'export_diagnostics':

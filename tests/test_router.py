@@ -22,6 +22,7 @@ EXPECTED_HANDLER_NAMES = {
     'clear_all_cache', 'browse_epg',
     'library_toggle', 'library_remove', 'library_update', 'browse_library',
     'check_tmdb_key', 'repair_library_art', 'run_diagnostics', 'search_filter',
+    'parental_set_pin', 'parental_clear_pin', 'toggle_profile_lock',
 }
 
 

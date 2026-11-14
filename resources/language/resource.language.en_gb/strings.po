@@ -981,3 +981,95 @@ msgstr "Run diagnostics"
 msgctxt "#33221"
 msgid "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
 msgstr "Checks sign-in, InputStream Adaptive, Widevine, the connection to NLZiet, TMDb and TVmaze, and the library folders. Saves a privacy-safe report you can attach to a bug report."
+
+msgctxt "#33238"
+msgid "Parental control"
+msgstr "Parental control"
+
+msgctxt "#33239"
+msgid "Set or change PIN"
+msgstr "Set or change PIN"
+
+msgctxt "#33240"
+msgid "Remove PIN"
+msgstr "Remove PIN"
+
+msgctxt "#33241"
+msgid "Live tv and TV guide only with PIN"
+msgstr "Live tv and TV guide only with PIN"
+
+msgctxt "#33242"
+msgid "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+msgstr "Choose which profiles need the PIN in Profiles: long press a profile. After a correct PIN the lock stays open for 30 minutes. Kodi cannot lock these settings; use Kodi's master lock for that."
+
+msgctxt "#33243"
+msgid "Show Trakt watched status in menus"
+msgstr "Show Trakt watched status in menus"
+
+msgctxt "#33244"
+msgid "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+msgstr "Marks films and episodes you watched on Trakt as watched in NLZiet's menus. Uses the Trakt account connected in the Trakt add-on (script.trakt); episodes are matched by show title, season and episode number."
+
+msgctxt "#33222"
+msgid "Enter the PIN"
+msgstr "Enter the PIN"
+
+msgctxt "#33223"
+msgid "Enter the current PIN"
+msgstr "Enter the current PIN"
+
+msgctxt "#33224"
+msgid "Choose a new PIN (at least 4 digits)"
+msgstr "Choose a new PIN (at least 4 digits)"
+
+msgctxt "#33225"
+msgid "Repeat the new PIN"
+msgstr "Repeat the new PIN"
+
+msgctxt "#33226"
+msgid "The PIN needs at least 4 digits."
+msgstr "The PIN needs at least 4 digits."
+
+msgctxt "#33227"
+msgid "The two PINs are not the same. Please try again."
+msgstr "The two PINs are not the same. Please try again."
+
+msgctxt "#33228"
+msgid "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+msgstr "PIN set. Now choose in Profiles (long press) which profiles need the PIN."
+
+msgctxt "#33229"
+msgid "PIN removed"
+msgstr "PIN removed"
+
+msgctxt "#33230"
+msgid "Wrong PIN"
+msgstr "Wrong PIN"
+
+msgctxt "#33231"
+msgid "Set a PIN first."
+msgstr "Set a PIN first."
+
+msgctxt "#33232"
+msgid "Require the PIN for this profile"
+msgstr "Require the PIN for this profile"
+
+msgctxt "#33233"
+msgid "No longer require the PIN for this profile"
+msgstr "No longer require the PIN for this profile"
+
+msgctxt "#33234"
+msgid "This profile now asks for the PIN"
+msgstr "This profile now asks for the PIN"
+
+msgctxt "#33235"
+msgid "This profile no longer asks for the PIN"
+msgstr "This profile no longer asks for the PIN"
+
+msgctxt "#33236"
+msgid "Kids"
+msgstr "Kids"
+
+msgctxt "#33237"
+msgid "PIN"
+msgstr "PIN"

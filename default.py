@@ -30,6 +30,8 @@ from resources.lib import library_art
 from resources.lib import errors as errors_mod
 from resources.lib import diagnostics as diagnostics_mod
 from resources.lib import search_filters
+from resources.lib import parental as parental_mod
+from resources.lib import trakt_status
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -221,6 +223,22 @@ TRANSLATIONS = {
     'library_art_fixed': {'nl': 'Posters bijgewerkt voor {} titels', 'en': 'Artwork updated for {} titles'},
     'tmdb_check_missing': {'nl': 'Er is nog geen TMDb-sleutel opgeslagen. Vul de sleutel in, druk op OK om de instellingen op te slaan en test daarna opnieuw.', 'en': 'No TMDb key is saved yet. Enter the key, press OK to save the settings and test again.'},
     'tmdb_check_offline': {'nl': 'TMDb is niet bereikbaar. Controleer je internetverbinding; de sleutel zelf is niet getest.', 'en': 'TMDb could not be reached. Check your internet connection; the key itself was not tested.'},
+    'parental_enter_pin': {'nl': 'Voer de pincode in', 'en': 'Enter the PIN'},
+    'parental_enter_current_pin': {'nl': 'Voer de huidige pincode in', 'en': 'Enter the current PIN'},
+    'parental_new_pin': {'nl': 'Kies een nieuwe pincode (minimaal 4 cijfers)', 'en': 'Choose a new PIN (at least 4 digits)'},
+    'parental_repeat_pin': {'nl': 'Herhaal de nieuwe pincode', 'en': 'Repeat the new PIN'},
+    'parental_pin_too_short': {'nl': 'De pincode moet minimaal 4 cijfers hebben.', 'en': 'The PIN needs at least 4 digits.'},
+    'parental_pin_mismatch': {'nl': 'De twee pincodes zijn niet gelijk. Probeer het opnieuw.', 'en': 'The two PINs are not the same. Please try again.'},
+    'parental_pin_set': {'nl': 'Pincode ingesteld. Kies nu bij Profielen (lang indrukken) welke profielen een pincode nodig hebben.', 'en': 'PIN set. Now choose in Profiles (long press) which profiles need the PIN.'},
+    'parental_pin_removed': {'nl': 'Pincode verwijderd', 'en': 'PIN removed'},
+    'parental_wrong_pin': {'nl': 'Onjuiste pincode', 'en': 'Wrong PIN'},
+    'parental_set_pin_first': {'nl': 'Stel eerst een pincode in.', 'en': 'Set a PIN first.'},
+    'parental_lock_profile': {'nl': 'Pincode vereisen voor dit profiel', 'en': 'Require the PIN for this profile'},
+    'parental_unlock_profile': {'nl': 'Geen pincode meer voor dit profiel', 'en': 'No longer require the PIN for this profile'},
+    'parental_profile_locked': {'nl': 'Dit profiel vraagt nu om de pincode', 'en': 'This profile now asks for the PIN'},
+    'parental_profile_unlocked': {'nl': 'Dit profiel vraagt niet meer om de pincode', 'en': 'This profile no longer asks for the PIN'},
+    'parental_kids': {'nl': 'Kids', 'en': 'Kids'},
+    'parental_pin_tag': {'nl': 'pincode', 'en': 'PIN'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -393,6 +411,22 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'parental_enter_pin': 33222,
+    'parental_enter_current_pin': 33223,
+    'parental_new_pin': 33224,
+    'parental_repeat_pin': 33225,
+    'parental_pin_too_short': 33226,
+    'parental_pin_mismatch': 33227,
+    'parental_pin_set': 33228,
+    'parental_pin_removed': 33229,
+    'parental_wrong_pin': 33230,
+    'parental_set_pin_first': 33231,
+    'parental_lock_profile': 33232,
+    'parental_unlock_profile': 33233,
+    'parental_profile_locked': 33234,
+    'parental_profile_unlocked': 33235,
+    'parental_kids': 33236,
+    'parental_pin_tag': 33237,
     'tmdb_check_missing': 33218,
     'tmdb_check_offline': 33219,
     'library_art_fixed': 33208,
@@ -1147,6 +1181,30 @@ def _apply_playback_metadata(list_item, metadata, fmt=None):
             list_item.setProperty('TotalTime', '3600')
 
 
+_TRAKT_INDEX = None
+_TRAKT_LOADED = False
+
+
+def _trakt_watched(metadata):
+    """True when Trakt says this film/episode was watched (opt-in setting)."""
+    global _TRAKT_INDEX, _TRAKT_LOADED
+    if not _setting_on('trakt_watched_status', False):
+        return False
+    if not _TRAKT_LOADED:
+        _TRAKT_LOADED = True
+        try:
+            token = trakt_status.access_token(xbmcaddon.Addon('script.trakt'))
+            cache = os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'trakt_watched.json')
+            _TRAKT_INDEX = trakt_status.load_index(cache, token, _official_trakt_client_id())
+        except Exception as e:
+            xbmc.log(f"NLZiet Trakt watched status unavailable: {e}", xbmc.LOGINFO)
+            _TRAKT_INDEX = None
+    try:
+        return bool(_TRAKT_INDEX and _TRAKT_INDEX.watched(metadata))
+    except Exception:
+        return False
+
+
 def add_directory_item(title, query, is_folder=True, thumb=None, info=None, content=None, group=None, is_playable=None, extra_context_items=None):
     query = _add_trakt_metadata_to_query(query, title, info, content)
     is_live = isinstance(query, dict) and query.get('fmt') == 'live'
@@ -1166,6 +1224,8 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
     playback_state = _playback_state(content) if not is_live else {}
     for key, value in playback_state.items():
         item_info.setdefault(key, value)
+    if trakt_metadata and not item_info.get('playcount') and _trakt_watched(trakt_metadata):
+        item_info['playcount'] = 1
 
     return kodi_ui.add_directory_item(
         ADDON,
@@ -2963,6 +3023,75 @@ def do_login():
             return
 
 
+def _parental():
+    try:
+        window = xbmcgui.Window(10000)
+    except Exception:
+        window = None
+    return parental_mod.Parental(ADDON, window)
+
+
+def _ask_pin(heading_key='parental_enter_pin'):
+    try:
+        return xbmcgui.Dialog().numeric(0, get_string(heading_key), '', True)
+    except TypeError:
+        return xbmcgui.Dialog().numeric(0, get_string(heading_key))
+
+
+def _pin_ok(profile_id=None, live=False):
+    """Ask for the parental PIN when this action needs it."""
+    guard = _parental()
+    if not guard.needs_pin(profile_id=profile_id, live=live):
+        return True
+    if guard.ask(_ask_pin):
+        return True
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+    return False
+
+
+def parental_set_pin():
+    guard = _parental()
+    if guard.has_pin() and not guard.ask(lambda: _ask_pin('parental_enter_current_pin')):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    first = _ask_pin('parental_new_pin')
+    if not first or len(first) < 4:
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_too_short'))
+        return
+    if _ask_pin('parental_repeat_pin') != first:
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_mismatch'))
+        return
+    guard.set_pin(first)
+    xbmcgui.Dialog().ok('NLZiet', get_string('parental_pin_set'))
+
+
+def parental_clear_pin():
+    guard = _parental()
+    if not guard.has_pin():
+        return
+    if not guard.ask(lambda: _ask_pin('parental_enter_current_pin')):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    guard.clear_pin()
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_pin_removed'), xbmcgui.NOTIFICATION_INFO)
+
+
+def toggle_profile_lock(profile_id):
+    guard = _parental()
+    if not guard.has_pin():
+        xbmcgui.Dialog().ok('NLZiet', get_string('parental_set_pin_first'))
+        parental_set_pin()
+        if not guard.has_pin():
+            return
+    elif not guard.ask(_ask_pin):
+        xbmcgui.Dialog().notification('NLZiet', get_string('parental_wrong_pin'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    locked = guard.toggle_profile(profile_id)
+    xbmcgui.Dialog().notification('NLZiet', get_string('parental_profile_locked' if locked else 'parental_profile_unlocked'),
+                                  xbmcgui.NOTIFICATION_INFO)
+    xbmc.executebuiltin('Container.Refresh')
+
+
 def manage_profiles():
     """List available profiles and let the user switch the active profile.
 
@@ -3042,8 +3171,19 @@ def manage_profiles():
             thumb = inactive_icon
             info_obj = None
 
+        guard = _parental()
+        tags = []
+        if parental_mod.is_kids_profile(p):
+            tags.append(get_string('parental_kids'))
+        if guard.is_profile_protected(pid):
+            tags.append(get_string('parental_pin_tag'))
+        if tags:
+            title = '{}  ({})'.format(title, ', '.join(tags))
+        lock_label = get_string('parental_unlock_profile' if guard.is_profile_protected(pid) else 'parental_lock_profile')
+        lock_menu = [(lock_label, 'RunPlugin({})'.format(build_url({'mode': 'toggle_profile_lock', 'profile_id': str(pid)})))]
         # Selecting an item triggers the 'select_profile' route with the profile id
-        add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj)
+        add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj,
+                           extra_context_items=lock_menu)
 
     _end_directory()
 
@@ -4511,6 +4651,10 @@ def select_profile(profile_id):
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_profile_id'), xbmcgui.NOTIFICATION_ERROR)
         return
 
+    if str(profile_id) != str(ADDON.getSetting('profile_id') or '') and not _pin_ok(profile_id=profile_id):
+        xbmc.executebuiltin('Container.Update(%s,replace)' % build_url({'mode': 'profiles'}))
+        return
+
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for faster profile switching
@@ -4867,6 +5011,9 @@ def do_search():
 
 
 def browse_category(content_type):
+    if str(content_type).lower() == 'channels' and not _pin_ok(live=True):
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
+        return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance for faster menu navigation
@@ -6030,6 +6177,8 @@ def _epg_wait_for_playback_end():
 def browse_epg():
     """Show the custom EPG window, falling back to a directory list."""
     global _epg_playback_active
+    if not _pin_ok(live=True):
+        return
     # Install the 'D' hotkey keymap for the EPG day selector (best-effort).
     try:
         import shutil
@@ -6158,6 +6307,9 @@ def _extract_id_from_stream(stream):
 
 
 def play_item(content_id, fmt=None, **kwargs):
+    if fmt in ('live', 'epg') and not _pin_ok(live=True):
+        xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        return
     username = ADDON.getSetting('username')
     password = ADDON.getSetting('password')
     # Use cached API instance - still makes the stream info call but avoids object init overhead
@@ -6650,6 +6802,9 @@ def get_route_handlers():
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
         'run_diagnostics': run_diagnostics,
+        'parental_set_pin': parental_set_pin,
+        'parental_clear_pin': parental_clear_pin,
+        'toggle_profile_lock': toggle_profile_lock,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,

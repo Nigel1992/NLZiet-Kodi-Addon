@@ -64,6 +64,14 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="trakt_watched_status" type="boolean" label="33243" help="33244">
+          <level>0</level>
+          <default>false</default>
+          <dependencies>
+            <dependency type="visible" on="property" name="infobool">System.HasAddon(script.trakt)</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
         <setting id="auto_add_new_episodes" type="boolean" label="33148" help="33155">
           <level>0</level>
           <default>false</default>
@@ -211,6 +219,51 @@
           <control type="button" format="action">
             <close>true</close>
           </control>
+        </setting>
+      </group>
+    </category>
+
+    <category id="category_parental" label="33238" help="">
+      <group id="1" label="">
+        <setting id="parental_set_pin" type="action" label="33239" help="33242">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=parental_set_pin)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="parental_clear_pin" type="action" label="33240" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=parental_clear_pin)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+        <setting id="parental_lock_live" type="boolean" label="33241" help="33242">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="parental_pin_hash" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="parental_pin_salt" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="parental_protected_profiles" type="string" label="33238">
+          <level>0</level>
+          <default/>
+          <constraints><allowempty>true</allowempty></constraints>
+          <visible>false</visible>
+          <control type="edit" format="string"/>
         </setting>
       </group>
     </category>
