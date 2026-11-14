@@ -50,6 +50,8 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        content=None, playback_state=None, is_live=False,
                        group=None,
                        add_to_library_label='Add to library',
+                       remove_from_library_label='Remove from library',
+                       library_check=None,
                        mylist_add_label='Add to My List',
                        mylist_remove_label='Remove from My List',
                        watch_later_add_label='Add to Watch Later',
@@ -228,10 +230,27 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 except Exception:
                     pass
 
-        if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
+        # Kodi library: series (folders) and movies (playable items).
+        library_kind = None
+        if content_id and isinstance(query, dict):
+            ctype_lib = str(content_type or '').lower()
+            if query.get('mode') == 'series_detail':
+                library_kind = 'series'
+            elif (query.get('mode') == 'play' and not is_live
+                  and (str(group or '').lower() == 'movies' or 'movie' in ctype_lib or 'film' in ctype_lib)):
+                library_kind = 'movie'
+        if library_kind:
             try:
-                cm_url = build_url_func({'mode': 'export_series_library', 'series_id': str(content_id)})
-                context_items.append((add_to_library_label, f"RunPlugin({cm_url})"))
+                in_library = bool(library_check and library_check(library_kind, content_id))
+            except Exception:
+                in_library = False
+            try:
+                cm_query = {'mode': 'library_toggle', 'kind': library_kind, 'id': str(content_id)}
+                lib_title = (content.get('title') if isinstance(content, dict) else None) or title
+                if lib_title:
+                    cm_query['title'] = lib_title
+                label = remove_from_library_label if in_library else add_to_library_label
+                context_items.append((label, f"RunPlugin({build_url_func(cm_query)})"))
             except Exception:
                 pass
 

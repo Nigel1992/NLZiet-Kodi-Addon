@@ -107,6 +107,70 @@
       </group>
     </category>
 
+    <category id="category_library" label="33198" help="">
+      <group id="1" label="">
+        <setting id="library_path" type="path" label="33199" help="33205">
+          <level>0</level>
+          <default>special://profile/addon_data/plugin.video.nlziet/library/TV Shows</default>
+          <constraints>
+            <writable>true</writable>
+          </constraints>
+          <control type="button" format="path">
+            <heading>33199</heading>
+          </control>
+        </setting>
+        <setting id="library_movies_path" type="path" label="33200" help="33206">
+          <level>0</level>
+          <default>special://profile/addon_data/plugin.video.nlziet/library/Movies</default>
+          <constraints>
+            <writable>true</writable>
+          </constraints>
+          <control type="button" format="path">
+            <heading>33200</heading>
+          </control>
+        </setting>
+      </group>
+      <group id="2" label="">
+        <setting id="library_auto_update" type="boolean" label="33201" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_update_hours" type="integer" label="33202" help="">
+          <level>0</level>
+          <default>12</default>
+          <constraints>
+            <minimum>1</minimum>
+            <step>1</step>
+            <maximum>168</maximum>
+          </constraints>
+          <dependencies>
+            <dependency type="enable" setting="library_auto_update">true</dependency>
+          </dependencies>
+          <control type="slider" format="integer">
+            <popup>false</popup>
+          </control>
+        </setting>
+        <setting id="library_scan_after" type="boolean" label="33203" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_clean_after" type="boolean" label="33204" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="library_update_now" type="action" label="33194" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=library_update)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
+      </group>
+    </category>
+
     <category id="category_expiry" label="33153" help="">
       <group id="1" label="">
         <setting id="expiry_notify_enabled" type="boolean" label="33149" help="">
@@ -260,13 +324,6 @@
             <default>plugin://plugin.video.nlziet?mode=iptv.epg</default>
             <visible>false</visible>
             <control type="edit" format="string" />
-        </setting>
-        <setting id="library_path" label="30136" type="string" help="">
-            <level>0</level>
-            <default>/storage/emulated/0/KodiNLZietLibrary/TV Shows</default>
-            <control type="edit" format="string">
-                <heading>30136</heading>
-            </control>
         </setting>
       </group>
     </category>

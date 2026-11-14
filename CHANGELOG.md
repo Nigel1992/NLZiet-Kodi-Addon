@@ -1,6 +1,22 @@
 # Changelog
 
-> **Latest Version:** v1.6.4 (November 13, 2026)
+> **Latest Version:** v1.7.0 (November 14, 2026)
+
+## [1.7.0] - 2026-11-14
+
+### Added
+- **Library**: movies can now be added to the Kodi library too (context menu "Add to library" on a movie). Movies are written to their own folder (Settings → Library → Folder for movies).
+- **Library**: the context menu shows "Remove from library" for series and movies that are already in the library; removing deletes the files and cleans the Kodi library.
+- **Library**: added series and movies are remembered and updated automatically in the background (default every 12 hours, never during playback): new episodes are added and episodes or movies that are no longer available are removed.
+- **Library**: new main menu entry "Library" with everything that was added, an "Update library now" action and a remove option per item.
+- **Library**: new settings category "Library" with folders for TV shows and movies, automatic update and interval, and options to scan and clean the Kodi library after a change.
+- **Library**: `.nfo` files now include artwork, a unique NLZiet id and runtime, so Kodi shows posters and thumbnails without an external scraper.
+
+### Changed
+- **Library**: episode numbers are assigned once and stored per episode, so file names stay the same when older episodes expire. Kodi keeps watched status and resume points.
+- **Library**: series with real season/episode numbers use those numbers; daily programmes keep using the broadcast year as season.
+- **Library**: the default library folder is now inside the addon data folder (`special://profile/addon_data/plugin.video.nlziet/library/`), so it works on every platform. Existing Android installs that use `/storage/emulated/0/KodiNLZietLibrary/TV Shows` keep using that folder. Folder settings now open Kodi's folder browser, and network shares (smb://, nfs://) are supported.
+- **Library**: a failed or empty answer from NLZiet never deletes library files.
 
 ## [1.6.4] - 2026-11-13
 

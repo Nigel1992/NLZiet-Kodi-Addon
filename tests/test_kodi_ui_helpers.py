@@ -214,7 +214,7 @@ def test_context_menu_reflects_watch_later_membership(monkeypatch):
     )
 
     labels = [label for label, _ in items[0].context_menu]
-    assert labels == ['Add to My List', 'Remove from Watch Later']
+    assert labels == ['Add to My List', 'Remove from Watch Later', 'Add to library']
 
 
 def test_context_menu_offers_my_series_for_series(monkeypatch):
