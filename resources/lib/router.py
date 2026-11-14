@@ -43,6 +43,20 @@ class Router:
         elif mode == 'remote_watched':
             self.handlers['remote_watched'](params.get('id'), params.get('watched', '1'),
                                             params.get('background') == '1')
+        elif mode == 'play_next':
+            self.handlers['play_next'](params.get('id'), params.get('background') == '1')
+        elif mode == 'toggle_stop_after':
+            self.handlers['toggle_stop_after']()
+        elif mode == 'shuffle':
+            self.handlers['shuffle_series'](params.get('series_id'))
+        elif mode == 'history':
+            self.handlers['browse_history']()
+        elif mode == 'clear_history':
+            self.handlers['clear_history']()
+        elif mode == 'record_history':
+            self.handlers['record_history'](params.get('id'), params.get('title', ''),
+                                            params.get('subtitle', ''), params.get('thumb', ''),
+                                            params.get('media_type', ''), params.get('background') == '1')
         elif mode == 'profiles':
             self.handlers['manage_profiles']()
         elif mode == 'my_list':

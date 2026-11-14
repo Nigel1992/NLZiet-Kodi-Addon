@@ -22,6 +22,7 @@ SHARED = [
     'resources/lib/logo_cache.py',
     'resources/lib/playback_extras.py',
     'resources/lib/watch_sync.py',
+    'resources/lib/watch_history.py',
 ]
 ROOT = Path(__file__).resolve().parents[1]
 

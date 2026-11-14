@@ -10,11 +10,26 @@ from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import metadata as metadata_mod
 from resources.lib import watch_sync
 from resources.lib import diagnostics as diagnostics_mod
+from resources.lib import playback_extras
 
 ADDON = xbmcaddon.Addon()
 
 
 ADDON_ID = 'plugin.video.nlziet'
+
+
+def _maybe_play_next(content_id):
+    """Binge: start the next episode, unless the user pressed Stop after this
+    one, or the Up Next add-on is installed (then Up Next handles it)."""
+    if not _setting_on('autoplay_next', False):
+        return
+    import xbmcgui
+    if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
+        return
+    if xbmc.getCondVisibility('System.HasAddon(service.upnext)'):
+        return
+    xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
+        ADDON_ID, content_id))
 
 
 def _send_watched(content_id, watched):
@@ -84,7 +99,17 @@ class PlaybackFollower(xbmc.Player):
         prop = watch_sync.PLAYING_PROPERTY.format('nlziet')
         self.watch.start(watch_sync.parse_playing(window.getProperty(prop)))
         window.clearProperty(prop)
+        window.clearProperty('nlziet.stop_after')
         self.sample()
+        # Preferred audio/subtitle language.
+        audio = _setting('preferred_audio', 'off')
+        sub = _setting('preferred_subtitle', 'off')
+        if audio not in ('', 'off') or sub not in ('', 'off'):
+            try:
+                result = playback_extras.apply_language(_rpc, audio, sub)
+                xbmc.log('NLZiet service: language {}'.format(result), xbmc.LOGINFO)
+            except Exception as exc:
+                xbmc.log('NLZiet service: language select failed: {}'.format(exc), xbmc.LOGWARNING)
 
     def sample(self):
         if not self.watch.key:
@@ -95,16 +120,19 @@ class PlaybackFollower(xbmc.Player):
         except RuntimeError:
             pass
 
-    def _done(self):
-        key = self.watch.finish()
-        if key:
-            _send_watched(key, True)
+    def _done(self, natural):
+        key = self.watch.key
+        watched = self.watch.finish()
+        if watched:
+            _send_watched(watched, True)
+        if natural and key:
+            _maybe_play_next(key)
 
     def onPlayBackStopped(self):
-        self._done()
+        self._done(False)
 
     def onPlayBackEnded(self):
-        self._done()
+        self._done(True)
 
 
 MONITOR = LibraryMonitor()

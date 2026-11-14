@@ -35,6 +35,7 @@ from resources.lib import trakt_status
 from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import playback_extras
 from resources.lib import watch_sync
+from resources.lib import watch_history
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -352,6 +353,16 @@ TRANSLATIONS = {
     'restore_confirm': {'nl': 'Je huidige lijsten vervangen door deze back-up?', 'en': 'Replace your current lists with this backup?'},
     'episode_label': {'nl': 'Aflevering {0}', 'en': 'Episode {0}'},
     'watched_sent': {'nl': 'Kijkstatus naar NLZiet gestuurd', 'en': 'Watched status sent to NLZiet'},
+    'stop_after_on': {'nl': 'Stop na deze aflevering', 'en': 'Stop after this episode'},
+    'stop_after_off': {'nl': 'Doorgaan na deze aflevering', 'en': 'Keep playing after this episode'},
+    'stop_after_set': {'nl': 'De volgende aflevering start niet automatisch', 'en': 'The next episode will not start automatically'},
+    'stop_after_cleared': {'nl': 'Automatisch volgende aflevering staat weer aan', 'en': 'Automatic next episode is on again'},
+    'shuffle_episode': {'nl': 'Willekeurige aflevering afspelen', 'en': 'Play a random episode'},
+    'shuffle_none': {'nl': 'Geen afleveringen gevonden om uit te kiezen', 'en': 'No episodes found to pick from'},
+    'watch_history': {'nl': 'Kijkgeschiedenis', 'en': 'Watch history'},
+    'history_empty': {'nl': 'Nog niets gekeken', 'en': 'Nothing watched yet'},
+    'history_clear': {'nl': 'Kijkgeschiedenis wissen', 'en': 'Clear watch history'},
+    'history_cleared': {'nl': 'Kijkgeschiedenis gewist', 'en': 'Watch history cleared'},
 }
 
 # Numeric string ids (see resources/language/*/strings.po). These let Kodi
@@ -577,6 +588,16 @@ STRING_IDS = {
     'restore_confirm': 33288,
     'episode_label': 33289,
     'watched_sent': 33290,
+    'stop_after_on': 33293,
+    'stop_after_off': 33294,
+    'stop_after_set': 33295,
+    'stop_after_cleared': 33296,
+    'shuffle_episode': 33297,
+    'shuffle_none': 33298,
+    'watch_history': 33299,
+    'history_empty': 33300,
+    'history_clear': 33301,
+    'history_cleared': 33302,
 }
 
 
@@ -1511,6 +1532,7 @@ def main_menu():
         add_directory_item(get_string('my_series'), {'mode': 'my_series'}, thumb=_pick_png('myseries'))
         add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
         add_directory_item(get_string('widgets'), {'mode': 'widgets'}, thumb=_pick_png('widgets'))
+        add_directory_item(get_string('watch_history'), {'mode': 'history'}, thumb=_pick_png('continue'))
         add_directory_item(get_string('manage_profiles'), {'mode': 'profiles'}, thumb=_pick_png('profiles'))
         add_directory_item(get_string('sign_out'), {'mode': 'logout_confirm'}, thumb=_pick_png('logout'), is_folder=False, is_playable=False)
     
@@ -2216,7 +2238,9 @@ def browse_library():
     for sid, entry in series:
         title = entry.get('title') or sid
         label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('series'))
-        remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
+        remove = [(get_string('shuffle_episode'), 'RunPlugin({})'.format(
+            build_url({'mode': 'shuffle', 'series_id': sid}))),
+                  (get_string('remove_from_library'), 'RunPlugin({})'.format(
             build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title}))),
                   (get_string('choose_tmdb'), 'RunPlugin({})'.format(
             build_url({'mode': 'choose_tmdb', 'kind': 'series', 'id': sid})))]
@@ -6593,6 +6617,14 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
         pass
     if fmt == 'epg':
         return
+    try:
+        meta = metadata or {}
+        watch_history.record(_history_path(), {
+            'id': content_id, 'title': meta.get('showtitle') or meta.get('title') or '',
+            'subtitle': meta.get('title') if meta.get('showtitle') else '',
+            'thumb': meta.get('thumb') or '', 'media_type': meta.get('media_type') or ''})
+    except Exception:
+        pass
     markers = {}
     try:
         chapters = api.get_chapters(content_id)
@@ -6701,6 +6733,109 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers):
         xbmc.log('NLZiet Up Next: next episode {} announced={}'.format(query.get('id'), sent), xbmc.LOGINFO)
     except Exception as exc:
         xbmc.log('NLZiet Up Next skipped: {}'.format(exc), xbmc.LOGINFO)
+
+
+# ------------------------------------------------- binge / shuffle / history ---
+
+STOP_AFTER_PROPERTY = 'nlziet.stop_after'
+
+
+def _history_path():
+    return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'watch_history.json')
+
+
+def _next_play_query(api, content_id):
+    """A {'mode':'play',...} query for the episode after ``content_id``, or None."""
+    try:
+        found = library_mod.next_library_episode(_get_library().store, content_id)
+    except Exception:
+        found = None
+    if found:
+        _sid, entry, _cur, next_id, (next_s, next_e) = found
+        return {'mode': 'play', 'id': next_id, 'media_type': 'episode',
+                'showtitle': entry.get('title') or '', 'season': str(next_s), 'episode': str(next_e)}
+    try:
+        nxt = library_mod.next_from_surrounding(api.get_surrounding_episodes(content_id), content_id)
+    except Exception:
+        nxt = None
+    if nxt and nxt.get('id'):
+        return {'mode': 'play', 'id': nxt['id']}
+    return None
+
+
+def play_next(content_id, background=False):
+    """Start the next episode (used by binge mode from the service)."""
+    if not content_id:
+        return
+    query = _next_play_query(get_api_instance(), content_id)
+    if query:
+        xbmc.executebuiltin('PlayMedia({})'.format(build_url(query)))
+    elif not background:
+        xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
+
+
+def toggle_stop_after():
+    """Cancel/allow the automatic next episode for the current session."""
+    window = xbmcgui.Window(10000)
+    if window.getProperty(STOP_AFTER_PROPERTY) == '1':
+        window.clearProperty(STOP_AFTER_PROPERTY)
+        xbmcgui.Dialog().notification('NLZiet', get_string('stop_after_cleared'), xbmcgui.NOTIFICATION_INFO, 3000)
+    else:
+        window.setProperty(STOP_AFTER_PROPERTY, '1')
+        xbmcgui.Dialog().notification('NLZiet', get_string('stop_after_set'), xbmcgui.NOTIFICATION_INFO, 3000)
+
+
+def shuffle_series(series_id):
+    """Play a random episode of a series."""
+    if not series_id:
+        return
+    api = get_api_instance()
+    try:
+        _title, episodes = _collect_series_episodes(api, series_id)
+    except Exception:
+        episodes = []
+    choice = watch_history.pick_random(episodes)
+    if not choice:
+        xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
+        return
+    query = {'mode': 'play', 'id': choice['id']}
+    if choice.get('title'):
+        query['title'] = choice.get('subtitle') or choice.get('title')
+    xbmc.executebuiltin('PlayMedia({})'.format(build_url(query)))
+
+
+def browse_history():
+    """Show what was watched (local, this device only)."""
+    items = watch_history.entries(_history_path())
+    if not items:
+        add_directory_item(get_string('history_empty'), {'mode': 'history'}, is_folder=False, is_playable=False)
+    else:
+        add_directory_item(get_string('history_clear'), {'mode': 'clear_history'}, is_folder=False, is_playable=False)
+    for row in items:
+        label = row.get('title') or row.get('id')
+        if row.get('subtitle'):
+            label = '{} - {}'.format(label, row['subtitle'])
+        info = {'title': label}
+        add_directory_item(label, {'mode': 'play', 'id': row.get('id')}, is_folder=False,
+                           thumb=row.get('thumb'), info=info)
+    _end_directory()
+
+
+def clear_history():
+    watch_history.clear(_history_path())
+    xbmcgui.Dialog().notification('NLZiet', get_string('history_cleared'), xbmcgui.NOTIFICATION_INFO, 3000)
+    try:
+        xbmc.executebuiltin('Container.Refresh')
+    except Exception:
+        pass
+
+
+def record_history(content_id, title='', subtitle='', thumb='', media_type='', background=True):
+    """Add one watched item to the local history (called by the service)."""
+    if not content_id:
+        return
+    watch_history.record(_history_path(), {'id': content_id, 'title': title, 'subtitle': subtitle,
+                                           'thumb': thumb, 'media_type': media_type})
 
 
 def remote_watched(content_id, watched='1', background=False):
@@ -7170,6 +7305,7 @@ WIDGET_LISTS = (
     ('watch_later', 'watch_later', 'watchlater'),
     ('my_series', 'my_series', 'myseries'),
     ('my_list', 'my_list', 'mylist'),
+    ('history', 'watch_history', 'continue'),
 )
 
 
@@ -7185,6 +7321,15 @@ def widgets_menu():
 def widget_list(name):
     """One widget list: only the titles, fast, and never a pop-up."""
     items = []
+    if name == 'history':
+        for row in watch_history.entries(_history_path()):
+            label = row.get('title') or row.get('id')
+            if row.get('subtitle'):
+                label = '{} - {}'.format(label, row['subtitle'])
+            add_directory_item(label, {'mode': 'play', 'id': row.get('id')}, is_folder=False,
+                               thumb=row.get('thumb'), info={'title': label})
+        _end_directory()
+        return
     try:
         if name == 'continue':
             items = get_api_instance().get_continue_watching() or []
@@ -7429,6 +7574,12 @@ def get_route_handlers():
         'restore_lists': restore_lists,
         'daily_check': daily_check,
         'remote_watched': remote_watched,
+        'play_next': play_next,
+        'toggle_stop_after': toggle_stop_after,
+        'shuffle_series': shuffle_series,
+        'browse_history': browse_history,
+        'clear_history': clear_history,
+        'record_history': record_history,
         'library_from_lists': library_from_lists,
         'choose_tmdb': choose_tmdb,
         'parental_set_pin': parental_set_pin,

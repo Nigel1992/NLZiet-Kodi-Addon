@@ -204,6 +204,54 @@ def send_upnext(addon_id, current, following, play_url, notification_time=None):
 
 # ------------------------------------------------------------ skip markers --
 
+def _match_language(streams, language):
+    """Index of the first stream in ``language`` (iso code), or None."""
+    language = str(language or '').lower()
+    aliases = {'nl': ('nl', 'dut', 'nld', 'nederlands', 'dutch'),
+               'en': ('en', 'eng', 'english', 'engels')}.get(language, (language,))
+    for stream in streams or []:
+        value = str(stream.get('language') or stream.get('name') or '').lower()
+        if any(alias and alias in value for alias in aliases):
+            return stream.get('index')
+    return None
+
+
+def apply_language(rpc, audio_lang=None, subtitle_lang=None):
+    """Pick the preferred audio/subtitle language on the running player.
+
+    ``rpc(method, params)`` runs JSON-RPC. ``audio_lang``/``subtitle_lang`` are
+    'nl', 'en', 'original' or a falsy value ('off'/None) to leave it alone.
+    Returns a short log string of what changed.
+    """
+    audio_lang = None if str(audio_lang or 'off') in ('off', 'original', '') else audio_lang
+    want_sub = str(subtitle_lang or 'off') not in ('off', '')
+    if not audio_lang and not want_sub:
+        return 'nothing'
+    try:
+        props = rpc('Player.GetProperties',
+                    {'playerid': 1, 'properties': ['audiostreams', 'subtitles', 'currentaudiostream']}) or {}
+    except Exception:
+        return 'no player'
+    done = []
+    if audio_lang:
+        index = _match_language(props.get('audiostreams'), audio_lang)
+        if index is not None:
+            try:
+                rpc('Player.SetAudioStream', {'playerid': 1, 'stream': int(index)})
+                done.append('audio=' + str(audio_lang))
+            except Exception:
+                pass
+    if want_sub:
+        index = _match_language(props.get('subtitles'), subtitle_lang)
+        if index is not None:
+            try:
+                rpc('Player.SetSubtitle', {'playerid': 1, 'subtitle': int(index), 'enable': True})
+                done.append('subtitle=' + str(subtitle_lang))
+            except Exception:
+                pass
+    return ', '.join(done) or 'no match'
+
+
 def wait_for_playback(player, timeout=30, monitor=None):
     end = time.time() + timeout
     while time.time() < end:

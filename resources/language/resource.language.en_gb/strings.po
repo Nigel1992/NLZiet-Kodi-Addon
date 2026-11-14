@@ -1257,3 +1257,83 @@ msgstr ""
 msgctxt "#33290"
 msgid "Watched status sent to NLZiet"
 msgstr ""
+
+msgctxt "#33291"
+msgid "Automatically play the next episode (binge)"
+msgstr ""
+
+msgctxt "#33292"
+msgid "When an episode from your library ends, the next one starts by itself. With the Up Next add-on installed, leave this off and let Up Next do it."
+msgstr ""
+
+msgctxt "#33293"
+msgid "Stop after this episode"
+msgstr ""
+
+msgctxt "#33294"
+msgid "Keep playing after this episode"
+msgstr ""
+
+msgctxt "#33295"
+msgid "The next episode will not start automatically"
+msgstr ""
+
+msgctxt "#33296"
+msgid "Automatic next episode is on again"
+msgstr ""
+
+msgctxt "#33297"
+msgid "Play a random episode"
+msgstr ""
+
+msgctxt "#33298"
+msgid "No episodes found to pick from"
+msgstr ""
+
+msgctxt "#33299"
+msgid "Watch history"
+msgstr ""
+
+msgctxt "#33300"
+msgid "Nothing watched yet"
+msgstr ""
+
+msgctxt "#33301"
+msgid "Clear watch history"
+msgstr ""
+
+msgctxt "#33302"
+msgid "Watch history cleared"
+msgstr ""
+
+msgctxt "#33303"
+msgid "Preferred audio language"
+msgstr ""
+
+msgctxt "#33304"
+msgid "Automatically choose this spoken language when a video starts, if it is available."
+msgstr ""
+
+msgctxt "#33305"
+msgid "Preferred subtitle language"
+msgstr ""
+
+msgctxt "#33306"
+msgid "Automatically turn on subtitles in this language when a video starts, if available."
+msgstr ""
+
+msgctxt "#33307"
+msgid "Off"
+msgstr ""
+
+msgctxt "#33308"
+msgid "Dutch"
+msgstr ""
+
+msgctxt "#33309"
+msgid "English"
+msgstr ""
+
+msgctxt "#33310"
+msgid "Original"
+msgstr ""

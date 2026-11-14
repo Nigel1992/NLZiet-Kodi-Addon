@@ -1,7 +1,18 @@
 # Changelog
 
-> **Latest Version:** v2.0.0 (November 14, 2026)
+> **Latest Version:** v2.1.0 (November 14, 2026)
 
+## [2.1.0] - 2026-11-14
+
+### Added
+- **Binge-modus**: nieuwe schakelaar "Volgende aflevering automatisch afspelen" (Instellingen → Afspelen). Als een bibliotheek-aflevering eindigt, start de volgende vanzelf. Heb je Up Next, laat dit uit en laat Up Next het doen.
+- **Stop na deze aflevering**: via het contextmenu/een actie kun je de automatische volgende aflevering voor die avond uitzetten.
+- **Willekeurige aflevering (shuffle)**: contextmenu op een serie in je bibliotheek → "Willekeurige aflevering afspelen".
+- **Vaste taal- en ondertitelvoorkeur**: kies een gesproken taal en/of ondertiteltaal die automatisch gekozen wordt als een video start (Instellingen → Afspelen).
+- **Kijkgeschiedenis**: een lokale lijst (alleen op dit apparaat) van wat je gekeken hebt, in het hoofdmenu en als widget; met een knop om te wissen.
+
+### Development
+- Nieuwe gedeelde module `watch_history.py` en uitbreiding van `playback_extras.py` (taalkeuze), gedeeld met Videoland. Extra tests.
 ## [2.0.0] - 2026-11-14
 
 ### Added
