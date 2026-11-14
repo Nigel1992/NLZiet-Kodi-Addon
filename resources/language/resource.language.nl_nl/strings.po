@@ -1534,3 +1534,7 @@ msgstr "Als een serie die je volgt een nieuwe aflevering krijgt, werk de bibliot
 msgctxt "#33355"
 msgid "My List was moved to Watch Later ({0} titles)"
 msgstr "Mijn lijst is overgezet naar Kijk Later ({0} titels)"
+
+msgctxt "#33356"
+msgid "Library dates updated ({0} episodes)"
+msgstr "Bibliotheekdatums bijgewerkt ({0} afleveringen)"

@@ -1,7 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.4.2 (November 14, 2026)
+> **Latest Version:** v2.4.3 (November 14, 2026)
 
+## [2.4.3] - 2026-11-14
+
+### Added
+- **Melding als de datum-reparatie klaar is.** De eenmalige achtergrondreparatie van de bibliotheekdatums toont nu een melding "Bibliotheekdatums bijgewerkt (N afleveringen)" zodra hij klaar is, en ververst de huidige lijst.
 ## [2.4.2] - 2026-11-14
 
 ### Changed

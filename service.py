@@ -317,6 +317,13 @@ def repair_dateadded_once():
     except Exception:
         pass
     xbmc.log('NLZiet service: dateadded repaired for {} episodes'.format(changed), xbmc.LOGINFO)
+    try:
+        import xbmcgui
+        xbmcgui.Dialog().notification('NLZiet', ADDON.getLocalizedString(33356).format(changed),
+                                      xbmcgui.NOTIFICATION_INFO, 8000)
+        xbmc.executebuiltin('Container.Refresh')
+    except Exception:
+        pass
 
 
 def main():
