@@ -143,12 +143,17 @@ def _total(item, duration):
     return 0
 
 
-def resume_call(method, id_name, item, position, duration):
+def resume_call(method, id_name, item, position, duration, lastplayed=None):
     """A JSON-RPC ``(method, params)`` to store this resume point, or ``None``.
 
     ``item`` is a library row with ``runtime`` and the current ``resume``.
     Returns ``None`` when the position is too small, too close to the end, or
     barely different from what Kodi already has (so nothing churns).
+
+    ``lastplayed`` (``'YYYY-MM-DD HH:MM:SS'``) is stored alongside the resume
+    point so the item sorts to the front of the skin's continue-watching row,
+    which orders by last-played. It is only written when the position actually
+    changes, so a once-an-hour sync does not keep shuffling Home.
     """
     total = _total(item, duration)
     position = _number(position)
@@ -160,10 +165,13 @@ def resume_call(method, id_name, item, position, duration):
     current = (item.get('resume') or {}).get('position') or 0
     if abs(current - position) < NEAR:
         return None
-    return method, {id_name: item[id_name], 'resume': {'position': position, 'total': total}}
+    params = {id_name: item[id_name], 'resume': {'position': position, 'total': total}}
+    if lastplayed:
+        params['lastplayed'] = str(lastplayed)
+    return method, params
 
 
-def build_calls(items, positions, id_name, method, cid_for):
+def build_calls(items, positions, id_name, method, cid_for, lastplayed=None):
     """Resume JSON-RPC calls for the library ``items`` that the service has a
     position for.
 
@@ -175,6 +183,8 @@ def build_calls(items, positions, id_name, method, cid_for):
     * ``cid_for``: callable mapping one item to its service content id (or
       ``None``). The caller supplies this so it can read a ``.strm`` file when
       Kodi reports a path rather than the plugin URL.
+    * ``lastplayed``: optional ``'YYYY-MM-DD HH:MM:SS'`` stored with every
+      changed item, so freshly-progressed episodes sort to the front.
     """
     calls = []
     for item in items or []:
@@ -182,7 +192,7 @@ def build_calls(items, positions, id_name, method, cid_for):
         if not cid or cid not in positions:
             continue
         position, duration = positions[cid]
-        call = resume_call(method, id_name, item, position, duration)
+        call = resume_call(method, id_name, item, position, duration, lastplayed)
         if call:
             calls.append(call)
     return calls

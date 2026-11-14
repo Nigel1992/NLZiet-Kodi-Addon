@@ -113,6 +113,20 @@ def test_resume_call_none_without_total():
     assert lr.resume_call('VideoLibrary.SetEpisodeDetails', 'episodeid', item, 600, 0) is None
 
 
+def test_resume_call_includes_lastplayed_when_given():
+    item = {'episodeid': 7, 'runtime': 1800, 'resume': {'position': 0}}
+    call = lr.resume_call('VideoLibrary.SetEpisodeDetails', 'episodeid', item, 600, 1800,
+                          '2026-11-14 20:15:00')
+    assert call[1]['lastplayed'] == '2026-11-14 20:15:00'
+    assert call[1]['resume'] == {'position': 600, 'total': 1800}
+
+
+def test_resume_call_omits_lastplayed_when_absent():
+    item = {'episodeid': 7, 'runtime': 1800, 'resume': {'position': 0}}
+    call = lr.resume_call('VideoLibrary.SetEpisodeDetails', 'episodeid', item, 600, 1800)
+    assert 'lastplayed' not in call[1]
+
+
 # --------------------------------------------------------------- build_calls
 def _cid_for(item):
     return lr.plugin_content_id(item.get('file'), NL, 'id')
@@ -133,6 +147,14 @@ def test_build_calls_matches_by_content_id():
                            'VideoLibrary.SetEpisodeDetails', _cid_for)
     assert calls == [('VideoLibrary.SetEpisodeDetails',
                       {'episodeid': 1, 'resume': {'position': 600, 'total': 1800}})]
+
+
+def test_build_calls_passes_lastplayed_through():
+    episodes = [{'episodeid': 1, 'file': 'plugin://plugin.video.nlziet/?id=AAA&inlib=1',
+                 'runtime': 1800, 'resume': {'position': 0}}]
+    calls = lr.build_calls(episodes, {'AAA': (600, 1800)}, 'episodeid',
+                           'VideoLibrary.SetEpisodeDetails', _cid_for, '2026-11-14 20:15:00')
+    assert calls[0][1]['lastplayed'] == '2026-11-14 20:15:00'
 
 
 def test_build_calls_empty_when_no_positions():
