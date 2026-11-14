@@ -858,3 +858,83 @@ msgstr "Nu synchroniseren"
 msgctxt "#33186"
 msgid "Show notification after automatic sync"
 msgstr "Melding tonen na automatische synchronisatie"
+
+msgctxt "#33187"
+msgid "Remove from library"
+msgstr "Verwijderen uit bibliotheek"
+
+msgctxt "#33188"
+msgid "{} added to library"
+msgstr "{} toegevoegd aan bibliotheek"
+
+msgctxt "#33189"
+msgid "{} removed from library"
+msgstr "{} verwijderd uit bibliotheek"
+
+msgctxt "#33190"
+msgid "This is not in the library"
+msgstr "Dit staat niet in de bibliotheek"
+
+msgctxt "#33191"
+msgid "Updating library..."
+msgstr "Bibliotheek bijwerken..."
+
+msgctxt "#33192"
+msgid "Library updated: {} new, {} removed"
+msgstr "Bibliotheek bijgewerkt: {} nieuw, {} verwijderd"
+
+msgctxt "#33193"
+msgid "Library update failed"
+msgstr "Bibliotheek bijwerken mislukt"
+
+msgctxt "#33194"
+msgid "Update library now"
+msgstr "Bibliotheek nu bijwerken"
+
+msgctxt "#33195"
+msgid "The library is empty"
+msgstr "De bibliotheek is nog leeg"
+
+msgctxt "#33196"
+msgid "Library"
+msgstr "Bibliotheek"
+
+msgctxt "#33197"
+msgid "Adding to library: {}"
+msgstr "Toevoegen aan bibliotheek: {}"
+
+msgctxt "#33198"
+msgid "Library"
+msgstr "Bibliotheek"
+
+msgctxt "#33199"
+msgid "Folder for TV shows"
+msgstr "Map voor series"
+
+msgctxt "#33200"
+msgid "Folder for movies"
+msgstr "Map voor films"
+
+msgctxt "#33201"
+msgid "Update library automatically"
+msgstr "Bibliotheek automatisch bijwerken"
+
+msgctxt "#33202"
+msgid "Update every (hours)"
+msgstr "Bijwerken elke (uren)"
+
+msgctxt "#33203"
+msgid "Scan Kodi library after a change"
+msgstr "Kodi-bibliotheek scannen na een wijziging"
+
+msgctxt "#33204"
+msgid "Clean expired titles from the Kodi library"
+msgstr "Verlopen titels uit de Kodi-bibliotheek opruimen"
+
+msgctxt "#33205"
+msgid "Add this folder in Kodi as a video source (type TV shows, scraper \"Local information only\") so Kodi finds the episodes."
+msgstr "Voeg deze map in Kodi toe als videobron (type Series, scraper \"Lokale informatie\"), zodat Kodi de afleveringen vindt."
+
+msgctxt "#33206"
+msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
+msgstr "Voeg deze map in Kodi toe als videobron (type Films, scraper \"Lokale informatie\"), zodat Kodi de films vindt."

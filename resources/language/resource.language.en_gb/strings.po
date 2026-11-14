@@ -841,3 +841,83 @@ msgstr "Sync now"
 msgctxt "#33186"
 msgid "Show notification after automatic sync"
 msgstr "Show notification after automatic sync"
+
+msgctxt "#33187"
+msgid "Remove from library"
+msgstr "Remove from library"
+
+msgctxt "#33188"
+msgid "{} added to library"
+msgstr "{} added to library"
+
+msgctxt "#33189"
+msgid "{} removed from library"
+msgstr "{} removed from library"
+
+msgctxt "#33190"
+msgid "This is not in the library"
+msgstr "This is not in the library"
+
+msgctxt "#33191"
+msgid "Updating library..."
+msgstr "Updating library..."
+
+msgctxt "#33192"
+msgid "Library updated: {} new, {} removed"
+msgstr "Library updated: {} new, {} removed"
+
+msgctxt "#33193"
+msgid "Library update failed"
+msgstr "Library update failed"
+
+msgctxt "#33194"
+msgid "Update library now"
+msgstr "Update library now"
+
+msgctxt "#33195"
+msgid "The library is empty"
+msgstr "The library is empty"
+
+msgctxt "#33196"
+msgid "Library"
+msgstr "Library"
+
+msgctxt "#33197"
+msgid "Adding to library: {}"
+msgstr "Adding to library: {}"
+
+msgctxt "#33198"
+msgid "Library"
+msgstr "Library"
+
+msgctxt "#33199"
+msgid "Folder for TV shows"
+msgstr "Folder for TV shows"
+
+msgctxt "#33200"
+msgid "Folder for movies"
+msgstr "Folder for movies"
+
+msgctxt "#33201"
+msgid "Update library automatically"
+msgstr "Update library automatically"
+
+msgctxt "#33202"
+msgid "Update every (hours)"
+msgstr "Update every (hours)"
+
+msgctxt "#33203"
+msgid "Scan Kodi library after a change"
+msgstr "Scan Kodi library after a change"
+
+msgctxt "#33204"
+msgid "Clean expired titles from the Kodi library"
+msgstr "Clean expired titles from the Kodi library"
+
+msgctxt "#33205"
+msgid "Add this folder in Kodi as a video source (type TV shows, scraper \"Local information only\") so Kodi finds the episodes."
+msgstr "Add this folder in Kodi as a video source (type TV shows, scraper \"Local information only\") so Kodi finds the episodes."
+
+msgctxt "#33206"
+msgid "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."
+msgstr "Add this folder in Kodi as a video source (type Movies, scraper \"Local information only\") so Kodi finds the movies."

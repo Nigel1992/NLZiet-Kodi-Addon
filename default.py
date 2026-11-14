@@ -13,7 +13,6 @@ import xbmcvfs
 import time
 import platform
 from datetime import datetime, timedelta, timezone
-from xml.sax.saxutils import escape
 
 try:
     from zoneinfo import ZoneInfo
@@ -25,6 +24,7 @@ from resources.lib.app_context import AddonContext
 from resources.lib.kodi import ui as kodi_ui
 from resources.lib.router import Router
 from resources.lib import tvmaze
+from resources.lib import library as library_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -200,6 +200,17 @@ TRANSLATIONS = {
     'add_to_library': {'nl': 'Toevoegen aan bibliotheek', 'en': 'Add to library'},
     'library_exported': {'nl': '{} afleveringen geexporteerd naar bibliotheek', 'en': '{} episodes exported to library'},
     'library_export_failed': {'nl': 'Bibliotheek export mislukt', 'en': 'Library export failed'},
+    'remove_from_library': {'nl': 'Verwijderen uit bibliotheek', 'en': 'Remove from library'},
+    'library_movie_added': {'nl': '{} toegevoegd aan bibliotheek', 'en': '{} added to library'},
+    'library_removed': {'nl': '{} verwijderd uit bibliotheek', 'en': '{} removed from library'},
+    'library_not_found': {'nl': 'Dit staat niet in de bibliotheek', 'en': 'This is not in the library'},
+    'library_updating': {'nl': 'Bibliotheek bijwerken...', 'en': 'Updating library...'},
+    'library_update_done': {'nl': 'Bibliotheek bijgewerkt: {} nieuw, {} verwijderd', 'en': 'Library updated: {} new, {} removed'},
+    'library_update_failed': {'nl': 'Bibliotheek bijwerken mislukt', 'en': 'Library update failed'},
+    'library_update_now': {'nl': 'Bibliotheek nu bijwerken', 'en': 'Update library now'},
+    'library_empty': {'nl': 'De bibliotheek is nog leeg', 'en': 'The library is empty'},
+    'library': {'nl': 'Bibliotheek', 'en': 'Library'},
+    'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
     'subtitle_cache_cleared': {'nl': '{} ondertitelcachebestanden verwijderd', 'en': '{} subtitle cache files removed'},
@@ -360,6 +371,17 @@ STRING_IDS = {
     'add_to_library': 33066,
     'library_exported': 33067,
     'library_export_failed': 33068,
+    'remove_from_library': 33187,
+    'library_movie_added': 33188,
+    'library_removed': 33189,
+    'library_not_found': 33190,
+    'library_updating': 33191,
+    'library_update_done': 33192,
+    'library_update_failed': 33193,
+    'library_update_now': 33194,
+    'library_empty': 33195,
+    'library': 33196,
+    'library_adding': 33197,
     'diagnostics_exported': 33069,
     'diagnostics_failed': 33070,
     'subtitle_cache_cleared': 33159,
@@ -1104,6 +1126,8 @@ def add_directory_item(title, query, is_folder=True, thumb=None, info=None, cont
         group=group,
         extra_context_items=extra_context_items,
         add_to_library_label=get_string('add_to_library'),
+        remove_from_library_label=get_string('remove_from_library'),
+        library_check=is_in_library,
         mylist_add_label=get_string('add_to_mylist'),
         mylist_remove_label=get_string('remove_from_mylist'),
         watch_later_add_label=get_string('add_to_watch_later'),
@@ -1263,6 +1287,7 @@ def main_menu():
         # Some icon sets use 'tv' instead of 'channels' (we check menu_tv.png)
         add_directory_item(get_string('channels'), {'mode': 'browse', 'type': 'channels'}, thumb=_pick_png('tv'))
         add_directory_item(get_string('tv_guide'), {'mode': 'browse_epg'}, thumb=_pick_png('epg'))
+        add_directory_item(get_string('library'), {'mode': 'browse_library'}, thumb=_pick_png('library'))
     
     # Set background image for the container
     try:
@@ -1581,128 +1606,200 @@ def show_series_season(series_id, season_id, episodes_url=None, series_title=Non
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def _safe_filename(value):
-    value = re.sub(r'[\\/:*?"<>|]+', ' ', str(value or '')).strip()
-    return re.sub(r'\s+', ' ', value) or 'NLZiet'
-
-
-def _date_only(value):
-    if not value:
-        return None
-    try:
-        if isinstance(value, str) and 'T' in value:
-            return datetime.fromisoformat(value.replace('Z', '+00:00')).date().isoformat()
-        if isinstance(value, str) and re.match(r'^\d{4}-\d{2}-\d{2}$', value):
-            return value
-    except Exception:
-        pass
-    return None
-
-
-def _int_or(value, fallback):
-    try:
-        match = re.search(r'\d+', str(value))
-        return int(match.group(0)) if match else fallback
-    except Exception:
-        return fallback
-
-
-def _episode_airdate(ep):
-    raw = ep.get('raw') if isinstance(ep.get('raw'), dict) else {}
-    for value in (
-        ep.get('aired_date'), raw.get('firstBroadcast'), raw.get('broadcastAt'),
-        raw.get('broadcastDate'), ep.get('release_date'), ep.get('available_from'),
-    ):
-        date_value = _date_only(value)
-        if date_value:
-            return date_value
-    return None
-
-
 def _write_text(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)
 
 
-def export_series_library(series_id):
-    if not series_id:
+def _library_episode_fetcher(api, series_id, detail):
+    """Return all episodes of a series (all seasons) for the library."""
+    episodes = []
+    seasons = (detail or {}).get('seasons') or []
+    if seasons:
+        for season_info in seasons:
+            episodes.extend(_get_series_season_episodes(
+                api,
+                series_id,
+                season_info.get('id'),
+                season_info.get('episodes_url'),
+                limit=1000,
+            ))
+    else:
+        episodes = api.get_series_episodes(series_id, limit=1000) or []
+    seen = set()
+    unique = []
+    for ep in episodes:
+        key = str(ep.get('id') or '')
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(ep)
+    return unique
+
+
+_LIBRARY = None
+
+
+def _get_library():
+    global _LIBRARY
+    if _LIBRARY is None:
+        _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher)
+    return _LIBRARY
+
+
+def _library_kind(kind):
+    return 'series' if str(kind or '').lower() in ('series', 'tvshow', 'show') else 'movie'
+
+
+def is_in_library(kind, item_id):
+    try:
+        return _get_library().is_in_library(_library_kind(kind), item_id)
+    except Exception:
+        return False
+
+
+def _after_library_change(scan=True, clean=False):
+    if _setting_on('library_scan_after', True) and scan:
+        library_mod.run_library_jobs(scan=True, clean=clean and _setting_on('library_clean_after', True))
+    elif clean and _setting_on('library_clean_after', True):
+        library_mod.run_library_jobs(scan=False, clean=True)
+
+
+def library_add(kind, item_id, title=None):
+    kind = _library_kind(kind)
+    if not item_id:
         xbmcgui.Dialog().notification('NLZiet', get_string('missing_series_id'), xbmcgui.NOTIFICATION_ERROR)
         return
+    lib = _get_library()
+    progress = xbmcgui.DialogProgressBG() if hasattr(xbmcgui, 'DialogProgressBG') else None
     try:
-        api = get_api_instance()
-        detail = api.get_series_detail(series_id) or {}
-        series_title = detail.get('title') or str(series_id)
-        episodes = []
-        seasons = detail.get('seasons') or []
-        if seasons:
-            for season_info in seasons:
-                episodes.extend(_get_series_season_episodes(
-                    api,
-                    series_id,
-                    season_info.get('id'),
-                    season_info.get('episodes_url'),
-                    limit=1000,
-                ))
+        if progress is not None:
+            progress.create('NLZiet', get_string('library_adding', title or ''))
+        if kind == 'series':
+            result = lib.add_series(item_id, title=title)
         else:
-            episodes = api.get_series_episodes(series_id, limit=1000) or []
-        if not episodes:
-            xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
+            result = lib.add_movie(item_id, title=title)
+        if not result.get('ok'):
+            if result.get('reason') == 'no_episodes':
+                xbmcgui.Dialog().notification('NLZiet', get_string('no_episodes_found'), xbmcgui.NOTIFICATION_INFO)
+            else:
+                xbmcgui.Dialog().notification('NLZiet', get_string('library_export_failed'), xbmcgui.NOTIFICATION_ERROR)
             return
+        lib.store.save()
+        if kind == 'series':
+            message = get_string('library_exported', result.get('total', 0))
+        else:
+            message = get_string('library_movie_added', result.get('title') or title or '')
+        xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
+        _after_library_change(scan=True)
+    except Exception as e:
+        xbmc.log(f"NLZiet library add failed for {kind}={item_id}: {e}", xbmc.LOGERROR)
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_export_failed'), xbmcgui.NOTIFICATION_ERROR)
+    finally:
+        if progress is not None:
+            try:
+                progress.close()
+            except Exception:
+                pass
 
-        base_dir = ADDON.getSetting('library_path') or '/storage/emulated/0/KodiNLZietLibrary/TV Shows'
-        show_dir = os.path.join(base_dir, _safe_filename(series_title))
-        _write_text(
-            os.path.join(show_dir, 'tvshow.nfo'),
-            '<tvshow>\n<title>{}</title>\n<plot>{}</plot>\n</tvshow>\n'.format(
-                escape(series_title), escape(detail.get('description') or '')
-            ),
+
+def library_remove(kind, item_id, title=None):
+    kind = _library_kind(kind)
+    try:
+        removed = _get_library().remove(kind, item_id)
+    except Exception as e:
+        xbmc.log(f"NLZiet library remove failed for {kind}={item_id}: {e}", xbmc.LOGERROR)
+        removed = False
+    if removed:
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_removed', title or ''), xbmcgui.NOTIFICATION_INFO)
+        _after_library_change(scan=False, clean=True)
+        xbmc.executebuiltin('Container.Refresh')
+    else:
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_not_found'), xbmcgui.NOTIFICATION_INFO)
+
+
+def library_toggle(kind, item_id, title=None):
+    if is_in_library(kind, item_id):
+        library_remove(kind, item_id, title)
+    else:
+        library_add(kind, item_id, title)
+        xbmc.executebuiltin('Container.Refresh')
+
+
+def export_series_library(series_id):
+    """Old route name, kept for existing favourites and skins."""
+    library_add('series', series_id)
+
+
+def library_update(background=False):
+    """Refresh every series and movie in the library."""
+    if background and xbmc.Player().isPlaying():
+        return
+    lib = _get_library()
+    progress = None
+    if not background and hasattr(xbmcgui, 'DialogProgressBG'):
+        progress = xbmcgui.DialogProgressBG()
+        progress.create('NLZiet', get_string('library_updating'))
+
+    def _progress(index, total, kind, item_id):
+        if progress is not None and total:
+            entry = lib.store.get(kind, item_id) or {}
+            progress.update(int(index * 100 / total), 'NLZiet', entry.get('title') or str(item_id))
+        return True
+
+    try:
+        totals = lib.update_all(progress=_progress)
+    except Exception as e:
+        xbmc.log(f"NLZiet library update failed: {e}", xbmc.LOGERROR)
+        if not background:
+            xbmcgui.Dialog().notification('NLZiet', get_string('library_update_failed'), xbmcgui.NOTIFICATION_ERROR)
+        return
+    finally:
+        if progress is not None:
+            try:
+                progress.close()
+            except Exception:
+                pass
+    changed = bool(totals.get('added') or totals.get('removed'))
+    if changed:
+        _after_library_change(scan=True, clean=bool(totals.get('removed')))
+    if not background or (changed and _setting_on('background_sync_notify', True)):
+        xbmcgui.Dialog().notification(
+            'NLZiet',
+            get_string('library_update_done', totals.get('added', 0), totals.get('removed', 0)),
+            xbmcgui.NOTIFICATION_INFO,
         )
 
-        dated = []
-        for ep in episodes:
-            airdate = _episode_airdate(ep)
-            dated.append((airdate or '9999-12-31', ep))
-        dated.sort(key=lambda item: (item[0], str(item[1].get('title') or item[1].get('subtitle') or '')))
 
-        per_season_count = {}
-        exported = 0
-        for airdate, ep in dated:
-            if not ep.get('id'):
-                continue
-            # ponytail: dated NLZiet exports use broadcast-year seasons; switch to API season IDs if NLZiet exposes stable TVDB-like numbering.
-            season = int(airdate[:4]) if airdate != '9999-12-31' else _int_or(ep.get('season_number'), 1)
-            per_season_count[season] = per_season_count.get(season, 0) + 1
-            episode_no = per_season_count[season] if airdate != '9999-12-31' else _int_or(ep.get('episode_number'), per_season_count[season])
-            title = ep.get('subtitle') or ep.get('title') or f"Episode {episode_no}"
-            filename = f"{_safe_filename(series_title)} S{season:04d}E{episode_no:02d}"
-            season_dir = os.path.join(show_dir, f"Season {season}")
-            strm_path = os.path.join(season_dir, filename + '.strm')
-            nfo_path = os.path.join(season_dir, filename + '.nfo')
-            playback_query = {
-                'mode': 'play',
-                'id': ep.get('id'),
-                'media_type': 'episode',
-                'title': _clean_episode_title(title),
-                'showtitle': series_title,
-                'season': str(season),
-                'episode': str(episode_no),
-            }
-            plugin_url = 'plugin://{}?{}'.format(ADDON.getAddonInfo('id'), urllib.parse.urlencode(playback_query))
-            _write_text(strm_path, plugin_url + '\n')
-            _write_text(
-                nfo_path,
-                '<episodedetails>\n<title>{}</title>\n<showtitle>{}</showtitle>\n<season>{}</season>\n<episode>{}</episode>\n<aired>{}</aired>\n<plot>{}</plot>\n</episodedetails>\n'.format(
-                    escape(title), escape(series_title), season, episode_no,
-                    '' if airdate == '9999-12-31' else airdate,
-                    escape(ep.get('description') or ''),
-                ),
-            )
-            exported += 1
-        xbmcgui.Dialog().notification('NLZiet', get_string('library_exported', exported), xbmcgui.NOTIFICATION_INFO)
-    except Exception as e:
-        xbmc.log(f"NLZiet library export failed for series={series_id}: {e}", xbmc.LOGERROR)
-        xbmcgui.Dialog().notification('NLZiet', get_string('library_export_failed'), xbmcgui.NOTIFICATION_ERROR)
+def browse_library():
+    """List everything that is in the Kodi library."""
+    lib = _get_library()
+    add_directory_item(get_string('library_update_now'), {'mode': 'library_update'}, is_folder=False, is_playable=False)
+    series = lib.items('series')
+    movies = lib.items('movie')
+    for sid, entry in series:
+        title = entry.get('title') or sid
+        label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('series'))
+        remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
+            build_url({'mode': 'library_remove', 'kind': 'series', 'id': sid, 'title': title})))]
+        kodi_ui.add_directory_item(
+            ADDON, HANDLE, build_url, get_api_instance, label,
+            {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=entry.get('thumb'),
+            extra_context_items=remove, library_check=None,
+        )
+    for mid, entry in movies:
+        title = entry.get('title') or mid
+        label = '{} [COLOR grey]({})[/COLOR]'.format(title, get_string('movies'))
+        remove = [(get_string('remove_from_library'), 'RunPlugin({})'.format(
+            build_url({'mode': 'library_remove', 'kind': 'movie', 'id': mid, 'title': title})))]
+        kodi_ui.add_directory_item(
+            ADDON, HANDLE, build_url, get_api_instance, label,
+            {'mode': 'play', 'id': mid}, is_folder=False, thumb=entry.get('thumb'),
+            extra_context_items=remove, library_check=None,
+        )
+    if not series and not movies:
+        xbmcgui.Dialog().notification('NLZiet', get_string('library_empty'), xbmcgui.NOTIFICATION_INFO)
+    xbmcplugin.endOfDirectory(HANDLE)
 
 
 def browse_tv_shows():
@@ -6289,6 +6386,10 @@ def get_route_handlers():
         'show_series_detail': show_series_detail,
         'show_series_season': show_series_season,
         'export_series_library': export_series_library,
+        'library_toggle': library_toggle,
+        'library_remove': library_remove,
+        'library_update': library_update,
+        'browse_library': browse_library,
         'browse_placement_row': browse_placement_row,
         'browse_tv_shows': browse_tv_shows,
         'browse_tv_genre': browse_tv_genre,

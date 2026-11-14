@@ -45,6 +45,7 @@ Both Kijk Later and My Series can optionally **synchronise both ways with your N
 N) parsing, with season mapping.  
 **Kijk Later** additionally shows the episode number and the remaining availability as compact, subtly coloured lines in the item description.  
 - **Search**: Find series, movies, and episodes by title.  
+- **Kodi library**: add series and movies to the Kodi library through the context menu ("Add to library"). The addon writes `.strm` + `.nfo` files, keeps episode numbers stable, adds new episodes and removes expired ones automatically (Settings → Library), and can scan/clean the Kodi library afterwards. The **Library** menu shows everything you added. Add the TV shows and movies folders once as Kodi video sources with the scraper "Local information only".  
 - **Trakt Scrobbling**: Movies and episodes expose playback metadata to the official Kodi `script.trakt` add-on, with movie title/year resolution, named-episode matching, cached-URL recovery, and explicit live-TV exclusion.  
 The Trakt add-on must be installed and authorized separately.  
 - **Robust Handshake**: Automatic manifest/license extraction and fallback logic.  
@@ -153,6 +154,7 @@ Zowel Kijk Later als Mijn Series kunnen optioneel **tweerichtings synchroniseren
 N)-parsing, met seizoensmapping.  
 **Kijk Later** toont daarnaast het afleveringsnummer en de resterende beschikbaarheid als compacte, subtiel gekleurde regels in de itembeschrijving.  
 - **Zoeken**: Vind series, films en afleveringen op titel.  
+- **Kodi-bibliotheek**: voeg series en films toe aan de Kodi-bibliotheek via het contextmenu ("Toevoegen aan bibliotheek"). De addon schrijft `.strm`- en `.nfo`-bestanden, houdt afleveringsnummers vast, voegt nieuwe afleveringen automatisch toe en ruimt verlopen afleveringen op (Instellingen → Bibliotheek), en kan daarna de Kodi-bibliotheek scannen en opschonen. Het menu **Bibliotheek** toont alles wat je hebt toegevoegd. Voeg de mappen voor series en films één keer toe als videobron in Kodi, met de scraper "Lokale informatie".  
 - **Trakt Scrobbling**: Films en afleveringen tonen afspeelmetadata aan de officiële Kodi `script.trakt`-add-on, met film titel/jaar-resolutie, benoemde-aflevering-matching, herstel van gecachte URL's en expliciete live-TV-uitsluiting.  
 De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.  
 - **Robuuste Handshake**: Automatische manifest/license-extractie en fallback-logica.  
