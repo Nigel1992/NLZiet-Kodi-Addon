@@ -27,6 +27,7 @@ from resources.lib import tvmaze
 from resources.lib import library as library_mod
 from resources.lib import metadata as metadata_mod
 from resources.lib import library_art
+from resources.lib import errors as errors_mod
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -542,6 +543,47 @@ def _make_color_tag(color_raw, text):
     emoji marker as a fallback (see code below).
     """
     return kodi_ui.make_color_tag(color_raw, text)
+
+
+# Lists where Kodi's sort menu (title, year, episode) makes sense. The first
+# sort option is always NLZiet's own order.
+_SORTABLE_MODES = {
+    'series', 'browse_series_genre', 'browse_movie_genre', 'browse_tv_genre', 'browse',
+    'search_group', 'my_list_group', 'watch_later', 'my_series', 'placement_row', 'browse_library',
+}
+_EPISODE_MODES = {'series_season', 'watch_later_collection'}
+
+
+def _current_mode():
+    try:
+        query = sys.argv[2] if len(sys.argv) > 2 else ''
+        return dict(urllib.parse.parse_qsl(query.lstrip('?'))).get('mode') or ''
+    except Exception:
+        return ''
+
+
+def _add_sort_methods(mode=None):
+    mode = _current_mode() if mode is None else mode
+    if mode not in _SORTABLE_MODES and mode not in _EPISODE_MODES:
+        return
+    names = ['SORT_METHOD_UNSORTED']
+    if mode in _EPISODE_MODES:
+        names += ['SORT_METHOD_EPISODE', 'SORT_METHOD_DATE']
+    names += ['SORT_METHOD_LABEL_IGNORE_THE', 'SORT_METHOD_VIDEO_YEAR']
+    for name in names:
+        method = getattr(xbmcplugin, name, None)
+        if method is None:
+            continue
+        try:
+            xbmcplugin.addSortMethod(HANDLE, method)
+        except Exception:
+            pass
+
+
+def _end_directory():
+    """endOfDirectory with Kodi's sort options for list pages."""
+    _add_sort_methods()
+    xbmcplugin.endOfDirectory(HANDLE)
 
 
 def build_url(query):
@@ -1303,7 +1345,7 @@ def main_menu():
     except Exception:
         xbmc.log('NLZiet: failed to set background image', xbmc.LOGDEBUG)
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
     if logged_in:
         _run_after_directory(_maybe_run_auto_add)
         _run_after_directory(_maybe_run_expiry_check)
@@ -1320,7 +1362,7 @@ def browse_series_categories():
         name = genre.get('name')
         genre_param = genre.get('genre')
         add_directory_item(name, {'mode': 'browse_series_genre', 'genre': genre_param or 'all'}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_series_genre(genre=None):
@@ -1343,7 +1385,7 @@ def browse_series_genre(genre=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -1362,7 +1404,7 @@ def browse_series_genre(genre=None):
             # Episodes would be playable - but shouldn't appear at top level in genre view
             pass
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_series():
@@ -1405,7 +1447,7 @@ def browse_series():
                 add_directory_item(comp_title, query, is_folder=True)
             except Exception:
                 continue
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
 
     # Fallback: simple series list when placements are unavailable
@@ -1421,7 +1463,7 @@ def browse_series():
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -1433,7 +1475,7 @@ def browse_series():
         except Exception:
             info = None
         add_directory_item(item.get('title') or item.get('id') or get_string('group_series'), {'mode': 'series_detail', 'series_id': item.get('id')}, is_folder=True, thumb=_pick_landscape_thumb(item), info=info, content=item, group='series')
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def show_series_detail(series_id):
@@ -1460,7 +1502,7 @@ def show_series_detail(series_id):
         for s in seasons:
             title = s.get('title') or f"{get_string('season')} {s.get('id')}"
             add_directory_item(title, {'mode': 'series_season', 'series_id': series_id, 'season_id': s.get('id'), 'episodes_url': s.get('episodes_url') or '', 'series_title': series_title, 'season_number': s.get('season_number') or ''}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _get_series_season_episodes(api, series_id, season_id=None, episodes_url=None, limit=400):
@@ -1609,7 +1651,7 @@ def show_series_season(series_id, season_id, episodes_url=None, series_title=Non
         if playback_content.get('season_number') is None and str(season_id or '').isdigit():
             playback_content['season_number'] = season_id
         add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=playback_content)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _write_text(path, text):
@@ -1864,7 +1906,7 @@ def browse_library():
         )
     if not series and not movies:
         xbmcgui.Dialog().notification('NLZiet', get_string('library_empty'), xbmcgui.NOTIFICATION_INFO)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_tv_shows():
@@ -1875,7 +1917,7 @@ def browse_tv_shows():
     for genre in genres:
         query = {'mode': 'browse_tv_genre', 'genre': genre.get('genre') or 'all'}
         add_directory_item(genre.get('name'), query, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_tv_genre(genre=None):
@@ -1920,7 +1962,7 @@ def browse_tv_genre(genre=None):
             if date_info:
                 parts.append(date_info)
             if expiry_text:
-                marker = '🔶 '
+                marker = ''  # text only: readable by screen readers and every skin
                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                 parts.append(colored)
             if desc:
@@ -1933,7 +1975,7 @@ def browse_tv_genre(genre=None):
             if date_info:
                 po_parts.append(date_info)
             if expiry_text:
-                marker = '🔶 '
+                marker = ''  # text only: readable by screen readers and every skin
                 po_parts.append(f"{marker}{expiry_text}")
             if truncated:
                 po_parts.append(truncated)
@@ -1961,7 +2003,7 @@ def browse_tv_genre(genre=None):
             is_folder = True
         
         add_directory_item(display_title, query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group='tvshows')
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_movie_categories():
@@ -1973,7 +2015,7 @@ def browse_movie_categories():
         name = genre.get('name')
         genre_param = genre.get('genre')
         add_directory_item(name, {'mode': 'browse_movie_genre', 'genre': genre_param or 'all'}, is_folder=True)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_movie_genre(genre=None):
@@ -1995,7 +2037,7 @@ def browse_movie_genre(genre=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -2010,7 +2052,7 @@ def browse_movie_genre(genre=None):
         # Movies are playable items
         add_directory_item(item.get('title'), {'mode': 'play', 'id': item.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(item), info=info, content=item, group='movies')
     
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
@@ -2068,7 +2110,7 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -2081,7 +2123,7 @@ def browse_placement_row(items_url=None, placement_id=None, comp_index=None):
                 add_directory_item(title, {'mode': 'play', 'id': src.get('playUrl') or src.get('streamUrl') or src.get('id')}, is_folder=False, thumb=thumb, info=info, content=src)
         except Exception:
             continue
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _extract_max_devices(summary):
@@ -2952,7 +2994,7 @@ def manage_profiles():
         # Selecting an item triggers the 'select_profile' route with the profile id
         add_directory_item(title, {'mode': 'select_profile', 'profile_id': str(pid)}, is_folder=True, thumb=thumb, info=info_obj)
 
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _get_list_api():
@@ -3363,7 +3405,7 @@ def browse_my_list():
 
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
         return
     # Group My List items by category so the My List top-level shows one folder
@@ -3385,7 +3427,7 @@ def browse_my_list():
 
     if not any_folder:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_list_empty'), xbmcgui.NOTIFICATION_INFO)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
     _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
@@ -3402,10 +3444,10 @@ def _browse_saved_group(group):
     if not filtered:
         message = get_string('no_items_for_group', _group_label(group))
         xbmcgui.Dialog().notification('NLZiet', message, xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
     else:
         _render_list_items(filtered)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
     _run_after_directory(_backfill_quietly, api, 'backfill_my_list')
 
 
@@ -3854,7 +3896,7 @@ def browse_watch_later():
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
     else:
         _render_watch_later_top(items, api)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
     _run_after_directory(
@@ -3885,7 +3927,7 @@ def browse_watch_later_collection(collection_id=None, season=None):
     members = _order_watch_later([itm for itm in items if _watch_later_collection_id(itm) == str(collection_id)])
     if not members:
         xbmcgui.Dialog().notification('NLZiet', get_string('watch_later_empty'), xbmcgui.NOTIFICATION_INFO)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
 
     by_season = {}
@@ -3914,7 +3956,7 @@ def browse_watch_later_collection(collection_id=None, season=None):
         _render_list_items(unknown, **labels)
     else:
         _render_list_items(members, **labels)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_watch_later')
     _run_after_directory(
@@ -4013,7 +4055,7 @@ def browse_my_series():
         # which is slow. Do it in the background so the list renders immediately;
         # highlight/refresh happen after the directory has been shown.
         _render_list_items(items, sync_mode='sync_my_series' if _my_series_sync_enabled() else None)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
     _run_after_directory(_check_my_series_new_episodes, api, list(items))
@@ -4630,7 +4672,7 @@ def do_search():
             results = fb
         else:
             xbmcgui.Dialog().notification('NLZiet', get_string('no_results', query), xbmcgui.NOTIFICATION_INFO)
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
             return
     # Group search results by their detected type so we can present grouped
     # folders (e.g. "Series" and "Movies") when multiple groups are found.
@@ -4671,7 +4713,7 @@ def do_search():
             except Exception:
                 thumb = None
             add_directory_item(_group_folder_label(g, len(items_for_group)), {'mode': 'search_group', 'q': query, 'group': g}, is_folder=True, thumb=thumb)
-        xbmcplugin.endOfDirectory(HANDLE)
+        _end_directory()
         return
 
     # Otherwise fall back to presenting each result individually (previous behavior)
@@ -4689,7 +4731,7 @@ def do_search():
                 # plotoutline (label2): plain expiry prefix + truncated plot for default skin
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4711,7 +4753,7 @@ def do_search():
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4766,7 +4808,7 @@ def do_search():
                 add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
                 add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def browse_category(content_type):
@@ -4799,7 +4841,7 @@ def browse_category(content_type):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4822,7 +4864,7 @@ def browse_category(content_type):
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4900,7 +4942,7 @@ def browse_category(content_type):
                 item['type'] = 'channel'
         
         add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group=add_group)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def search_group(q, group):
@@ -4961,7 +5003,7 @@ def search_group(q, group):
             results = fb
         else:
             xbmcgui.Dialog().notification('NLZiet', get_string('no_results', q), xbmcgui.NOTIFICATION_INFO)
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
             return
 
     # Present only items that match the requested group
@@ -4976,7 +5018,7 @@ def search_group(q, group):
                 plot_full = desc
                 po = truncated
                 if expiry_text:
-                    marker = '🔶 '
+                    marker = ''  # text only: readable by screen readers and every skin
                     colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                     plot_full = f"{colored}\n{desc}" if desc else colored
                     po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -4994,7 +5036,7 @@ def search_group(q, group):
                             plot_full = desc
                             po = truncated
                             if expiry_text:
-                                marker = '🔶 '
+                                marker = ''  # text only: readable by screen readers and every skin
                                 colored = _make_color_tag(EXPIRY_COLOR_RAW, expiry_text)
                                 plot_full = f"{colored}\n{desc}" if desc else colored
                                 po = f"{marker}{expiry_text} — {truncated}" if truncated else f"{marker}{expiry_text}"
@@ -5041,7 +5083,7 @@ def search_group(q, group):
                 add_directory_item(display_title, {'mode': 'series_detail', 'series_id': sid}, is_folder=True, thumb=thumb, info=info, content=item)
             else:
                 add_directory_item(display_title, {'mode': 'play', 'id': item.get('id') or content_id}, is_folder=False, thumb=thumb, info=info, content=item)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def filter_manifest_subtitles(manifest_url):
@@ -5885,7 +5927,7 @@ def browse_epg():
     except Exception as exc:
         xbmc.log('NLZiet browse_epg failed: {0}'.format(exc), xbmc.LOGERROR)
         try:
-            xbmcplugin.endOfDirectory(HANDLE)
+            _end_directory()
         except Exception:
             pass
 
@@ -5950,7 +5992,7 @@ def _browse_epg_impl():
                 add_directory_item(label, {'mode': 'play', 'id': _extract_id_from_stream(stream)}, is_folder=False, thumb=thumb, info=info)
             else:
                 add_directory_item(label, {'mode': 'browse_epg'}, is_folder=False, thumb=thumb, info=info)
-    xbmcplugin.endOfDirectory(HANDLE)
+    _end_directory()
 
 
 def _extract_id_from_stream(stream):
@@ -6476,6 +6518,32 @@ def router(paramstring):
     Router(context, get_route_handlers()).dispatch(paramstring)
 
 
-if __name__ == '__main__':
+def _show_friendly_error(exc, paramstring=''):
+    """Log the full error and show the user one clear sentence."""
+    xbmc.log('NLZiet: unexpected error\n' + errors_mod.log_text(exc), xbmc.LOGERROR)
+    params = dict(urllib.parse.parse_qsl((paramstring or '').lstrip('?')))
+    if params.get('mode') == 'play':
+        try:
+            xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+        except Exception:
+            pass
+    if params.get('background') == '1':
+        return
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    xbmcgui.Dialog().notification('NLZiet', errors_mod.user_message(exc, 'NLZiet', language),
+                                  xbmcgui.NOTIFICATION_ERROR, 7000)
+
+
+def run():
     context = AddonContext.from_kodi()
-    Router(context, get_route_handlers()).dispatch()
+    try:
+        Router(context, get_route_handlers()).dispatch()
+    except Exception as exc:
+        _show_friendly_error(exc, context.paramstring)
+
+
+if __name__ == '__main__':
+    run()
