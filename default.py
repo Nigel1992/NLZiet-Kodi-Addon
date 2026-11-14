@@ -29,6 +29,7 @@ from resources.lib import metadata as metadata_mod
 from resources.lib import library_art
 from resources.lib import errors as errors_mod
 from resources.lib import diagnostics as diagnostics_mod
+from resources.lib import search_filters
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -4766,6 +4767,10 @@ def do_search():
         _end_directory()
         return
 
+    # One group only: show it with the filter entry on top.
+    if search_filters.options(results) != ([], []):
+        return search_group(query, non_empty[0] if non_empty else 'all')
+
     # Otherwise fall back to presenting each result individually (previous behavior)
     for item in results:
         info = None
@@ -4995,7 +5000,97 @@ def browse_category(content_type):
     _end_directory()
 
 
-def search_group(q, group):
+def _search_language():
+    try:
+        return xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        return 'nl'
+
+
+def _filtered_search_results(results, q, group, period=None, genre=None):
+    """Apply period/genre filters and put a Filter entry on top of the list.
+
+    Returns the filtered results, or None when nothing is left (the listing
+    is then already finished with a message).
+    """
+    t = search_filters.texts(_search_language())
+    in_group = [item for item in results
+                if str(group or 'all').lower() == 'all'
+                or _search_group_key(str(item.get('type') or '').lower(), item) == str(group).lower()]
+    periods, genres = search_filters.options(in_group)
+    if periods or genres or period or genre:
+        label = '{}  [{}]'.format(t['filter'], search_filters.describe(t, period, genre))
+        query = {'mode': 'search_filter', 'q': q, 'group': group or 'all'}
+        if period:
+            query['period'] = period
+        if genre:
+            query['genre'] = genre
+        add_directory_item(label, query, is_folder=False, is_playable=False, thumb=_pick_menu_png_any('search'))
+    filtered = search_filters.apply(results, period, genre)
+    if (period or genre) and not filtered:
+        xbmcgui.Dialog().notification('NLZiet', t['empty'], xbmcgui.NOTIFICATION_INFO)
+        _end_directory()
+        return None
+    return filtered
+
+
+def _pick_menu_png_any(name):
+    try:
+        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ''
+    except Exception:
+        addon_path = ''
+    return kodi_ui.pick_menu_png(addon_path, name)
+
+
+def search_filter(q, group='all', period=None, genre=None):
+    """Ask for a period or genre and reopen the search results with it."""
+    t = search_filters.texts(_search_language())
+    api = get_api_instance()
+    results = api.search(q) or []
+    in_group = [item for item in results
+                if str(group or 'all').lower() == 'all'
+                or _search_group_key(str(item.get('type') or '').lower(), item) == str(group).lower()]
+    periods, genres = search_filters.options(in_group)
+    if not periods and not genres:
+        xbmcgui.Dialog().ok('NLZiet', t['no_data'])
+        return
+    choices, actions = [], []
+    if periods:
+        choices.append(t['period'])
+        actions.append('period')
+    if genres:
+        choices.append(t['genre'])
+        actions.append('genre')
+    if period or genre:
+        choices.append(t['clear'])
+        actions.append('clear')
+    picked = xbmcgui.Dialog().select(t['filter'], choices)
+    if picked < 0:
+        return
+    action = actions[picked]
+    if action == 'period':
+        labels = [t['all']] + [t[key] for key in periods]
+        index = xbmcgui.Dialog().select(t['period'], labels)
+        if index < 0:
+            return
+        period = periods[index - 1] if index > 0 else None
+    elif action == 'genre':
+        labels = [t['all']] + genres
+        index = xbmcgui.Dialog().select(t['genre'], labels)
+        if index < 0:
+            return
+        genre = genres[index - 1] if index > 0 else None
+    else:
+        period, genre = None, None
+    query = {'mode': 'search_group', 'q': q, 'group': group or 'all'}
+    if period:
+        query['period'] = period
+    if genre:
+        query['genre'] = genre
+    xbmc.executebuiltin('Container.Update({},replace)'.format(build_url(query)))
+
+
+def search_group(q, group, period=None, genre=None):
     """Show search results filtered to a single group (e.g. 'Series' or 'Movies').
 
     This re-runs the search (or fallback) and presents only items that match
@@ -5056,6 +5151,10 @@ def search_group(q, group):
             _end_directory()
             return
 
+    results = _filtered_search_results(results, q, group, period, genre)
+    if results is None:
+        return
+
     # Present only items that match the requested group
     for item in results:
         info = None
@@ -5109,7 +5208,7 @@ def search_group(q, group):
         # compute group and skip items that don't match
         group_name = _search_group_key(itype_l, item)
 
-        if str(group_name).lower() != str(group or '').lower():
+        if str(group or 'all').lower() != 'all' and str(group_name).lower() != str(group or '').lower():
             continue
 
         title = item.get('title') or item.get('name') or content_id or get_string('result_label')
@@ -6540,6 +6639,7 @@ def get_route_handlers():
         'clear_subtitle_cache': clear_subtitle_cache,
         'clear_all_cache': clear_all_cache,
         'search_group': search_group,
+        'search_filter': search_filter,
         'show_series_detail': show_series_detail,
         'show_series_season': show_series_season,
         'export_series_library': export_series_library,

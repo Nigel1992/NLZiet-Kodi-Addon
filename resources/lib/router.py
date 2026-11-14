@@ -101,7 +101,14 @@ class Router:
         elif mode == 'browse_epg':
             self.handlers['browse_epg']()
         elif mode == 'search_group':
-            self.handlers['search_group'](params.get('q'), params.get('group'))
+            if params.get('period') or params.get('genre'):
+                self.handlers['search_group'](params.get('q'), params.get('group'),
+                                              params.get('period'), params.get('genre'))
+            else:
+                self.handlers['search_group'](params.get('q'), params.get('group'))
+        elif mode == 'search_filter':
+            self.handlers['search_filter'](params.get('q'), params.get('group') or 'all',
+                                           params.get('period'), params.get('genre'))
         elif mode == 'series_detail':
             self.handlers['show_series_detail'](params.get('series_id'))
         elif mode == 'series_season':

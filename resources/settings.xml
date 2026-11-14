@@ -175,6 +175,13 @@
             <close>false</close>
           </control>
         </setting>
+        <setting id="run_diagnostics" type="action" label="33220" help="33221">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=diagnostics)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
       </group>
       <group id="3" label="33212">
         <setting id="library_enrich" type="boolean" label="33213" help="33214">
@@ -246,13 +253,6 @@
           <level>2</level>
           <default>false</default>
           <control type="toggle"/>
-        </setting>
-        <setting id="run_diagnostics" type="action" label="33220" help="33221">
-          <level>0</level>
-          <data>RunPlugin(plugin://$ID?mode=diagnostics)</data>
-          <control type="button" format="action">
-            <close>true</close>
-          </control>
         </setting>
         <setting id="export_diagnostics" type="action" label="30112" help="30113">
           <level>0</level>

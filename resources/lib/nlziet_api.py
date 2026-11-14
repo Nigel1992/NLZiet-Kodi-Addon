@@ -3182,7 +3182,7 @@ class NLZietAPI:
                                 else:
                                     minutes = max(1, secs // 60)
                                     expires_in = f'Expires in {minutes}m'
-                    results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in})
+                    results.append({'id': content_id, 'title': title, 'thumb': thumb, 'type': typ, 'description': desc, 'subtitle': subtitle, 'posterUrl': thumb, 'expires_at': expires_at, 'expires_in': expires_in, 'year': self._extract_year(src), 'raw': src if isinstance(src, dict) else {}})
                 return results
         except Exception as e:
             try:

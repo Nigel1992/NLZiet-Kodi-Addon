@@ -21,7 +21,7 @@ EXPECTED_HANDLER_NAMES = {
     'play_item', 'select_iptv_channels', 'clear_subtitle_cache',
     'clear_all_cache', 'browse_epg',
     'library_toggle', 'library_remove', 'library_update', 'browse_library',
-    'check_tmdb_key', 'repair_library_art', 'run_diagnostics',
+    'check_tmdb_key', 'repair_library_art', 'run_diagnostics', 'search_filter',
 }
 
 
