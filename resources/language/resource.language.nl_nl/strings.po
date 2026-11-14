@@ -970,3 +970,7 @@ msgstr "Gratis sleutel via themoviedb.org: Instellingen > API. Plak de \"API Key
 msgctxt "#33217"
 msgid "Test TMDb key"
 msgstr "TMDb-sleutel testen"
+
+msgctxt "#33207"
+msgid "{} series moved to the NLZiet folder. Add that folder as a source in Kodi."
+msgstr "{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi."

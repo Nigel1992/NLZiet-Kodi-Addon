@@ -70,6 +70,7 @@ def main():
     started = time.time()
     last_sync = time.time()
     last_library_trigger = 0
+    legacy_checked = False
     while not MONITOR.abortRequested():
         if MONITOR.waitForAbort(60):
             break
@@ -79,6 +80,14 @@ def main():
         if interval > 0 and now - last_sync >= interval * 60:
             last_sync = now
             _sync_now()
+
+        # Move a library exported by 1.6.x into the add-on folder once.
+        if not legacy_checked and now - started >= LIBRARY_STARTUP_DELAY and not xbmc.Player().isPlaying():
+            legacy_checked = True
+            if os.path.isdir(library_mod.LEGACY_TV_PATH):
+                last_library_trigger = now
+                xbmc.executebuiltin('RunPlugin(plugin://plugin.video.nlziet/?mode=library_update&background=1)')
+                continue
 
         # Retry at most once an hour if an update did not record itself.
         if (now - started >= LIBRARY_STARTUP_DELAY and now - last_library_trigger >= 3600

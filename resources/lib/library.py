@@ -13,6 +13,7 @@ even when older episodes expire or NLZiet changes its own numbering.
 import json
 import os
 import re
+import shutil
 import time
 import urllib.parse
 from xml.sax.saxutils import escape
@@ -33,9 +34,10 @@ except ImportError:  # pragma: no cover - only outside Kodi
 ADDON_ID = 'plugin.video.nlziet'
 DEFAULT_TV_PATH = 'special://profile/addon_data/{}/library/TV Shows'.format(ADDON_ID)
 DEFAULT_MOVIES_PATH = 'special://profile/addon_data/{}/library/Movies'.format(ADDON_ID)
-# Default used by versions up to 1.6.4. Still honoured when that folder exists
-# so existing Android installs keep exporting to the folder Kodi already scans.
-LEGACY_TV_PATH = '/storage/emulated/0/KodiNLZietLibrary/TV Shows'
+# Default used by versions up to 1.6.4. Files found there are moved once into
+# the add-on's own data folder (see Library.migrate_legacy_folder).
+LEGACY_ROOT = '/storage/emulated/0/KodiNLZietLibrary'
+LEGACY_TV_PATH = LEGACY_ROOT + '/TV Shows'
 
 STORE_VERSION = 1
 UNDATED = '9999-12-31'
@@ -282,12 +284,64 @@ class Library:
 
     def tv_root(self):
         value = self._setting('library_path')
-        if not value or value == DEFAULT_TV_PATH:
-            # Keep using the old Android default when it is already in use.
-            if os.path.isdir(LEGACY_TV_PATH):
-                return LEGACY_TV_PATH
+        if not value or value.rstrip('/') == LEGACY_TV_PATH:
             value = DEFAULT_TV_PATH
         return translate_path(value)
+
+    def migrate_legacy_folder(self, legacy_root=LEGACY_ROOT):
+        """Move series exported by 1.6.x out of KodiNLZietLibrary into the
+        add-on's own folder. Returns the number of moved show folders."""
+        if self._setting('library_path').rstrip('/') == LEGACY_TV_PATH:
+            try:
+                self.addon.setSetting('library_path', DEFAULT_TV_PATH)
+            except Exception:
+                pass
+        source = os.path.join(legacy_root, 'TV Shows')
+        if not os.path.isdir(source):
+            return 0
+        target = self.tv_root()
+        if '://' in str(target) or os.path.normcase(os.path.abspath(target)) == os.path.normcase(os.path.abspath(source)):
+            return 0
+        moved = 0
+        for name in sorted(os.listdir(source)):
+            src = os.path.join(source, name)
+            dst = os.path.join(target, name)
+            try:
+                if os.path.isdir(src):
+                    self._merge_move(src, dst)
+                    moved += 1
+                else:
+                    os.makedirs(target, exist_ok=True)
+                    shutil.move(src, dst)
+            except Exception as exc:
+                _log('could not move {}: {}'.format(src, exc))
+        for folder in (source, legacy_root):
+            try:
+                if os.path.isdir(folder) and not os.listdir(folder):
+                    os.rmdir(folder)
+            except OSError:
+                pass
+        if moved:
+            _log('moved {} series from {} to {}'.format(moved, source, target))
+        return moved
+
+    @staticmethod
+    def _merge_move(src, dst):
+        if not os.path.exists(dst):
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.move(src, dst)
+            return
+        for root, _dirs, files in os.walk(src):
+            rel = os.path.relpath(root, src)
+            out = os.path.join(dst, rel) if rel != '.' else dst
+            os.makedirs(out, exist_ok=True)
+            for name in files:
+                target = os.path.join(out, name)
+                if os.path.exists(target):
+                    os.remove(os.path.join(root, name))  # the new folder wins
+                else:
+                    shutil.move(os.path.join(root, name), target)
+        shutil.rmtree(src, ignore_errors=True)
 
     def movies_root(self):
         return translate_path(self._setting('library_movies_path') or DEFAULT_MOVIES_PATH)

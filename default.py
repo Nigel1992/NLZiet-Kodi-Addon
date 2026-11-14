@@ -213,6 +213,7 @@ TRANSLATIONS = {
     'library': {'nl': 'Bibliotheek', 'en': 'Library'},
     'tmdb_check_ok': {'nl': 'TMDb-sleutel werkt', 'en': 'TMDb key works'},
     'tmdb_check_failed': {'nl': 'TMDb-sleutel werkt niet. Controleer de sleutel.', 'en': 'TMDb key does not work. Check the key.'},
+    'library_moved': {'nl': '{} series verplaatst naar de NLZiet-map. Voeg die map toe als bron in Kodi.', 'en': '{} series moved to the NLZiet folder. Add that folder as a source in Kodi.'},
     'library_adding': {'nl': 'Toevoegen aan bibliotheek: {}', 'en': 'Adding to library: {}'},
     'diagnostics_exported': {'nl': 'Diagnostisch rapport opgeslagen:\n{}', 'en': 'Diagnostic report saved:\n{}'},
     'diagnostics_failed': {'nl': 'Diagnostisch rapport kon niet worden opgeslagen', 'en': 'Could not save diagnostic report'},
@@ -385,6 +386,7 @@ STRING_IDS = {
     'library_empty': 33195,
     'library': 33196,
     'library_adding': 33197,
+    'library_moved': 33207,
     'tmdb_check_ok': 33210,
     'tmdb_check_failed': 33211,
     'diagnostics_exported': 33069,
@@ -1672,6 +1674,14 @@ def _get_library():
     if _LIBRARY is None:
         _LIBRARY = library_mod.Library(get_api_instance(), ADDON, _library_episode_fetcher,
                                        enricher=_library_enricher())
+        try:
+            moved = _LIBRARY.migrate_legacy_folder()
+        except Exception as e:
+            xbmc.log(f"NLZiet library folder move failed: {e}", xbmc.LOGWARNING)
+            moved = 0
+        if moved:
+            xbmcgui.Dialog().notification('NLZiet', get_string('library_moved', moved), xbmcgui.NOTIFICATION_INFO, 8000)
+            library_mod.run_library_jobs(scan=True, clean=True)
     return _LIBRARY
 
 

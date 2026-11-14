@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v1.7.1 (November 14, 2026)
+> **Latest Version:** v1.7.2 (November 14, 2026)
+
+## [1.7.2] - 2026-11-14
+
+### Changed
+- **Library folder**: the library now always lives in the add-on's own folder (`special://profile/addon_data/plugin.video.nlziet/library/`). Series exported by older versions to `/storage/emulated/0/KodiNLZietLibrary/TV Shows` are moved there automatically, once (on first library use, or about two minutes after Kodi starts). The empty old folder is removed, and the folder setting is reset if it still pointed to the old location. A notification asks to add the new folder as a Kodi source; Kodi's library is cleaned and rescanned.
 
 ## [1.7.1] - 2026-11-14
 
@@ -23,7 +28,7 @@
 ### Changed
 - **Library**: episode numbers are assigned once and stored per episode, so file names stay the same when older episodes expire. Kodi keeps watched status and resume points.
 - **Library**: series with real season/episode numbers use those numbers; daily programmes keep using the broadcast year as season.
-- **Library**: the default library folder is now inside the addon data folder (`special://profile/addon_data/plugin.video.nlziet/library/`), so it works on every platform. Existing Android installs that use `/storage/emulated/0/KodiNLZietLibrary/TV Shows` keep using that folder. Folder settings now open Kodi's folder browser, and network shares (smb://, nfs://) are supported.
+- **Library**: the default library folder is now inside the addon data folder (`special://profile/addon_data/plugin.video.nlziet/library/`), so it works on every platform. (See 1.7.2: the old Android folder is moved there.) Folder settings now open Kodi's folder browser, and network shares (smb://, nfs://) are supported.
 - **Library**: a failed or empty answer from NLZiet never deletes library files.
 
 ## [1.6.4] - 2026-11-13

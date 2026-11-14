@@ -258,3 +258,54 @@ def test_background_update_skips_while_playing(wired, monkeypatch):
     default.library_update(background=True)
 
     assert called == []
+
+
+def test_legacy_android_folder_is_moved_into_addon_folder(tmp_path):
+    legacy = tmp_path / 'KodiNLZietLibrary'
+    (legacy / 'TV Shows' / 'Show' / 'Season 2026').mkdir(parents=True)
+    (legacy / 'TV Shows' / 'Show' / 'tvshow.nfo').write_text('<tvshow/>')
+    (legacy / 'TV Shows' / 'Show' / 'Season 2026' / 'Show S2026E01.strm').write_text('plugin://x\n')
+    # A show that also exists in the new folder: the new files win, old extras move.
+    (tmp_path / 'TV Shows' / 'Both').mkdir(parents=True)
+    (tmp_path / 'TV Shows' / 'Both' / 'tvshow.nfo').write_text('new')
+    (legacy / 'TV Shows' / 'Both').mkdir()
+    (legacy / 'TV Shows' / 'Both' / 'tvshow.nfo').write_text('old')
+    (legacy / 'TV Shows' / 'Both' / 'extra.strm').write_text('old extra')
+
+    class Addon:
+        def __init__(self):
+            self.settings = {'library_path': library.LEGACY_TV_PATH}
+
+        def getSetting(self, key):
+            return {'library_path': self.settings['library_path'] if self.settings['library_path'] != library.DEFAULT_TV_PATH else str(tmp_path / 'TV Shows')}.get(key, '')
+
+        def setSetting(self, key, value):
+            self.settings[key] = value
+
+        def getAddonInfo(self, key):
+            return {'id': 'plugin.video.nlziet', 'profile': str(tmp_path / 'profile')}.get(key, '')
+
+    addon = Addon()
+    lib = library.Library(FakeAPI(), addon, fetcher)
+
+    moved = lib.migrate_legacy_folder(str(legacy))
+
+    assert moved == 2
+    assert addon.settings['library_path'] == library.DEFAULT_TV_PATH
+    assert _files(tmp_path / 'TV Shows') == [
+        'Both/extra.strm', 'Both/tvshow.nfo', 'Show/Season 2026/Show S2026E01.strm', 'Show/tvshow.nfo']
+    assert (tmp_path / 'TV Shows' / 'Both' / 'tvshow.nfo').read_text() == 'new'
+    assert not legacy.exists()
+    assert lib.migrate_legacy_folder(str(legacy)) == 0
+
+
+def test_old_legacy_setting_never_used_as_target(tmp_path):
+    class Addon:
+        def getSetting(self, key):
+            return library.LEGACY_TV_PATH if key == 'library_path' else ''
+
+        def getAddonInfo(self, key):
+            return str(tmp_path) if key == 'profile' else 'plugin.video.nlziet'
+
+    lib = library.Library(FakeAPI(), Addon(), fetcher)
+    assert lib.tv_root() != library.LEGACY_TV_PATH
