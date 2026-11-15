@@ -1,6 +1,12 @@
 # Changelog
 
-> **Latest Version:** v2.5.7 (November 15, 2026)
+> **Latest Version:** v2.5.8 (November 15, 2026)
+
+## [2.5.8] - 2026-11-15
+
+### Opgelost
+- **Automatisch doorspelen werkt nu echt.** De volgende aflevering start nu zodra de aflevering als *bekeken* telt (voorbij de drempel), net zoals de Lucent Video-add-on het doet — niet meer alleen bij het "afgelopen"-signaal, dat bij DRM vaak als "gestopt" met een iets verouderde positie binnenkomt. Uit de log bleek dat precies het probleem (`watched=True`, maar geen volgende).
+- Tijdelijke diagnose-meldingen weer verwijderd.
 
 ## [2.5.7] - 2026-11-15
 

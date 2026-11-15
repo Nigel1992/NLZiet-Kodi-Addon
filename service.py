@@ -30,10 +30,6 @@ def _maybe_play_next(content_id):
     import xbmcgui
     if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
         return
-    # Diagnostic: show on screen that the end was detected and the next episode
-    # is being looked up.
-    xbmcgui.Dialog().notification('NLZiet', 'Einde: volgende aflevering zoeken…',
-                                  xbmcgui.NOTIFICATION_INFO, 3000)
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
         ADDON_ID, content_id))
 
@@ -130,20 +126,10 @@ class PlaybackFollower(xbmc.Player):
             pass
 
     def _done(self, natural):
+        self._scrobble('stop')
         key = self.watch.key
         position, total = self.watch.position, self.watch.total
         near_end = bool(total and total > 0 and position >= total - 20)
-        # Diagnostic: show at the end of a video what the service sees, so the
-        # auto-next path can be traced on screen.
-        try:
-            import xbmcgui as _xg
-            _xg.Dialog().notification(
-                'NLZiet', 'Einde afg={} eind={} pos={}/{} id={}'.format(
-                    int(natural), int(near_end), int(position or 0), int(total or 0), bool(key)),
-                _xg.NOTIFICATION_INFO, 6000)
-        except Exception:
-            pass
-        self._scrobble('stop')
         if key and _setting_on('resume_playback', True):
             try:
                 resume_store.save(_resume_path(), key, position, total)
@@ -156,10 +142,12 @@ class PlaybackFollower(xbmc.Player):
         watched = self.watch.finish(share)
         if watched:
             _send_watched(watched, True)
-        # inputstream.adaptive (DRM) often reports the end of a video as
-        # "stopped" rather than "ended", so also treat a stop within the final
-        # seconds as a natural end; otherwise auto-play-next never fires.
-        if (natural or near_end) and key:
+        # Start the next episode when the video ended, stopped within the final
+        # seconds, or counts as watched (>= threshold). inputstream.adaptive
+        # (DRM) often reports the end as "stopped" with a slightly stale
+        # position, so relying on the end event alone missed it; the "watched"
+        # signal is the reliable trigger (same idea as the Lucent Video add-on).
+        if (natural or near_end or bool(watched)) and key:
             _maybe_play_next(key)
 
     def onPlayBackStopped(self):
