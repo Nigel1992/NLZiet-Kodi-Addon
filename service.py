@@ -141,7 +141,11 @@ class PlaybackFollower(xbmc.Player):
         watched = self.watch.finish(share)
         if watched:
             _send_watched(watched, True)
-        if natural and key:
+        # inputstream.adaptive (DRM) often reports the end of a video as
+        # "stopped" rather than "ended", so also treat a stop within the final
+        # seconds as a natural end; otherwise auto-play-next never fires.
+        near_end = bool(total and total > 0 and position >= total - 20)
+        if (natural or near_end) and key:
             _maybe_play_next(key)
 
     def onPlayBackStopped(self):
