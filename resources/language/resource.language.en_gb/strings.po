@@ -1557,3 +1557,7 @@ msgstr ""
 msgctxt "#33365"
 msgid "Play the next episode?"
 msgstr ""
+
+msgctxt "#33366"
+msgid "No next episode found"
+msgstr ""

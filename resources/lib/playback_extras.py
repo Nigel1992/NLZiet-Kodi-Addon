@@ -336,7 +336,9 @@ def start_next_prompt(play_fn, ask, credits_start=None, lead=45, player=None, mo
             except Exception:
                 return
             if total and total > 0:
-                if credits_start and 0 < credits_start < total:
+                # Only trust a credits marker in the back half of the video;
+                # a stray early marker should not pop the prompt mid-episode.
+                if credits_start and total * 0.5 < credits_start < total - 10:
                     trigger = credits_start
                 else:
                     trigger = max(0, total - lead)

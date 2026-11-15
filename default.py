@@ -342,6 +342,7 @@ TRANSLATIONS = {
     'skip_intro_question': {'nl': 'Intro overslaan?', 'en': 'Skip the intro?'},
     'skip_recap_question': {'nl': 'Samenvatting overslaan?', 'en': 'Skip the recap?'},
     'play_next_question': {'nl': 'Volgende aflevering afspelen?', 'en': 'Play the next episode?'},
+    'play_next_none': {'nl': 'Geen volgende aflevering gevonden', 'en': 'No next episode found'},
     'widgets': {'nl': 'Widgets voor je startscherm', 'en': 'Widgets for the home screen'},
     'continue_watching': {'nl': 'Verder kijken', 'en': 'Continue watching'},
     'widgets_help': {'nl': 'Kies deze lijsten als widget in de instellingen van je skin.', 'en': 'Pick these lists as a widget in your skin settings.'},
@@ -607,6 +608,7 @@ STRING_IDS = {
     'skip_intro_question': 33270,
     'skip_recap_question': 33271,
     'play_next_question': 33365,
+    'play_next_none': 33366,
     'widgets': 33272,
     'continue_watching': 33273,
     'widgets_help': 33274,
@@ -6857,6 +6859,9 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode
         found = _next_episode_for(api, content_id, metadata, stream_info)
         if not found:
             xbmc.log('NLZiet next episode: none for {}'.format(content_id), xbmc.LOGINFO)
+            if mode == 'ask':
+                xbmcgui.Dialog().notification('NLZiet', get_string('play_next_none'),
+                                              xbmcgui.NOTIFICATION_INFO, 4000)
             return
         current, following, query = found
         player = xbmc.Player()
@@ -6973,10 +6978,15 @@ def play_next(content_id, background=False):
     if not content_id:
         return
     query = _next_play_query(get_api_instance(), content_id)
-    if query:
+    # Never replay the same episode: if "next" resolves to what just played,
+    # there is nothing to advance to.
+    if query and str(query.get('id') or '') and str(query.get('id')) != str(content_id):
+        xbmc.log('NLZiet play_next: {} -> {}'.format(content_id, query.get('id')), xbmc.LOGINFO)
         xbmc.executebuiltin('PlayMedia({})'.format(build_url(query)))
-    elif not background:
-        xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
+    else:
+        xbmc.log('NLZiet play_next: no next episode for {}'.format(content_id), xbmc.LOGINFO)
+        if not background:
+            xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
 
 
 def toggle_stop_after():

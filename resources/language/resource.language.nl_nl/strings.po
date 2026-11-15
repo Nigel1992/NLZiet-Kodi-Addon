@@ -1574,3 +1574,7 @@ msgstr "Uit"
 msgctxt "#33365"
 msgid "Play the next episode?"
 msgstr "Volgende aflevering afspelen?"
+
+msgctxt "#33366"
+msgid "No next episode found"
+msgstr "Geen volgende aflevering gevonden"
