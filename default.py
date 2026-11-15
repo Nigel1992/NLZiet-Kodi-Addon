@@ -6790,6 +6790,16 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
             xbmc.log('NLZiet skip watcher failed: {}'.format(exc), xbmc.LOGINFO)
     next_mode = (ADDON.getSetting('next_episode') or 'upnext')
     if next_mode in ('upnext', 'ask'):
+        # Kodi can start the same playback more than once. Set a per-episode
+        # flag here, in the play call itself, so a second start sees it before
+        # anything runs and the question/notice isn't doubled. The flag is
+        # keyed on the episode id (overwritten by the next episode), so it
+        # needs no clearing.
+        if next_mode == 'ask':
+            win = xbmcgui.Window(10000)
+            if win.getProperty('nlziet.next_armed') == str(content_id):
+                return
+            win.setProperty('nlziet.next_armed', str(content_id))
         playback_extras.start_background(
             lambda: _announce_next_episode(api, content_id, metadata or {}, stream_info, markers, next_mode),
             'NLZietNextEpisode')
@@ -6870,12 +6880,6 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode
         credits = markers.get('credits') if markers else None
         credits_start = credits[0] if credits and credits[0] else None
         if mode == 'ask':
-            # Kodi can start the same playback more than once; ask only once
-            # per episode.
-            win = xbmcgui.Window(10000)
-            if win.getProperty('nlziet.next_armed') == str(content_id):
-                return
-            win.setProperty('nlziet.next_armed', str(content_id))
             # The add-on asks itself, near the end, without the Up Next add-on.
             def _ask():
                 return bool(xbmcgui.Dialog().yesno(
