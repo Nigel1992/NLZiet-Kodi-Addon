@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.5.0 (November 15, 2026)
+> **Latest Version:** v2.5.1 (November 15, 2026)
+
+## [2.5.1] - 2026-11-15
+
+### Opgelost
+- **Eigen "volgende aflevering"-popup kwam soms niet.** De wachter die de vraag toont draait nu in een thread die Kodi niet voortijdig afbreekt, en er is een logregel toegevoegd (`Next episode prompt at ...`) zodat te zien is wanneer hij afgaat.
 
 ## [2.5.0] - 2026-11-15
 

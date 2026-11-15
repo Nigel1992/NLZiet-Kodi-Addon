@@ -344,6 +344,11 @@ def start_next_prompt(play_fn, ask, credits_start=None, lead=45, player=None, mo
                 if not asked and now >= trigger and total - now > 5:
                     asked = True
                     try:
+                        xbmc.log('Next episode prompt at {:.0f}s of {:.0f}s'.format(now, total),
+                                 xbmc.LOGINFO)
+                    except Exception:
+                        pass
+                    try:
                         if ask():
                             play_fn()
                     except Exception:
