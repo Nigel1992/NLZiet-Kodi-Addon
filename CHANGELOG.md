@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.5.8 (November 15, 2026)
+> **Latest Version:** v2.5.9 (November 15, 2026)
+
+## [2.5.9] - 2026-11-15
+
+### Opgelost
+- **"Nee" bij de vraag start de volgende aflevering niet meer.** Oorzaak: de achtergronddienst hield de instelling vast zoals die bij het opstarten was. Zette je daarna "met vraag" aan, dan dacht de dienst nog "automatisch" en speelde bij de kijk-drempel tóch door. De dienst leest de instelling nu **vers** bij elke beslissing. Daarnaast zet "Nee" nu een "stop na deze"-vlag, zodat de dienst sowieso niets meer doet.
 
 ## [2.5.8] - 2026-11-15
 

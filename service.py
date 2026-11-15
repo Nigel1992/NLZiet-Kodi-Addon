@@ -24,10 +24,17 @@ ADDON_ID = 'plugin.video.nlziet'
 def _maybe_play_next(content_id):
     """Binge: start the next episode by ourselves, unless the user pressed Stop
     after this one. Only in the 'auto' next-episode mode; the Up Next and
-    'ask' modes handle the next episode at playback time instead."""
-    if _setting('next_episode', 'upnext') != 'auto':
-        return
+    'ask' modes handle the next episode at playback time instead.
+
+    The setting is read from a fresh add-on instance: the long-running service
+    holds a cached ADDON object that can keep returning the value it read at
+    startup, so a change the user makes while Kodi runs would otherwise be
+    missed (e.g. switching to 'ask' but the service still auto-plays)."""
+    import xbmcaddon
     import xbmcgui
+    mode = xbmcaddon.Addon().getSetting('next_episode') or 'upnext'
+    if mode != 'auto':
+        return
     if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
         return
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(

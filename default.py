@@ -6882,8 +6882,13 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode
         if mode == 'ask':
             # The add-on asks itself, near the end, without the Up Next add-on.
             def _ask():
-                return bool(xbmcgui.Dialog().yesno(
+                yes = bool(xbmcgui.Dialog().yesno(
                     'NLZiet', get_string('play_next_question'), autoclose=15000))
+                if not yes:
+                    # "No" means: don't start the next episode. Also tell the
+                    # background service, so it doesn't auto-play at the end.
+                    xbmcgui.Window(10000).setProperty('nlziet.stop_after', '1')
+                return yes
 
             def _play():
                 xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
