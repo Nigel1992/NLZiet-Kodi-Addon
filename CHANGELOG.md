@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.5.6 (November 15, 2026)
+> **Latest Version:** v2.5.7 (November 15, 2026)
+
+## [2.5.7] - 2026-11-15
+
+### Diagnose
+- **Melding aan het eind van elke aflevering.** Toont "Einde afg=.. eind=.. pos=../.. id=.." zodat zichtbaar is of de dienst het einde herkent en de aflevering volgt. Hiermee kan de "volgende aflevering" worden opgespoord. Wordt daarna weggehaald.
 
 ## [2.5.6] - 2026-11-15
 

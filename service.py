@@ -130,9 +130,20 @@ class PlaybackFollower(xbmc.Player):
             pass
 
     def _done(self, natural):
-        self._scrobble('stop')
         key = self.watch.key
         position, total = self.watch.position, self.watch.total
+        near_end = bool(total and total > 0 and position >= total - 20)
+        # Diagnostic: show at the end of a video what the service sees, so the
+        # auto-next path can be traced on screen.
+        try:
+            import xbmcgui as _xg
+            _xg.Dialog().notification(
+                'NLZiet', 'Einde afg={} eind={} pos={}/{} id={}'.format(
+                    int(natural), int(near_end), int(position or 0), int(total or 0), bool(key)),
+                _xg.NOTIFICATION_INFO, 6000)
+        except Exception:
+            pass
+        self._scrobble('stop')
         if key and _setting_on('resume_playback', True):
             try:
                 resume_store.save(_resume_path(), key, position, total)
@@ -148,7 +159,6 @@ class PlaybackFollower(xbmc.Player):
         # inputstream.adaptive (DRM) often reports the end of a video as
         # "stopped" rather than "ended", so also treat a stop within the final
         # seconds as a natural end; otherwise auto-play-next never fires.
-        near_end = bool(total and total > 0 and position >= total - 20)
         if (natural or near_end) and key:
             _maybe_play_next(key)
 
