@@ -102,6 +102,7 @@ class PlaybackFollower(xbmc.Player):
         self.watch.start(watch_sync.parse_playing(window.getProperty(prop)))
         window.clearProperty(prop)
         window.clearProperty('nlziet.stop_after')
+        window.clearProperty('nlziet.next_armed')
         self.sample()
         self._scrobble('start')
         # Preferred audio/subtitle language.

@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.5.3 (November 15, 2026)
+> **Latest Version:** v2.5.4 (November 15, 2026)
+
+## [2.5.4] - 2026-11-15
+
+### Opgelost
+- **De vraag komt nu maar één keer.** Kodi start hetzelfde afspelen soms dubbel, waardoor "Volgende aflevering afspelen?" twee keer verscheen. Er zit nu een slot op: per aflevering één keer.
 
 ## [2.5.3] - 2026-11-15
 
