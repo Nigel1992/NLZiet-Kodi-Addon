@@ -341,6 +341,7 @@ TRANSLATIONS = {
     'not_allowed': {'nl': 'Niet toegestaan', 'en': 'Not allowed'},
     'skip_intro_question': {'nl': 'Intro overslaan?', 'en': 'Skip the intro?'},
     'skip_recap_question': {'nl': 'Samenvatting overslaan?', 'en': 'Skip the recap?'},
+    'play_next_question': {'nl': 'Volgende aflevering afspelen?', 'en': 'Play the next episode?'},
     'widgets': {'nl': 'Widgets voor je startscherm', 'en': 'Widgets for the home screen'},
     'continue_watching': {'nl': 'Verder kijken', 'en': 'Continue watching'},
     'widgets_help': {'nl': 'Kies deze lijsten als widget in de instellingen van je skin.', 'en': 'Pick these lists as a widget in your skin settings.'},
@@ -605,6 +606,7 @@ STRING_IDS = {
     'list_item_airing': 33183,
     'skip_intro_question': 33270,
     'skip_recap_question': 33271,
+    'play_next_question': 33365,
     'widgets': 33272,
     'continue_watching': 33273,
     'widgets_help': 33274,
@@ -6784,10 +6786,11 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
             playback_extras.start_skip_watcher(markers, ask)
         except Exception as exc:
             xbmc.log('NLZiet skip watcher failed: {}'.format(exc), xbmc.LOGINFO)
-    if _setting_on('upnext', True) and playback_extras.upnext_available():
+    next_mode = (ADDON.getSetting('next_episode') or 'upnext')
+    if next_mode in ('upnext', 'ask'):
         playback_extras.start_background(
-            lambda: _announce_next_episode(api, content_id, metadata or {}, stream_info, markers),
-            'NLZietUpNext')
+            lambda: _announce_next_episode(api, content_id, metadata or {}, stream_info, markers, next_mode),
+            'NLZietNextEpisode')
 
 
 def _next_episode_for(api, content_id, metadata, stream_info):
@@ -6849,30 +6852,45 @@ def _next_episode_for(api, content_id, metadata, stream_info):
     return current, nxt, query
 
 
-def _announce_next_episode(api, content_id, metadata, stream_info, markers):
+def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode='upnext'):
     try:
         found = _next_episode_for(api, content_id, metadata, stream_info)
         if not found:
-            xbmc.log('NLZiet Up Next: no next episode for {}'.format(content_id), xbmc.LOGINFO)
+            xbmc.log('NLZiet next episode: none for {}'.format(content_id), xbmc.LOGINFO)
             return
         current, following, query = found
         player = xbmc.Player()
         if not playback_extras.wait_for_playback(player):
             return
-        notify_at = None
         credits = markers.get('credits') if markers else None
-        if credits and credits[0]:
+        credits_start = credits[0] if credits and credits[0] else None
+        if mode == 'ask':
+            # The add-on asks itself, near the end, without the Up Next add-on.
+            def _ask():
+                return bool(xbmcgui.Dialog().yesno(
+                    'NLZiet', get_string('play_next_question'), autoclose=15000))
+
+            def _play():
+                xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
+                    ADDON.getAddonInfo('id'), content_id))
+
+            playback_extras.start_next_prompt(_play, _ask, credits_start=credits_start)
+            xbmc.log('NLZiet next episode: own prompt armed for {}'.format(query.get('id')), xbmc.LOGINFO)
+            return
+        # mode == 'upnext': hand the next episode to the Up Next add-on.
+        notify_at = None
+        if credits_start:
             try:
                 total = player.getTotalTime()
-                if total > credits[0]:
-                    notify_at = total - credits[0]
+                if total > credits_start:
+                    notify_at = total - credits_start
             except Exception:
                 pass
         sent = playback_extras.send_upnext(ADDON.getAddonInfo('id'), current, following,
                                            build_url(query), notify_at)
         xbmc.log('NLZiet Up Next: next episode {} announced={}'.format(query.get('id'), sent), xbmc.LOGINFO)
     except Exception as exc:
-        xbmc.log('NLZiet Up Next skipped: {}'.format(exc), xbmc.LOGINFO)
+        xbmc.log('NLZiet next episode skipped: {}'.format(exc), xbmc.LOGINFO)
 
 
 # ------------------------------------------------- binge / shuffle / history ---

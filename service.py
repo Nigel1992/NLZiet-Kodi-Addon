@@ -22,14 +22,13 @@ ADDON_ID = 'plugin.video.nlziet'
 
 
 def _maybe_play_next(content_id):
-    """Binge: start the next episode, unless the user pressed Stop after this
-    one, or the Up Next add-on is installed (then Up Next handles it)."""
-    if not _setting_on('autoplay_next', False):
+    """Binge: start the next episode by ourselves, unless the user pressed Stop
+    after this one. Only in the 'auto' next-episode mode; the Up Next and
+    'ask' modes handle the next episode at playback time instead."""
+    if _setting('next_episode', 'upnext') != 'auto':
         return
     import xbmcgui
     if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
-        return
-    if xbmc.getCondVisibility('System.HasAddon(service.upnext)'):
         return
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
         ADDON_ID, content_id))

@@ -311,6 +311,50 @@ def start_skip_watcher(markers, ask, player=None, monitor=None):
     return start_background(run, 'SkipMarkers')
 
 
+def start_next_prompt(play_fn, ask, credits_start=None, lead=45, player=None, monitor=None):
+    """Offer the next episode near the end, without the Up Next add-on.
+
+    ``ask()`` shows the question and returns True to play the next episode;
+    ``play_fn()`` then starts it. The prompt appears at ``credits_start`` when
+    that marker is known, otherwise ``lead`` seconds before the end. Runs in a
+    background thread and asks at most once."""
+    if xbmc is None:
+        return None
+    player = player or xbmc.Player()
+    monitor = monitor or xbmc.Monitor()
+
+    def run():
+        if not wait_for_playback(player, monitor=monitor):
+            return
+        asked = False
+        while not monitor.abortRequested():
+            try:
+                if not player.isPlayingVideo():
+                    return
+                now = player.getTime()
+                total = player.getTotalTime()
+            except Exception:
+                return
+            if total and total > 0:
+                if credits_start and 0 < credits_start < total:
+                    trigger = credits_start
+                else:
+                    trigger = max(0, total - lead)
+                # Don't pop up in the last few seconds; there's no time to react.
+                if not asked and now >= trigger and total - now > 5:
+                    asked = True
+                    try:
+                        if ask():
+                            play_fn()
+                    except Exception:
+                        pass
+                    return
+            if monitor.waitForAbort(1):
+                return
+
+    return start_background(run, 'NextEpisode')
+
+
 def start_background(target, name):
     """Run ``target`` next to playback. Not a daemon thread: a plugin call
     ends right after it hands Kodi the stream, and Python would then stop

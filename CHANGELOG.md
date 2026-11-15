@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.4.6 (November 14, 2026)
+> **Latest Version:** v2.5.0 (November 15, 2026)
+
+## [2.5.0] - 2026-11-15
+
+### Gewijzigd
+- **Volgende aflevering: nu zonder Up Next te kunnen.** Nieuwe instelling *Volgende aflevering* met vier keuzes: **Up Next-add-on** (zoals voorheen, de bekende kaart), **Door de add-on zelf (met vraag)** — een ingebouwde "Volgende aflevering afspelen?" vlak voor het einde, zonder dat `service.upnext` nodig is, **Door de add-on zelf (automatisch)** — de volgende aflevering begint vanzelf, en **Uit**. Handig als de Up Next-add-on bij jou problemen geeft. De oude losse schakelaars "Up Next" en "Automatisch doorspelen" zijn hierin samengevoegd.
 
 ## [2.4.6] - 2026-11-14
 

@@ -1546,3 +1546,31 @@ msgstr "Ook tonen wat je op een ander apparaat keek"
 msgctxt "#33358"
 msgid "Once an hour, copy your NLZiet watch position into the Kodi library, so episodes you started on your phone or tablet also appear in the continue-watching rows here."
 msgstr "Eén keer per uur je NLZiet-kijkpositie naar de Kodi-bibliotheek kopiëren, zodat afleveringen die je op je telefoon of tablet begon ook hier in de 'verder kijken'-rijen verschijnen."
+
+msgctxt "#33359"
+msgid "Next episode"
+msgstr "Volgende aflevering"
+
+msgctxt "#33360"
+msgid "What happens after an episode. Up Next add-on: the familiar card (needs service.upnext). By the add-on itself: a built-in question, no Up Next needed. Automatic: the next episode just starts. Off: nothing."
+msgstr "Wat er gebeurt na een aflevering. Up Next-add-on: de bekende kaart (vereist service.upnext). Door de add-on zelf: een ingebouwde vraag, geen Up Next nodig. Automatisch: de volgende aflevering begint vanzelf. Uit: niets."
+
+msgctxt "#33361"
+msgid "Up Next add-on"
+msgstr "Up Next-add-on"
+
+msgctxt "#33362"
+msgid "By the add-on itself (ask)"
+msgstr "Door de add-on zelf (met vraag)"
+
+msgctxt "#33363"
+msgid "By the add-on itself (automatic)"
+msgstr "Door de add-on zelf (automatisch)"
+
+msgctxt "#33364"
+msgid "Off"
+msgstr "Uit"
+
+msgctxt "#33365"
+msgid "Play the next episode?"
+msgstr "Volgende aflevering afspelen?"

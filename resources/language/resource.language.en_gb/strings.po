@@ -1529,3 +1529,31 @@ msgstr ""
 msgctxt "#33358"
 msgid "Once an hour, copy your NLZiet watch position into the Kodi library, so episodes you started on your phone or tablet also appear in the continue-watching rows here."
 msgstr ""
+
+msgctxt "#33359"
+msgid "Next episode"
+msgstr ""
+
+msgctxt "#33360"
+msgid "What happens after an episode. Up Next add-on: the familiar card (needs service.upnext). By the add-on itself: a built-in question, no Up Next needed. Automatic: the next episode just starts. Off: nothing."
+msgstr ""
+
+msgctxt "#33361"
+msgid "Up Next add-on"
+msgstr ""
+
+msgctxt "#33362"
+msgid "By the add-on itself (ask)"
+msgstr ""
+
+msgctxt "#33363"
+msgid "By the add-on itself (automatic)"
+msgstr ""
+
+msgctxt "#33364"
+msgid "Off"
+msgstr ""
+
+msgctxt "#33365"
+msgid "Play the next episode?"
+msgstr ""

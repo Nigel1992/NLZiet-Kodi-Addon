@@ -253,15 +253,24 @@
         </setting>
       </group>
       <group id="2" label="33285">
-        <setting id="upnext" type="boolean" label="33265" help="33266">
+        <setting id="next_episode" type="string" label="33359" help="33360">
           <level>0</level>
-          <default>true</default>
-          <control type="toggle"/>
+          <default>upnext</default>
+          <constraints>
+            <options>
+              <option label="33361">upnext</option>
+              <option label="33362">ask</option>
+              <option label="33363">auto</option>
+              <option label="33364">off</option>
+            </options>
+          </constraints>
+          <control type="spinner" format="string"/>
         </setting>
         <setting id="install_upnext" type="action" label="33267">
           <level>0</level>
           <data>InstallAddon(service.upnext)</data>
           <dependencies>
+            <dependency type="visible" setting="next_episode" operator="is">upnext</dependency>
             <dependency type="visible" on="property" name="infobool" operator="!is">System.HasAddon(service.upnext)</dependency>
           </dependencies>
           <control type="button" format="action">
@@ -271,11 +280,6 @@
         <setting id="skip_markers" type="boolean" label="33268" help="33269">
           <level>0</level>
           <default>true</default>
-          <control type="toggle"/>
-        </setting>
-        <setting id="autoplay_next" type="boolean" label="33291" help="33292">
-          <level>0</level>
-          <default>false</default>
           <control type="toggle"/>
         </setting>
         <setting id="preferred_audio" type="string" label="33303" help="33304">
