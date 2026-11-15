@@ -6992,11 +6992,19 @@ def play_next(content_id, background=False):
     # there is nothing to advance to.
     if query and str(query.get('id') or '') and str(query.get('id')) != str(content_id):
         xbmc.log('NLZiet play_next: {} -> {}'.format(content_id, query.get('id')), xbmc.LOGINFO)
+        # Diagnostic: show which episode is picked as the next one.
+        title = query.get('showtitle') or ''
+        se = ''
+        if query.get('season') and query.get('episode'):
+            se = ' S{}E{}'.format(query.get('season'), query.get('episode'))
+        xbmcgui.Dialog().notification('NLZiet', 'Volgende: {}{}'.format(title, se),
+                                      xbmcgui.NOTIFICATION_INFO, 3000)
         xbmc.executebuiltin('PlayMedia({})'.format(build_url(query)))
     else:
         xbmc.log('NLZiet play_next: no next episode for {}'.format(content_id), xbmc.LOGINFO)
-        if not background:
-            xbmcgui.Dialog().notification('NLZiet', get_string('shuffle_none'), xbmcgui.NOTIFICATION_INFO)
+        # Diagnostic: always show when no next episode was found (also in auto).
+        xbmcgui.Dialog().notification('NLZiet', get_string('play_next_none'),
+                                      xbmcgui.NOTIFICATION_INFO, 3000)
 
 
 def toggle_stop_after():

@@ -30,6 +30,10 @@ def _maybe_play_next(content_id):
     import xbmcgui
     if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
         return
+    # Diagnostic: show on screen that the end was detected and the next episode
+    # is being looked up.
+    xbmcgui.Dialog().notification('NLZiet', 'Einde: volgende aflevering zoeken…',
+                                  xbmcgui.NOTIFICATION_INFO, 3000)
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
         ADDON_ID, content_id))
 
