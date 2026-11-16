@@ -124,6 +124,10 @@ All donations go towards your chosen charity. You can pick any charity you'd lik
 
 Pull requests, bug reports, and feature suggestions are welcome. Open an issue or pull request in this repository.  
 
+## 🙏 Acknowledgements
+
+- **[@djdirty](https://github.com/djdirty60) (Wilfried)** — author of pull request #48, which brought the Kodi library, playback extras, widgets, diagnostics, parental controls, Trakt integration, backup/restore and many other features, plus Dutch/English translations and ~299 unit tests. Huge thanks! 🙏
+
 ---
 
 ## 📄 License
@@ -233,6 +237,10 @@ Alle donaties gaan naar een door jou gekozen goed doel. Je kunt elk goed doel ki
 ## 🤝 Bijdragen
 
 Pull requests, bugrapporten en featuresuggesties zijn welkom. Open een issue of pull request in deze repository.
+
+## 🙏 Dankwoord
+
+- **[@djdirty](https://github.com/djdirty60) (Wilfried)** — auteur van pull request #48, die de Kodi-bibliotheek, afspeelfuncties, widgets, diagnose, ouderlijk toezicht, Trakt-integratie, backup/herstel en nog veel meer bracht, plus Nederlandse/Engelse vertalingen en ~299 unit-tests. Enorm bedankt! 🙏
 
 ---
 
