@@ -1,6 +1,14 @@
 # Changelog
 
-> **Latest Version:** v2.5.9 (November 15, 2026)
+> **Latest Version:** v2.6.0 (November 16, 2026)
+
+## [2.6.0] - 2026-11-16
+
+### Gewijzigd
+- **"Overslaan" en "Volgende aflevering" nu als klein knopje in de hoek.** De intro-overslaan-vraag en de volgende-aflevering-vraag verschijnen niet meer als beeldvullend ja/nee-venster, maar als een wit pilletje rechtsonder (druk op OK om te doen, negeren om door te kijken). De video blijft erachter zichtbaar.
+
+### Opgelost
+- **Niet meer twee keer de "volgende aflevering"-vraag** bij de overgang naar de volgende aflevering.
 
 ## [2.5.9] - 2026-11-15
 

@@ -24,6 +24,7 @@ SHARED = [
     'resources/lib/watch_sync.py',
     'resources/lib/watch_history.py',
     'resources/lib/library_resume.py',
+    'resources/lib/corner.py',
 ]
 ROOT = Path(__file__).resolve().parents[1]
 

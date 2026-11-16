@@ -351,6 +351,7 @@ def start_next_prompt(play_fn, ask, credits_start=None, lead=45, player=None, mo
         if not wait_for_playback(player, monitor=monitor):
             return
         asked = False
+        seen_before = False  # saw the video playing before the trigger point
         while not monitor.abortRequested():
             try:
                 if not player.isPlayingVideo():
@@ -366,8 +367,14 @@ def start_next_prompt(play_fn, ask, credits_start=None, lead=45, player=None, mo
                     trigger = credits_start
                 else:
                     trigger = max(0, total - lead)
+                # Require that the video was seen playing before the trigger, so
+                # the prompt can't fire on a just-started next episode that, for
+                # a moment during the hand-over, still reports the previous
+                # episode's near-the-end position.
+                if now < trigger - 1:
+                    seen_before = True
                 # Don't pop up in the last few seconds; there's no time to react.
-                if not asked and now >= trigger and total - now > 5:
+                if not asked and seen_before and now >= trigger and total - now > 5:
                     asked = True
                     try:
                         xbmc.log('Next episode prompt at {:.0f}s of {:.0f}s'.format(now, total),

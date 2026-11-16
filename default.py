@@ -34,6 +34,7 @@ from resources.lib import parental as parental_mod
 from resources.lib import trakt_status
 from resources.lib import logo_cache as logo_cache_mod
 from resources.lib import playback_extras
+from resources.lib import corner
 from resources.lib import watch_sync
 from resources.lib import watch_history
 from resources.lib import reminders as reminders_mod
@@ -343,6 +344,9 @@ TRANSLATIONS = {
     'skip_recap_question': {'nl': 'Samenvatting overslaan?', 'en': 'Skip the recap?'},
     'play_next_question': {'nl': 'Volgende aflevering afspelen?', 'en': 'Play the next episode?'},
     'play_next_none': {'nl': 'Geen volgende aflevering gevonden', 'en': 'No next episode found'},
+    'skip_intro_label': {'nl': 'Intro overslaan', 'en': 'Skip intro'},
+    'skip_recap_label': {'nl': 'Terugblik overslaan', 'en': 'Skip recap'},
+    'next_episode_label': {'nl': 'Volgende aflevering', 'en': 'Next episode'},
     'widgets': {'nl': 'Widgets voor je startscherm', 'en': 'Widgets for the home screen'},
     'continue_watching': {'nl': 'Verder kijken', 'en': 'Continue watching'},
     'widgets_help': {'nl': 'Kies deze lijsten als widget in de instellingen van je skin.', 'en': 'Pick these lists as a widget in your skin settings.'},
@@ -609,6 +613,9 @@ STRING_IDS = {
     'skip_recap_question': 33271,
     'play_next_question': 33365,
     'play_next_none': 33366,
+    'skip_intro_label': 33367,
+    'skip_recap_label': 33368,
+    'next_episode_label': 33369,
     'widgets': 33272,
     'continue_watching': 33273,
     'widgets_help': 33274,
@@ -6782,8 +6789,10 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
         xbmc.log('NLZiet chapters failed: {}'.format(exc), xbmc.LOGINFO)
     if markers and _setting_on('skip_markers', True):
         def ask(kind):
-            text = get_string('skip_recap_question' if kind == 'recap' else 'skip_intro_question')
-            return xbmcgui.Dialog().yesno('NLZiet', text, autoclose=8000)
+            # A small corner button (like the streaming apps), not a full-screen
+            # yes/no dialog.
+            label = get_string('skip_recap_label' if kind == 'recap' else 'skip_intro_label')
+            return corner.ask(label, seconds=12)
         try:
             playback_extras.start_skip_watcher(markers, ask)
         except Exception as exc:
@@ -6880,15 +6889,10 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode
         credits = markers.get('credits') if markers else None
         credits_start = credits[0] if credits and credits[0] else None
         if mode == 'ask':
-            # The add-on asks itself, near the end, without the Up Next add-on.
+            # A small corner card (like the streaming apps): press it to play the
+            # next episode, ignore it to stay. No full-screen dialog.
             def _ask():
-                yes = bool(xbmcgui.Dialog().yesno(
-                    'NLZiet', get_string('play_next_question'), autoclose=15000))
-                if not yes:
-                    # "No" means: don't start the next episode. Also tell the
-                    # background service, so it doesn't auto-play at the end.
-                    xbmcgui.Window(10000).setProperty('nlziet.stop_after', '1')
-                return yes
+                return corner.ask(get_string('next_episode_label'), seconds=15)
 
             def _play():
                 xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(

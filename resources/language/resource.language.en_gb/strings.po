@@ -1561,3 +1561,15 @@ msgstr ""
 msgctxt "#33366"
 msgid "No next episode found"
 msgstr ""
+
+msgctxt "#33367"
+msgid "Skip intro"
+msgstr ""
+
+msgctxt "#33368"
+msgid "Skip recap"
+msgstr ""
+
+msgctxt "#33369"
+msgid "Next episode"
+msgstr ""
