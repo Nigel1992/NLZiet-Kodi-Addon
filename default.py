@@ -212,6 +212,7 @@ TRANSLATIONS = {
     'max_devices_label': {'nl': 'Max apparaten', 'en': 'Max devices'},
     'expires_label': {'nl': 'Verloopt', 'en': 'Expires'},
     'add_to_library': {'nl': 'Toevoegen aan bibliotheek', 'en': 'Add to library'},
+    'register_sources': {'nl': 'Kodi-bronnen voor de bibliotheek toevoegen (herstart Kodi)', 'en': 'Add Kodi sources for the library (restart Kodi)'},
     'library_exported': {'nl': '{} afleveringen geexporteerd naar bibliotheek', 'en': '{} episodes exported to library'},
     'library_export_failed': {'nl': 'Bibliotheek export mislukt', 'en': 'Library export failed'},
     'remove_from_library': {'nl': 'Verwijderen uit bibliotheek', 'en': 'Remove from library'},
@@ -471,6 +472,7 @@ STRING_IDS = {
     'max_devices_label': 33064,
     'expires_label': 33065,
     'add_to_library': 33066,
+    'register_sources': 33144,
     'library_exported': 33067,
     'library_export_failed': 33068,
     'remove_from_library': 33187,
@@ -2177,6 +2179,69 @@ def sync_lists_to_library(lib, api=None, progress=None):
     return added, removed, failed
 
 
+def _scan_library_paths(lib):
+    """Ask Kodi to scan the library folders directly (works even when they are
+    not registered as a video source yet)."""
+    for path in (getattr(lib, 'tv_root', lambda: '')(), getattr(lib, 'movies_root', lambda: '')()):
+        if path:
+            try:
+                xbmc.executebuiltin('UpdateLibrary(video, "{}")'.format(path.replace('"', '')))
+            except Exception:
+                pass
+
+
+def register_library_sources():
+    """Add the library folders as Kodi video sources (idempotent).
+
+    Kodi only scans folders that are registered as a source, so this makes the
+    .strm files show up without manual setup. Kodi needs a restart to pick up
+    new sources."""
+    import os
+    import xml.etree.ElementTree as ET
+    lib = _get_library()
+    paths = [p for p in (lib.tv_root(), lib.movies_root()) if p]
+    names = ['NLZiet Series', 'NLZiet Movies']
+    src_path = xbmc.translatePath('special://userdata/sources.xml')
+    try:
+        if os.path.exists(src_path):
+            tree = ET.parse(src_path)
+            root = tree.getroot()
+        else:
+            root = ET.Element('sources')
+            tree = ET.ElementTree(root)
+        video = root.find('video')
+        if video is None:
+            video = ET.SubElement(root, 'video')
+            ET.SubElement(video, 'default', {'pathversion': '1'})
+        existing = set()
+        for source in video.findall('source'):
+            node = source.find('path')
+            if node is not None and node.text:
+                existing.add(node.text.rstrip('/'))
+        added = 0
+        for name, path in zip(names, paths):
+            norm = path.rstrip('/')
+            if norm in existing:
+                continue
+            source = ET.SubElement(video, 'source')
+            ET.SubElement(source, 'name').text = name
+            ET.SubElement(source, 'path', {'pathversion': '1'}).text = path.rstrip('/') + '/'
+            ET.SubElement(source, 'allowsharing').text = 'true'
+            added += 1
+        if added:
+            tree.write(src_path, encoding='utf-8', xml_declaration=True)
+            xbmcgui.Dialog().notification('NLZiet', get_string('register_sources') + ' (' + str(added) + ')',
+                                          xbmcgui.NOTIFICATION_INFO)
+            xbmcgui.Dialog().ok('NLZiet', 'Herstart Kodi om de nieuwe bronnen te laden,\n'
+                                         'en stel bij elke bron de inhoud in op "TV Series"/"Movies"\n'
+                                         'met scraper "Lokale informatie".')
+        else:
+            xbmcgui.Dialog().notification('NLZiet', 'Bronnen bestaan al', xbmcgui.NOTIFICATION_INFO)
+    except Exception as exc:
+        xbmc.log('NLZiet register sources failed: {}'.format(exc), xbmc.LOGERROR)
+        xbmcgui.Dialog().notification('NLZiet', 'Bronnen toevoegen mislukt', xbmcgui.NOTIFICATION_ERROR)
+
+
 def library_from_lists(background=False):
     """Menu/settings action: put My Series and Watch Later in the Kodi library."""
     if background and xbmc.Player().isPlaying():
@@ -2186,11 +2251,11 @@ def library_from_lists(background=False):
     if not background and hasattr(xbmcgui, 'DialogProgressBG'):
         dialog = xbmcgui.DialogProgressBG()
         dialog.create('NLZiet', get_string('library_lists_busy'))
-
+ 
     def report(index, total, title):
         if dialog is not None and total:
             dialog.update(int(index * 100 / total), 'NLZiet', title)
-
+ 
     try:
         added, removed, failed = sync_lists_to_library(lib, progress=report)
     finally:
@@ -2198,6 +2263,7 @@ def library_from_lists(background=False):
             dialog.close()
     if added or removed:
         library_mod.run_library_jobs(scan=True, clean=bool(removed) and _setting_on('library_clean_after', True))
+    _scan_library_paths(lib)
     if not background or (added or removed):
         xbmcgui.Dialog().notification('NLZiet', get_string('library_lists_done', added, removed, failed),
                                       xbmcgui.NOTIFICATION_INFO)
@@ -2331,6 +2397,7 @@ def library_update(background=False):
     if changed or not background:
         # A manual update always scans, so titles a busy Kodi skipped get in too.
         library_mod.run_library_jobs(scan=True, clean=bool(totals.get('removed')) and _setting_on('library_clean_after', True))
+    _scan_library_paths(lib)
     repair_library_art()
     if not background or (changed and _setting_on('background_sync_notify', True)):
         xbmcgui.Dialog().notification(
@@ -8153,6 +8220,7 @@ def get_route_handlers():
         'browse_library': browse_library,
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
+        'register_library_sources': register_library_sources,
         'run_diagnostics': run_diagnostics,
         'widgets_menu': widgets_menu,
         'widget_list': widget_list,

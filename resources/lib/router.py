@@ -174,6 +174,8 @@ class Router:
             self.handlers['browse_library']()
         elif mode == 'repair_library_art':
             self.handlers['repair_library_art'](background=params.get('background') == '1')
+        elif mode == 'register_library_sources':
+            self.handlers['register_library_sources']()
         elif mode == 'check_tmdb_key':
             self.handlers['check_tmdb_key']()
         elif mode == 'placement_row':

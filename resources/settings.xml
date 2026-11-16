@@ -201,6 +201,13 @@
             <close>false</close>
           </control>
         </setting>
+        <setting id="register_library_sources" type="action" label="33099" help="">
+          <level>0</level>
+          <data>RunPlugin(plugin://$ID?mode=register_library_sources)</data>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+        </setting>
         <setting id="library_repair_art" type="action" label="33209" help="">
           <level>0</level>
           <data>RunPlugin(plugin://$ID?mode=repair_library_art)</data>
