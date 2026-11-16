@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.6.0 (November 16, 2026)
+> **Latest Version:** v2.6.1 (November 16, 2026)
+
+## [2.6.1] - 2026-11-16
+
+### Diagnose
+- Probe om te vinden of/waar NLZiet intro-markeringen levert (logt `NLZiet marker-probe …` met de rauwe chapters-respons en marker-achtige velden). Voor de intro-skip. Wordt daarna weggehaald.
 
 ## [2.6.0] - 2026-11-16
 
