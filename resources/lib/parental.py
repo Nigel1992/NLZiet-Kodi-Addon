@@ -61,7 +61,9 @@ class Parental:
         if self.window is None:
             return False
         try:
-            return float(self.window.getProperty(UNLOCK_PROPERTY) or 0) > self.now()
+            import math
+            value = float(self.window.getProperty(UNLOCK_PROPERTY) or 0)
+            return math.isfinite(value) and value > self.now()
         except (TypeError, ValueError):
             return False
 

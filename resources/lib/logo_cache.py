@@ -101,7 +101,11 @@ class LogoCache:
         for key in list(queue)[:limit]:
             if should_stop is not None and should_stop():
                 break
-            kind, title, year = (list(queue[key]) + [None, None, None])[:3]
+            raw = queue.get(key)
+            if not isinstance(raw, (list, tuple)):
+                queue.pop(key, None)
+                continue
+            kind, title, year = (list(raw) + [None, None, None])[:3]
             try:
                 url = enricher.logo_for(kind, title, year)
             except Exception:

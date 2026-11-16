@@ -69,13 +69,19 @@ def find_episode(episodes, episode_title):
         match = by_name.get(close[0]) if close else None
     if not match or not match.get('season') or not match.get('number'):
         return None
-    return int(match['season']), int(match['number'])
+    try:
+        return int(match['season']), int(match['number'])
+    except (TypeError, ValueError):
+        return None
 
 
 def _load_cache(cache_path):
     try:
         with open(cache_path, 'r', encoding='utf-8') as handle:
-            return json.load(handle) or {}
+            data = json.load(handle)
+        if not isinstance(data, dict):
+            return {}
+        return data
     except Exception:
         return {}
 
@@ -103,7 +109,11 @@ def lookup_season_episode(series_title, episode_title, cache_path=None):
         if show_id is None:
             entry = {'ts': time.time(), 'show_id': None, 'episodes': []}
         else:
-            episodes = _request('/shows/{}/episodes'.format(int(show_id)))
+            try:
+                sid = int(show_id)
+            except (TypeError, ValueError):
+                return None
+            episodes = _request('/shows/{}/episodes'.format(sid))
             if episodes is None:
                 return None
             entry = {'ts': time.time(), 'show_id': show_id, 'episodes': [

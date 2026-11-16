@@ -46,7 +46,7 @@ def library_update(data):
     item = info.get('item') or {}
     media_type = item.get('type')
     dbid = item.get('id')
-    if media_type not in ('episode', 'movie') or not isinstance(dbid, int):
+    if media_type not in ('episode', 'movie') or type(dbid) is not int:
         return None
     try:
         watched = int(info.get('playcount') or 0) > 0

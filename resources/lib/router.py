@@ -197,14 +197,26 @@ class Router:
         elif mode == 'browse':
             self.handlers['browse_category'](params.get('type', 'all'))
         elif mode == 'play':
-            content_id = params.pop('id')
+            content_id = params.get('id')
             params.pop('mode', None)
-            self.handlers['play_item'](content_id, **params)
+            params.pop('id', None)
+            if content_id is None:
+                pass
+            else:
+                self.handlers['play_item'](content_id, **params)
         elif mode == 'iptv-select-channels':
             self.handlers['select_iptv_channels']()
         elif mode == 'iptv-channels':
             from resources.lib import iptvmgr
-            iptvmgr.IPTVManager(int(params['port'])).send_channels()
+            try:
+                port = int(params.get('port'))
+            except (TypeError, ValueError):
+                port = 0
+            iptvmgr.IPTVManager(port).send_channels()
         elif mode == 'iptv.epg':
             from resources.lib import iptvmgr
-            iptvmgr.IPTVManager(int(params['port'])).send_epg()
+            try:
+                port = int(params.get('port'))
+            except (TypeError, ValueError):
+                port = 0
+            iptvmgr.IPTVManager(port).send_epg()

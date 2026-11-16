@@ -35,7 +35,9 @@ MESSAGES = {
 
 def _http_status(exc):
     for candidate in (exc, getattr(exc, '__cause__', None), getattr(exc, '__context__', None)):
-        code = getattr(candidate, 'code', None) or getattr(candidate, 'status', None)
+        code = getattr(candidate, 'code', None)
+        if code is None:
+            code = getattr(candidate, 'status', None)
         if code is None:
             response = getattr(candidate, 'response', None)
             code = getattr(response, 'status_code', None)

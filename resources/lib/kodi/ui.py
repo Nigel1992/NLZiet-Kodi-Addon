@@ -278,12 +278,27 @@ def optimize_image_url(url):
     if not url or not isinstance(url, str):
         return url
 
-    # Remove any existing width/crop parameters
+    # Never touch signed/expiring URLs: stripping their query string would
+    # remove tokens/signatures and break the image.
     if '?' in url:
-        url = url.split('?')[0]
+        try:
+            from urllib.parse import urlparse, parse_qsl, urlencode
+            parsed = urlparse(url)
+            params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            auth_keys = {'token', 'sig', 'signature', 'key', 'auth', 'expires',
+                         'expiry', 'exp', 'hash', 'hmac'}
+            if auth_keys & {k.lower() for k in params}:
+                return url
+            # Drop only known width/crop params, keep the rest.
+            for k in ('width', 'w', 'crop', 'resize', 'size', 'quality', 'q'):
+                params.pop(k, None)
+            params['width'] = '3840'
+            new_query = urlencode(params)
+            return parsed._replace(query=new_query).geturl()
+        except Exception:
+            return url
 
-    # Request a much larger width for fanart (3840px = 4K width)
-    # This ensures crisp display even on large screens
+    # Plain URL: append the width hint.
     return url + '?width=3840'
 
 

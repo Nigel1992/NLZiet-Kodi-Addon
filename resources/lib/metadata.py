@@ -35,6 +35,11 @@ OFFLINE_RETRY = 300
 _GENERIC_TITLE = re.compile(r"^\s*(episode|aflevering|afl\.?)\s*\d+\s*$", re.IGNORECASE)
 
 
+def _safe_id(value):
+    text = str(value or '').strip()
+    return text if text and text.isdigit() else None
+
+
 def normalize_title(text):
     text = unicodedata.normalize("NFKD", str(text or ""))
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
@@ -300,6 +305,9 @@ class Enricher:
         return candidates[0][1]
 
     def _tmdb_details(self, kind, tmdb_id):
+        tmdb_id = _safe_id(tmdb_id)
+        if tmdb_id is None:
+            return {}
         detail = self._tmdb("/{}/{}".format(kind, tmdb_id),
                             {"language": self.language, "append_to_response": "external_ids"}) or {}
         if detail and not detail.get("overview") and not self.language.startswith("en"):
@@ -308,8 +316,9 @@ class Enricher:
         return detail
 
     def _tmdb_logo(self, kind, tmdb_id):
-        """Best clearlogo: Dutch first (or the add-on language), then English,
-        then one without text; within a language the best-rated one."""
+        tmdb_id = _safe_id(tmdb_id)
+        if tmdb_id is None:
+            return ""
         language = self.language.split("-")[0].lower()
         payload = self._tmdb("/{}/{}/images".format(kind, tmdb_id),
                              {"include_image_language": "{},en,null".format(language)}) or {}
@@ -321,6 +330,9 @@ class Enricher:
         return self._image(logos[0]["file_path"]) if logos else ""
 
     def _tmdb_show(self, tmdb_id):
+        tmdb_id = _safe_id(tmdb_id)
+        if tmdb_id is None:
+            return {}
         detail = self._tmdb_details("tv", tmdb_id)
         if not detail:
             return {}
@@ -358,6 +370,9 @@ class Enricher:
         return None
 
     def _tvmaze_show(self, tvmaze_id):
+        tvmaze_id = _safe_id(tvmaze_id)
+        if tvmaze_id is None:
+            return {}
         show = self._tvmaze("/shows/{}".format(tvmaze_id)) or {}
         if not show:
             return {}
@@ -389,6 +404,9 @@ class Enricher:
         return extra
 
     def _tmdb_episode(self, tmdb_id, season, number):
+        tmdb_id = _safe_id(tmdb_id)
+        if tmdb_id is None:
+            return {}
         payload = self._tmdb("/tv/{}/season/{}".format(tmdb_id, season), {"language": self.language}) or {}
         for ep in payload.get("episodes") or []:
             if ep.get("episode_number") == number:
@@ -397,6 +415,9 @@ class Enricher:
         return {}
 
     def _tvmaze_episode(self, tvmaze_id, season, number, airdate, by_number):
+        tvmaze_id = _safe_id(tvmaze_id)
+        if tvmaze_id is None:
+            return {}
         episodes = self._tvmaze("/shows/{}/episodes".format(tvmaze_id), {"specials": 1}) or []
         match = None
         if airdate:

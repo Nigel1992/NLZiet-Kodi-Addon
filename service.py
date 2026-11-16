@@ -37,8 +37,9 @@ def _maybe_play_next(content_id):
         return
     if xbmcgui.Window(10000).getProperty('nlziet.stop_after') == '1':
         return
+    from urllib.parse import quote
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
-        ADDON_ID, content_id))
+        ADDON_ID, quote(str(content_id), safe='')))
 
 
 def _send_watched(content_id, watched):
@@ -48,8 +49,9 @@ def _send_watched(content_id, watched):
     if not REPEATS.fresh(str(content_id), watched):
         return
     xbmc.log('NLZiet service: watched={} for {}'.format(watched, content_id), xbmc.LOGINFO)
+    from urllib.parse import quote
     xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=remote_watched&id={}&watched={}&background=1)'.format(
-        ADDON_ID, content_id, 1 if watched else 0))
+        ADDON_ID, quote(str(content_id), safe=''), 1 if watched else 0))
 
 
 def _rpc(method, params):
@@ -211,9 +213,14 @@ REPEATS = watch_sync.Repeats()
 LIBRARY_STARTUP_DELAY = 120
 
 
+def _addon():
+    import xbmcaddon
+    return xbmcaddon.Addon()
+
+
 def _setting(name, default=''):
     try:
-        value = ADDON.getSetting(name)
+        value = _addon().getSetting(name)
     except Exception:
         return default
     return default if value in ('', None) else value
@@ -252,7 +259,7 @@ def _library_update_due():
     if not _setting_on('library_auto_update', True):
         return False
     try:
-        profile = library_mod.translate_path(ADDON.getAddonInfo('profile')) or ''
+        profile = library_mod.translate_path(_addon().getAddonInfo('profile')) or ''
         store = library_mod.LibraryStore(os.path.join(profile, 'library.json'))
     except Exception:
         return False

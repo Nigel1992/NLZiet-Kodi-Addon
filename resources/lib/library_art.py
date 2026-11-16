@@ -262,7 +262,7 @@ def repair_kodi_art(library, marker="", rpc=None):
         for item in result.get(key) or []:
             file_path = str(item.get("file") or "").replace("\\", "/")
             lowered = file_path.lower()
-            if not any(root and root in lowered for root in roots) \
+            if not any(root and (lowered == root or lowered.startswith(root + '/')) for root in roots) \
                     and not (marker and marker.lower() in lowered):
                 continue
             entry = entries.get(_folder_of(file_path, is_file))

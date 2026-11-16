@@ -63,7 +63,11 @@ def plugin_content_id(text, addon_id, param):
         return None
     url = text[start:].splitlines()[0].strip()
     try:
-        query = dict(parse_qsl(urlparse(url).query))
+        # Keep the FIRST value for duplicate keys so a crafted URL cannot spoof
+        # matching by appending a second inlib/id parameter.
+        query = {}
+        for key, value in parse_qsl(urlparse(url).query):
+            query.setdefault(key, value)
     except (ValueError, TypeError):
         return None
     if query.get('inlib') != '1':

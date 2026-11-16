@@ -6895,8 +6895,9 @@ def _announce_next_episode(api, content_id, metadata, stream_info, markers, mode
                 return corner.ask(get_string('next_episode_label'), seconds=15)
 
             def _play():
+                from urllib.parse import quote
                 xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=play_next&id={}&background=1)'.format(
-                    ADDON.getAddonInfo('id'), content_id))
+                    ADDON.getAddonInfo('id'), quote(str(content_id), safe='')))
 
             playback_extras.start_next_prompt(_play, _ask, credits_start=credits_start)
             xbmc.log('NLZiet next episode: own prompt armed for {}'.format(query.get('id')), xbmc.LOGINFO)
@@ -7247,7 +7248,7 @@ def play_item(content_id, fmt=None, **kwargs):
     except Exception:
         # Fallback to creating a new instance if cache fails
         api = NLZietAPI(username=username, password=password)
-    xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGINFO)
+    xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGDEBUG)
     # Stored list items (Watch Later / My List) are played by id only, so look
     # their title, description and artwork up from the local lists so the OSD
     # and Trakt metadata are complete.
@@ -7362,7 +7363,7 @@ def play_item(content_id, fmt=None, **kwargs):
     # plays from the start instead of jumping to realtime. Only seek for live
     # (dynamic) streams; VOD replays already start at 0.
     is_live_replay = fmt == 'epg' and 'start=' in str(manifest or '')
-    xbmc.log('NLZiet replay: is_live_replay={0}'.format(is_live_replay), xbmc.LOGINFO)
+    xbmc.log('NLZiet replay: is_live_replay={0}'.format(is_live_replay), xbmc.LOGDEBUG)
     if is_live_replay:
         try:
             import threading
@@ -7390,7 +7391,7 @@ def play_item(content_id, fmt=None, **kwargs):
                         'params': {'playerid': 1, 'value': {'percentage': 0}},
                         'id': 1,
                     }))
-                    xbmc.log('NLZiet replay seek to 0:00:00 done', xbmc.LOGINFO)
+                    xbmc.log('NLZiet replay seek to 0:00:00 done', xbmc.LOGDEBUG)
                 except Exception as exc:
                     xbmc.log(f'NLZiet replay seek failed: {exc}', xbmc.LOGWARNING)
             import time
@@ -7398,8 +7399,8 @@ def play_item(content_id, fmt=None, **kwargs):
         except Exception:
             pass
     subs_in_info = info.get('subtitles')
-    xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGINFO)
-    xbmc.log(f"NLZiet info subtitles value: {repr(subs_in_info)} (type: {type(subs_in_info).__name__})", xbmc.LOGINFO)
+    xbmc.log(f"NLZiet play_item: id={content_id} manifest={manifest} is_drm={is_drm} fmt={fmt} has_subs={bool(subs_in_info)}", xbmc.LOGDEBUG)
+    xbmc.log(f"NLZiet info subtitles value: {repr(subs_in_info)} (type: {type(subs_in_info).__name__})", xbmc.LOGDEBUG)
     if not manifest:
         xbmcgui.Dialog().notification('NLZiet', get_string('no_manifest'), xbmcgui.NOTIFICATION_ERROR)
         return
@@ -7407,7 +7408,7 @@ def play_item(content_id, fmt=None, **kwargs):
     # Check subtitle setting once for all processing
     try:
         enable_subs = ADDON.getSetting('subtitles_default')
-        xbmc.log(f"NLZiet DEBUG subtitles_default raw value: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+        xbmc.log(f"NLZiet DEBUG subtitles_default raw value: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGDEBUG)
     except Exception as e:
         enable_subs = None
         xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)
@@ -7615,7 +7616,7 @@ def play_item(content_id, fmt=None, **kwargs):
         # Check subtitle setting once
         try:
             enable_subs = ADDON.getSetting('subtitles_default')
-            xbmc.log(f"NLZiet DEBUG non-DRM subtitles_default raw: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGINFO)
+            xbmc.log(f"NLZiet DEBUG non-DRM subtitles_default raw: {repr(enable_subs)} (type: {type(enable_subs).__name__})", xbmc.LOGDEBUG)
         except Exception as e:
             enable_subs = None
             xbmc.log(f"NLZiet ERROR reading subtitles_default: {e}", xbmc.LOGINFO)

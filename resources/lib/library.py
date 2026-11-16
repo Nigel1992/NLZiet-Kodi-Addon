@@ -69,6 +69,59 @@ def safe_filename(value):
     return value or 'NLZiet'
 
 
+def _is_safe_folder(folder):
+    '''True only for a single, relative folder name with no traversal.
+
+    ``folder`` is expected to be a single path component produced by
+    ``safe_filename``. A tampered ``library.json`` must never be able to
+    point ``remove``/sync at an arbitrary location.
+    '''
+    if not isinstance(folder, str) or not folder:
+        return False
+    if '\x00' in folder or '\\' in folder or '/' in folder:
+        return False
+    if folder in ('.', '..'):
+        return False
+    if folder.startswith('.') or folder.endswith('.'):
+        return False
+    # Reject any traversal attempt (also covers 'a/../b' if it slipped in).
+    if '..' in folder:
+        return False
+    # Absolute paths / drive letters / schemes.
+    if os.path.isabs(folder) or ':' in folder:
+        return False
+    # Must be a single segment: no whitespace-only or empty after strip.
+    if folder != folder.strip():
+        return False
+    return True
+
+
+def _norm_path(path):
+    text = str(path or '')
+    # Remote (smb/nfs/etc.) paths are case-sensitive and use '/'.
+    if '://' in text and not text.lower().startswith('special://'):
+        import re
+        if re.match(r'^[a-z][a-z0-9+.-]*://', text, re.I):
+            return text
+    return os.path.normcase(text)
+
+
+def _path_inside_root(target, root):
+    '''Best-effort containment check for remove_tree targets.'''
+    target = str(target or '')
+    root = str(root or '')
+    if '://' in target or '://' in root:
+        # Remote: lexical containment only.
+        base = root.rstrip('/')
+        return target == base or target.startswith(base + '/')
+    try:
+        root_real = os.path.realpath(root)
+        target_real = os.path.realpath(target)
+        return os.path.commonpath([root_real, target_real]) == root_real
+    except (ValueError, OSError):
+        return False
+
+
 def _date_only(value):
     if not value:
         return None
@@ -151,7 +204,12 @@ class LocalFS:
 
     @staticmethod
     def _remote(path):
-        return '://' in str(path) and xbmcvfs is not None
+        text = str(path or '')
+        # 'special://' is a Kodi virtual path that resolves locally.
+        if text.lower().startswith('special://'):
+            return False
+        import re
+        return bool(re.match(r'^[a-z][a-z0-9+.-]*://', text, re.I)) and xbmcvfs is not None
 
     def join(self, *parts):
         if self._remote(parts[0]):
@@ -327,14 +385,22 @@ class Library:
             except Exception:
                 pass
         source = os.path.join(legacy_root, 'TV Shows')
-        if not os.path.isdir(source):
+        # Never follow a symlinked source: only migrate real directories.
+        if not os.path.isdir(source) or os.path.islink(source):
             return 0
         target = self.tv_root()
-        if '://' in str(target) or os.path.normcase(os.path.abspath(target)) == os.path.normcase(os.path.abspath(source)):
+        if '://' in str(target):
+            return 0
+        try:
+            if os.path.normcase(os.path.abspath(target)) == os.path.normcase(os.path.abspath(source)):
+                return 0
+        except (OSError, ValueError):
             return 0
         moved = 0
         for name in sorted(os.listdir(source)):
             src = os.path.join(source, name)
+            if os.path.islink(src):
+                continue
             dst = os.path.join(target, name)
             try:
                 if os.path.isdir(src):
@@ -347,7 +413,7 @@ class Library:
                 _log('could not move {}: {}'.format(src, exc))
         for folder in (source, legacy_root):
             try:
-                if os.path.isdir(folder) and not os.listdir(folder):
+                if os.path.isdir(folder) and not os.path.islink(folder) and not os.listdir(folder):
                     os.rmdir(folder)
             except OSError:
                 pass
@@ -357,21 +423,52 @@ class Library:
 
     @staticmethod
     def _merge_move(src, dst):
+        # Refuse to operate on symlinked sources.
+        if os.path.islink(src):
+            return
         if not os.path.exists(dst):
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            os.makedirs(os.path.dirname(dst) or '.', exist_ok=True)
             shutil.move(src, dst)
             return
-        for root, _dirs, files in os.walk(src):
+        for root, dirs, files in os.walk(src, followlinks=False):
+            # Prune symlinked subdirectories.
+            dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
             rel = os.path.relpath(root, src)
             out = os.path.join(dst, rel) if rel != '.' else dst
             os.makedirs(out, exist_ok=True)
             for name in files:
+                src_file = os.path.join(root, name)
+                if os.path.islink(src_file):
+                    continue
                 target = os.path.join(out, name)
-                if os.path.exists(target):
-                    os.remove(os.path.join(root, name))  # the new folder wins
+                if os.path.exists(target) and not os.path.islink(target):
+                    os.remove(src_file)  # the new folder wins
+                elif not os.path.exists(target):
+                    shutil.move(src_file, target)
+        # Remove source tree without following symlinks.
+        for root, dirs, files in os.walk(src, topdown=False, followlinks=False):
+            for name in files:
+                p = os.path.join(root, name)
+                if os.path.islink(p):
+                    os.remove(p)
                 else:
-                    shutil.move(os.path.join(root, name), target)
-        shutil.rmtree(src, ignore_errors=True)
+                    try:
+                        os.remove(p)
+                    except OSError:
+                        pass
+            for name in dirs:
+                p = os.path.join(root, name)
+                if os.path.islink(p):
+                    os.remove(p)
+                else:
+                    try:
+                        os.rmdir(p)
+                    except OSError:
+                        pass
+        try:
+            os.rmdir(src)
+        except OSError:
+            pass
 
     def tmdb_art_first(self):
         """Posters/backgrounds from TMDb before NLZiet's own (default on)."""
@@ -486,7 +583,7 @@ class Library:
 
     def _show_folder(self, entry, title):
         folder = entry.get('folder')
-        if not folder:
+        if not folder or not _is_safe_folder(folder):
             folder = safe_filename(title)
             entry['folder'] = folder
         return self.fs.join(self.tv_root(), folder)
@@ -495,12 +592,20 @@ class Library:
         result = {'kind': 'series', 'id': series_id, 'added': 0, 'removed': 0, 'total': 0, 'ok': False}
         section = self.store.section('series')
         entry = dict(section.get(series_id) or {})
-        detail = self.api.get_series_detail(series_id) or {}
+        try:
+            detail = self.api.get_series_detail(series_id) or {}
+        except Exception as exc:
+            _log('series detail failed for {}: {}'.format(series_id, exc))
+            detail = {}
         if title:
             entry['card_title'] = metadata.clean_title(title)
         series_title = (metadata.clean_title(detail.get('title')) or entry.get('card_title')
                         or entry.get('title') or series_id)
-        episodes = [ep for ep in (self.episode_fetcher(self.api, series_id, detail) or []) if ep.get('id')]
+        try:
+            episodes = [ep for ep in (self.episode_fetcher(self.api, series_id, detail) or []) if ep.get('id')]
+        except Exception as exc:
+            _log('episode fetch failed for {}: {}'.format(series_id, exc))
+            episodes = []
         if not episodes:
             # Never delete files because of a failed or empty API answer.
             result['reason'] = 'no_episodes'
@@ -541,8 +646,8 @@ class Library:
             season_dir = self.fs.join(show_dir, 'Season {}'.format(season))
             strm_path = self.fs.join(season_dir, base + '.strm')
             nfo_path = self.fs.join(season_dir, base + '.nfo')
-            wanted.add(os.path.normcase(strm_path))
-            wanted.add(os.path.normcase(nfo_path))
+            wanted.add(_norm_path(strm_path))
+            wanted.add(_norm_path(nfo_path))
             query = {
                 'mode': 'play',
                 'id': ep.get('id'),
@@ -569,7 +674,7 @@ class Library:
             name = os.path.basename(path).lower()
             if name == 'tvshow.nfo' or not name.endswith(('.strm', '.nfo')):
                 continue
-            if os.path.normcase(path) not in wanted:
+            if _norm_path(path) not in wanted:
                 if self.fs.delete(path) and name.endswith('.strm'):
                     result['removed'] += 1
         self.fs.remove_empty_dirs(show_dir)
@@ -706,7 +811,7 @@ class Library:
                 _log('metadata lookup failed for {}: {}'.format(movie_title, exc))
             self._save_metadata()
         year = _int_or_none(movie_data.get('year'))
-        if not entry.get('folder'):
+        if not entry.get('folder') or not _is_safe_folder(entry.get('folder')):
             entry['folder'] = safe_filename('{} ({})'.format(movie_title, year) if year else movie_title)
         movie_dir = self.fs.join(self.movies_root(), entry['folder'])
         base = self.fs.join(movie_dir, entry['folder'])
@@ -756,8 +861,15 @@ class Library:
             return False
         folder = entry.get('folder')
         if folder:
-            root = self.tv_root() if kind == 'series' else self.movies_root()
-            self.fs.remove_tree(self.fs.join(root, folder))
+            if not _is_safe_folder(folder):
+                _log('refusing to remove unsafe folder {!r}'.format(folder))
+            else:
+                root = self.tv_root() if kind == 'series' else self.movies_root()
+                target = self.fs.join(root, folder)
+                if _path_inside_root(target, root):
+                    self.fs.remove_tree(target)
+                else:
+                    _log('refusing to remove path outside root: {}'.format(target))
         if save:
             self.store.save()
         return True

@@ -39,12 +39,16 @@ def write_lock():
 
 
 def main(argv):
-    if len(argv) < 2:
+    args = [a for a in argv[1:] if a != '--check']
+    check = '--check' in argv[1:]
+    if not args:
+        if check:
+            # Nothing to check without a target.
+            return 0
         write_lock()
         print('SHARED.lock updated')
         return 0
-    other = Path(argv[1]).resolve()
-    check = '--check' in argv
+    other = Path(args[0]).resolve()
     different = []
     for name in SHARED:
         mine, theirs = ROOT / name, other / name
@@ -53,8 +57,9 @@ def main(argv):
             if not check:
                 theirs.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(mine, theirs)
-    write_lock()
+    # Only mutate the lock in write mode.
     if not check:
+        write_lock()
         shutil.copy2(ROOT / 'SHARED.lock', other / 'SHARED.lock')
     for name in different:
         print(('differs: ' if check else 'copied:  ') + name)

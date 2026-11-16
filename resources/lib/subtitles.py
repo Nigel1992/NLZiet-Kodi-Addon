@@ -125,8 +125,11 @@ def clear_cache(cache_dir):
         path = os.path.join(cache_dir, name)
         if not os.path.isfile(path):
             continue
-        os.remove(path)
-        removed += 1
+        try:
+            os.remove(path)
+            removed += 1
+        except OSError:
+            continue
     return removed
 
 
@@ -159,9 +162,12 @@ def clear_cache_if_due(cache_dir, interval_hours=24, marker_path=None, log=None)
     if not cache_dir:
         return 0
     try:
-        hours = max(1, int(float(interval_hours or 24)))
+        hours = float(interval_hours if interval_hours is not None else 24)
     except (TypeError, ValueError):
         hours = 24
+    if hours <= 0:
+        return 0
+    hours = max(1, int(hours))
     marker = marker_path or _marker_path(cache_dir)
     try:
         with open(marker, 'r', encoding='utf-8') as handle:

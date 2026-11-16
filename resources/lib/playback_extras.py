@@ -248,7 +248,10 @@ def apply_language(rpc, audio_lang=None, subtitle_lang=None):
     Returns a short log string of what changed.
     """
     audio_lang = None if str(audio_lang or 'off') in ('off', 'original', '') else audio_lang
-    want_sub = str(subtitle_lang or 'off') not in ('off', '')
+    if str(subtitle_lang or 'off') in ('original',):
+        want_sub = False
+    else:
+        want_sub = str(subtitle_lang or 'off') not in ('off', '')
     if not audio_lang and not want_sub:
         return 'nothing'
     try:
@@ -303,10 +306,19 @@ def wait_for_playback(player, timeout=30, monitor=None):
 def _ask_skip(ask, kind, seconds):
     """Call the skip callback, supporting both ``ask(kind)`` and
     ``ask(kind, seconds)`` signatures."""
+    import inspect
     try:
+        sig = inspect.signature(ask)
+        params = sig.parameters
+    except (TypeError, ValueError):
+        params = {}
+    # Count positional parameters ignoring self/cls.
+    positional = [p for p in params.values()
+                  if p.kind in (inspect.Parameter.POSITIONAL_ONLY,
+                                inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+    if len(positional) >= 2:
         return ask(kind, seconds)
-    except TypeError:
-        return ask(kind)
+    return ask(kind)
 
 
 def start_skip_watcher(markers, ask, player=None, monitor=None):

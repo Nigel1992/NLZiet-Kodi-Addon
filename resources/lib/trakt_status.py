@@ -70,7 +70,7 @@ class WatchedIndex:
         return cls(movies, episodes)
 
     def to_json(self):
-        return {'movies': {k: sorted(y for y in v if y) + ([None] if None in v else []) for k, v in self.movies.items()},
+        return {'movies': {k: sorted(y for y in v if y is not None) + ([None] if None in v else []) for k, v in self.movies.items()},
                 'episodes': {k: sorted([list(p) for p in v]) for k, v in self.episodes.items()}}
 
     @classmethod

@@ -85,7 +85,7 @@ def clear(path, content_id):
     data = _load(path)
     if str(content_id) in data:
         data.pop(str(content_id))
-        _save(path, data)
+        _save(path, _prune(data, time.time()))
         return True
     return False
 
