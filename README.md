@@ -59,6 +59,11 @@ The Trakt add-on must be installed and authorized separately.
 
 See the [Changelog](CHANGELOG.md) for the full version history.  
 
+## 📚 Documentation
+
+- **[User Guide (simple language)](docs/USER_GUIDE.md)** — everything explained step by step, for everyone.
+- **[Technical Documentation](docs/TECHNICAL.md)** — architecture, modules, API, testing, build & release (for developers/contributors).
+
 ## 🚀 Installation
 
 1. Download the latest release from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases), or install via the [Kodi repository](https://github.com/Nigel1992/kodi-repository) (recommended for automatic updates).  
@@ -153,6 +158,11 @@ De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.
 - **Debug Logging**: Eenvoudige logverzameling voor probleemoplossing.  
 
 Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) voor de volledige versiegeschiedenis.  
+
+## 📚 Documentatie
+
+- **[Gebruikershandleiding (eenvoudige taal)](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, voor iedereen.
+- **[Technische documentatie](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen (voor ontwikkelaars/bijdragers).
 
 ---
 
