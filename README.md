@@ -61,8 +61,10 @@ See the [Changelog](CHANGELOG.md) for the full version history.
 
 ## 📚 Documentation
 
-- **[User Guide (simple language)](docs/USER_GUIDE.md)** — everything explained step by step, for everyone.
-- **[Technical Documentation](docs/TECHNICAL.md)** — architecture, modules, API, testing, build & release (for developers/contributors).
+Choose the version that fits you:
+
+- **📖 [Simple language — for everyone](docs/USER_GUIDE.md)** — everything explained step by step, in plain words, no technical knowledge needed.
+- **🔧 [Technical version — for developers](docs/TECHNICAL.md)** — architecture, modules, API, testing, build & release.
 
 ## 🚀 Installation
 
@@ -161,8 +163,10 @@ Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZi
 
 ## 📚 Documentatie
 
-- **[Gebruikershandleiding (eenvoudige taal)](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, voor iedereen.
-- **[Technische documentatie](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen (voor ontwikkelaars/bijdragers).
+Kies de versie die bij je past:
+
+- **📖 [Eenvoudige taal — voor iedereen](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, in gewone woorden, geen technische kennis nodig.
+- **🔧 [Technische versie — voor ontwikkelaars](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen.
 
 ---
 
