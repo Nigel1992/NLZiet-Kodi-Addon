@@ -1,6 +1,30 @@
 # Changelog
 
-> **Latest Version:** v2.6.3 (November 16, 2026)
+> **Latest Version:** v2.0.0 (November 17, 2026)
+
+## [2.0.0] - 2026-11-17
+
+### Toegevoegd
+- **Kodi-bibliotheek**: series en films exporteren naar `.strm/.nfo`, met automatische updates (nieuwe afleveringen erbij, verlopen verwijderen), TMDb/TVmaze-metadata-aanvulling, seizoensposters, clearlogo's, artwork-repair via JSON-RPC.
+- **Kijken**: kijkstatus terug naar NLZiet, Up Next + intro/recap overslaan, binge-modus, "stop na deze aflevering", shuffle, vaste taal/ondertitel-voorkeur, VOD resume-posities (lokaal + cross-device sync).
+- **Overzicht & gemak**: widgets, "verloopt binnenkort"-lijst, favoriete kanalen, lokale kijkgeschiedenis, melding nieuwe aflevering/seizoen, EPG-herinnering, zoeken in Videoland, hele serie als bekeken markeren, sorteeropties, zoekfilters.
+- **Betrouwbaarheid & beheer**: diagnosescherm + dagelijkse achtergrondcontrole, duidelijke foutmeldingen, toegankelijkheid, ouderlijk toezicht, Trakt (status + live scrobble + import), backup/herstel, CI (tests + zip + release).
+- **Automatische bron-registratie**: de add-on voegt de bibliotheekmappen zelf toe aan Kodi (sources.xml + content type/scraper in de database) en scant ze, zonder handmatige stappen.
+- **Huge thanks aan djdirty (Wilfried)** voor de oorspronkelijke pull request (#48) met al deze functies, vertalingen en 299 unit-tests.
+
+### Gewijzigd
+- Licentie blijft CC-BY-NC 4.0.
+- "My List (Kodi only)" verwijderd; leftovers gemigreerd naar Kijk Later.
+
+### Gefixt (review van PR #48)
+- Path traversal in de bibliotheek (folder-veld in `library.json` + symlinks in legacy-migratie).
+- Command injection in `RunPlugin`-URLs.
+- Ongevalideerde `int()`-conversies in de router.
+- Ouderlijk toezicht bypass via `inf`.
+- Signed image-URLs die braken door `optimize_image_url`.
+- Verouderde settings in de service (cached `ADDON`).
+- Diverse robustheidsissues (remote-detectie, cache-parsing, `sync-shared --check`, etc.).
+- `xbmc.translatePath` → `xbmcvfs.translatePath` (Kodi 20+ compatibiliteit).
 
 ## [2.6.3] - 2026-11-16
 
