@@ -2191,7 +2191,11 @@ def _scan_library_paths(lib):
 
 
 def fix_library_sources():
-    """Set content type/scraper on library paths and trigger a scan."""
+    """Ensure sources.xml, fix content type/scraper in DB, and scan."""
+    try:
+        ensure_sources_xml()
+    except Exception:
+        pass
     _fix_library_sources_db()
     try:
         _scan_library_paths(_get_library())
@@ -2199,19 +2203,15 @@ def fix_library_sources():
         pass
 
 
-def register_library_sources():
-    """Add the library folders as Kodi video sources (idempotent).
-
-    Kodi only scans folders that are registered as a source, so this makes the
-    .strm files show up without manual setup. Kodi needs a restart to pick up
-    new sources."""
+def ensure_sources_xml():
+    """Write the library folders into sources.xml (idempotent, no UI)."""
     import os
     import xml.etree.ElementTree as ET
-    _fix_library_sources_db()
     lib = _get_library()
     paths = [p for p in (lib.tv_root(), lib.movies_root()) if p]
     names = ['NLZiet Series', 'NLZiet Movies']
     src_path = xbmcvfs.translatePath('special://userdata/sources.xml')
+    added = 0
     try:
         if os.path.exists(src_path):
             tree = ET.parse(src_path)
@@ -2228,7 +2228,6 @@ def register_library_sources():
             node = source.find('path')
             if node is not None and node.text:
                 existing.add(node.text.rstrip('/'))
-        added = 0
         for name, path in zip(names, paths):
             norm = path.rstrip('/')
             if norm in existing:
@@ -2240,16 +2239,21 @@ def register_library_sources():
             added += 1
         if added:
             tree.write(src_path, encoding='utf-8', xml_declaration=True)
-            xbmcgui.Dialog().notification('NLZiet', get_string('register_sources') + ' (' + str(added) + ')',
-                                          xbmcgui.NOTIFICATION_INFO)
-            xbmcgui.Dialog().ok('NLZiet', 'Herstart Kodi om de nieuwe bronnen te laden,\n'
-                                         'en stel bij elke bron de inhoud in op "TV Series"/"Movies"\n'
-                                         'met scraper "Lokale informatie".')
-        else:
-            xbmcgui.Dialog().notification('NLZiet', 'Bronnen bestaan al', xbmcgui.NOTIFICATION_INFO)
     except Exception as exc:
-        xbmc.log('NLZiet register sources failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().notification('NLZiet', 'Bronnen toevoegen mislukt: {}'.format(exc), xbmcgui.NOTIFICATION_ERROR)
+        xbmc.log('NLZiet ensure sources failed: {}'.format(exc), xbmc.LOGERROR)
+    return added
+
+
+def register_library_sources():
+    """Add the library folders as Kodi video sources (idempotent)."""
+    _fix_library_sources_db()
+    added = ensure_sources_xml()
+    _scan_library_paths(_get_library())
+    if added:
+        xbmcgui.Dialog().notification('NLZiet', get_string('register_sources') + ' (' + str(added) + ')',
+                                      xbmcgui.NOTIFICATION_INFO)
+    else:
+        xbmcgui.Dialog().notification('NLZiet', 'Bronnen bestaan al', xbmcgui.NOTIFICATION_INFO)
 
 
 def _fix_library_sources_db():
