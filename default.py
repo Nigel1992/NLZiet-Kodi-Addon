@@ -817,7 +817,7 @@ def _clear_resume_bookmark(content_id):
         import os
         import sqlite3
 
-        db_dir = xbmc.translatePath('special://userdata/Database/')
+        db_dir = xbmcvfs.translatePath('special://userdata/Database/')
         escaped_id = str(content_id).replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         pattern = 'plugin://plugin.video.nlziet/?mode=play&id={0}'.format(escaped_id)
         for db_path in glob.glob(os.path.join(db_dir, 'MyVideos*.db')):
@@ -1562,7 +1562,7 @@ def main_menu():
     _check_and_handle_token_expiry()
     
     try:
-        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ''
+        addon_path = xbmcvfs.translatePath(ADDON.getAddonInfo('path')) or ''
     except Exception:
         try:
             addon_path = ADDON.getAddonInfo('path') or ''
@@ -2201,7 +2201,7 @@ def register_library_sources():
     lib = _get_library()
     paths = [p for p in (lib.tv_root(), lib.movies_root()) if p]
     names = ['NLZiet Series', 'NLZiet Movies']
-    src_path = xbmc.translatePath('special://userdata/sources.xml')
+    src_path = xbmcvfs.translatePath('special://userdata/sources.xml')
     try:
         if os.path.exists(src_path):
             tree = ET.parse(src_path)
@@ -2239,7 +2239,7 @@ def register_library_sources():
             xbmcgui.Dialog().notification('NLZiet', 'Bronnen bestaan al', xbmcgui.NOTIFICATION_INFO)
     except Exception as exc:
         xbmc.log('NLZiet register sources failed: {}'.format(exc), xbmc.LOGERROR)
-        xbmcgui.Dialog().notification('NLZiet', 'Bronnen toevoegen mislukt', xbmcgui.NOTIFICATION_ERROR)
+        xbmcgui.Dialog().notification('NLZiet', 'Bronnen toevoegen mislukt: {}'.format(exc), xbmcgui.NOTIFICATION_ERROR)
 
 
 def library_from_lists(background=False):
@@ -5670,7 +5670,7 @@ def _filtered_search_results(results, q, group, period=None, genre=None):
 
 def _pick_menu_png_any(name):
     try:
-        addon_path = xbmc.translatePath(ADDON.getAddonInfo('path')) or ''
+        addon_path = xbmcvfs.translatePath(ADDON.getAddonInfo('path')) or ''
     except Exception:
         addon_path = ''
     return kodi_ui.pick_menu_png(addon_path, name)
