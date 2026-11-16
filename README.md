@@ -28,6 +28,13 @@
 <summary>🇬🇧 <b>English</b> — click to expand</summary>
 
 
+## 📚 Documentation
+
+Choose the version that fits you:
+
+- **📖 [Simple language — for everyone](docs/USER_GUIDE.md)** — everything explained step by step, in plain words, no technical knowledge needed.
+- **🔧 [Technical version — for developers](docs/TECHNICAL.md)** — architecture, modules, API, testing, build & release.
+
 ## ✨ Features
 
 - **Live TV**: Stream all supported NLZiet channels with EPG info.  
@@ -58,13 +65,6 @@ The Trakt add-on must be installed and authorized separately.
 ---
 
 See the [Changelog](CHANGELOG.md) for the full version history.  
-
-## 📚 Documentation
-
-Choose the version that fits you:
-
-- **📖 [Simple language — for everyone](docs/USER_GUIDE.md)** — everything explained step by step, in plain words, no technical knowledge needed.
-- **🔧 [Technical version — for developers](docs/TECHNICAL.md)** — architecture, modules, API, testing, build & release.
 
 ## 🚀 Installation
 
@@ -132,6 +132,13 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 <details>
 <summary>🇳🇱 <b>Nederlands</b> — klik om uit te klappen</summary>
 
+## 📚 Documentatie
+
+Kies de versie die bij je past:
+
+- **📖 [Eenvoudige taal — voor iedereen](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, in gewone woorden, geen technische kennis nodig.
+- **🔧 [Technische versie — voor ontwikkelaars](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen.
+
 ## ✨ Functies
 
 - **Live TV**: Stream alle ondersteunde NLZiet-zenders met EPG-info.  
@@ -160,13 +167,6 @@ De Trakt-add-on moet apart worden geïnstalleerd en geautoriseerd.
 - **Debug Logging**: Eenvoudige logverzameling voor probleemoplossing.  
 
 Zie de [Changelog](CHANGELOG.md) of [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) voor de volledige versiegeschiedenis.  
-
-## 📚 Documentatie
-
-Kies de versie die bij je past:
-
-- **📖 [Eenvoudige taal — voor iedereen](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, in gewone woorden, geen technische kennis nodig.
-- **🔧 [Technische versie — voor ontwikkelaars](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen.
 
 ---
 
