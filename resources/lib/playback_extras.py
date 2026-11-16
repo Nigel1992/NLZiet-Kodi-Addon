@@ -137,6 +137,30 @@ def markers_from_chapters(chapters):
     return found
 
 
+def markers_from_typed_chapters(chapters):
+    """Markers from a typed chapter list like Videoland's ``video.chapters``:
+    ``[{"tcStart": 0, "tcEnd": 75, "type": "intro"},
+       {"tcStart": 1484, "tcEnd": 1498, "type": "ending_credits"}]``.
+    Each entry names its own kind and both ends; times are in seconds."""
+    if isinstance(chapters, dict):
+        chapters = chapters.get('chapters')
+    if not isinstance(chapters, list):
+        return {}
+    found = {}
+    for chapter in chapters:
+        if not isinstance(chapter, dict):
+            continue
+        kind = _kind_of(chapter.get('type') or chapter.get('title') or chapter.get('name'))
+        if not kind or kind in found:
+            continue
+        start = _number(chapter.get('tcStart', chapter.get('tcIn', chapter.get('start'))))
+        if start is None:
+            continue
+        end = _number(chapter.get('tcEnd', chapter.get('tcOut', chapter.get('end'))))
+        found[kind] = (start, end)
+    return found
+
+
 def chapter_titles(chapters):
     """The chapter titles, for the log (shows what a service calls them)."""
     if isinstance(chapters, dict):

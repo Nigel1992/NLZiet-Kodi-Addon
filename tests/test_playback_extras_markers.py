@@ -66,3 +66,23 @@ def test_apply_language_no_match():
     def rpc(method, params):
         return {'audiostreams': [{'index': 0, 'language': 'eng'}], 'subtitles': []}
     assert pe.apply_language(rpc, 'nl', 'off') == 'no match'
+
+
+def test_markers_from_typed_chapters_videoland():
+    chapters = [
+        {"tcStart": 0, "tcEnd": 75, "type": "intro", "title": None},
+        {"tcStart": 1484, "tcEnd": 1498, "type": "ending_credits", "title": None},
+    ]
+    assert pe.markers_from_typed_chapters(chapters) == {
+        'intro': (0.0, 75.0), 'credits': (1484.0, 1498.0)}
+
+
+def test_markers_from_typed_chapters_recap_and_dict_wrapper():
+    data = {"chapters": [{"tcStart": 30, "tcEnd": 60, "type": "recap"}]}
+    assert pe.markers_from_typed_chapters(data) == {'recap': (30.0, 60.0)}
+
+
+def test_markers_from_typed_chapters_empty():
+    assert pe.markers_from_typed_chapters(None) == {}
+    assert pe.markers_from_typed_chapters([]) == {}
+    assert pe.markers_from_typed_chapters([{"type": "intro"}]) == {}  # no tcStart
