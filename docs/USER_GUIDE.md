@@ -1,158 +1,157 @@
-# NLZiet Kodi Addon — Gebruikershandleiding
+# NLZiet Kodi Addon — User Guide
 
-> Eenvoudige taal. Alles wat je moet weten om de add-on te gebruiken.
+> Plain language. Everything you need to use the add-on.
 
-**Versie:** 2.0.0 · [Changelog](../CHANGELOG.md) · [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases)
-
----
-
-## 📥 Installeren
-
-1. Download de nieuwste release-zip van [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
-2. In Kodi: **Add-ons → Installeer vanuit zip-bestand** → selecteer de zip.
-3. Open de add-on en log in met je NLZiet-account (knop **Inloggen**).
-4. Installeer `inputstream.adaptive` (voor DRM-afspelen) — de add-on controleert dit automatisch.
-5. (Optioneel) Installeer en autoriseer de officiële Kodi **Trakt**-add-on voor scrobbling.
-
-Na het opstarten configureert de add-on zichzelf: bibliotheekmappen, content-type en scan. Je hoeft niets handmatig in te stellen.
+**Version:** 2.0.0 · [Changelog](../CHANGELOG.md) · [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases)
 
 ---
 
-## 📺 Live TV kijken
+## 📥 Installation
 
-- Open de add-on → **Live TV** (of **TV Gids**).
-- Je ziet alle zenders met de huidige en komende programma's (7 dagen vooruit).
-- Klik op een programma om te kijken. Afspelen start via `inputstream.adaptive` (DRM).
-- **EPG-herinnering**: zet in de TV Gids een herinnering voor een toekomstig programma; je krijgt een melding vlak voor de start.
-- **Favoriete kanalen**: markeer kanalen als favoriet; die komen vooraan te staan.
+1. Download the latest release zip from [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
+2. In Kodi: **Add-ons → Install from zip file** → select the zip.
+3. Open the add-on and log in with your NLZiet account (button **Inloggen** / Login).
+4. Install `inputstream.adaptive` (for DRM playback) — the add-on checks this automatically.
+5. (Optional) Install and authorize the official Kodi **Trakt** add-on for scrobbling.
+
+After startup the add-on configures itself: library folders, content type, scan. You don't need to set anything up manually.
+
+---
+
+## 📺 Live TV
+
+- Open the add-on → **Live TV** (or **TV Gids**).
+- All channels with current and upcoming programmes (7 days ahead).
+- Click a programme to watch. Playback uses `inputstream.adaptive` (DRM).
+- **EPG reminder**: set a reminder in the TV Guide for a future programme; you get a notification shortly before it starts.
+- **Favourite channels**: mark channels as favourites; they appear first.
 
 ## 📺 Series
 
-- **Bladeren**: open **Series** → kies een categorie of genre.
-- **Zoeken**: typ een titel; resultaten kunnen gefilterd worden op periode en genre.
-- **Aflevering afspelen**: klik op een aflevering. De add-on onthoudt waar je gebleven bent.
-- **Verder kijken**: op het startscherm staat een widget "Verder kijken" met series die je bezig bent.
-- **Hele serie als bekeken markeren**: contextmenu → "Hele serie als bekeken markeren".
+- **Browse**: open **Series** → pick a category or genre.
+- **Search**: type a title; results can be filtered by period and genre.
+- **Play an episode**: click it. The add-on remembers where you left off.
+- **Continue watching**: a "Verder kijken" widget on the home screen.
+- **Mark a whole series as watched**: context menu → "Mark whole series as watched".
 
-## 🎬 Films
+## 🎬 Movies
 
-- **Bladeren**: open **Films** → kies een categorie of genre.
-- **Zoeken**: typ een titel.
-- **Afspelen**: klik op een film. Resume-positie wordt onthouden.
+- **Browse**: open **Movies** → pick a category or genre.
+- **Search**: type a title.
+- **Play**: click a movie. Resume position is remembered.
 
-## ⏸️ Afspelen — extra functies
+## ⏸️ Playback — extra features
 
-- **Up Next / Volgende aflevering**: bij het einde van een aflevering kun je automatisch of met een knop de volgende starten (instelling: Up Next / eigen prompt / automatisch / uit).
-- **Intro/recap overslaan**: op basis van hoofdstukken (als NLZiet ze levert) verschijnt een "Overslaan"-knop.
-- **Binge-modus**: automatisch door naar de volgende aflevering.
-- **Stop na deze aflevering**: zet een vlag zodat er niet verder wordt gegaan.
-- **Shuffle**: willekeurige aflevering van een serie.
-- **Vaste taal/ondertitels**: stel je voorkeur in; wordt automatisch toegepast. Optioneel opent Kodi's ondertitelzoeker als de stream er geen heeft.
-- **Resume (verder kijken)**: positie wordt lokaal opgeslagen en gesynchroniseerd met NLZiet (zodat je op telefoon/tablet verder kunt kijken).
+- **Up Next / Next episode**: at the end of an episode you can auto-start or use a button to play the next one (setting: Up Next / built-in prompt / automatic / off).
+- **Skip intro/recap**: based on chapters (when NLZiet provides them) a "Skip" button appears.
+- **Binge mode**: automatically plays the next episode.
+- **Stop after this episode**: sets a flag so playback stops afterwards.
+- **Shuffle**: random episode from a series.
+- **Fixed language/subtitles**: set your preference; applied automatically. Optionally opens Kodi's subtitle search if the stream has none.
+- **Resume (continue watching)**: position saved locally and synced with NLZiet (so you can continue on phone/tablet).
 
-## 📋 Lijsten
+## 📋 Lists
 
-### Kijk Later (Watch Later)
-- Afleveringen en films die je wilt bewaren.
-- Toevoegen: contextmenu → "Toevoegen aan Kijk Later".
-- Synchroniseert tweerichtings met je NLZiet-account (Instellingen → Synchronisatie).
-- Widget op het startscherm.
+### Watch Later (Kijk Later)
+- Episodes and movies you want to keep.
+- Add: context menu → "Add to Watch Later".
+- Syncs two-way with your NLZiet account (Settings → Synchronization).
+- Widget on the home screen.
 
-### Mijn Series (My Series)
-- Volg hele series. Elke serie toont of er nieuwe afleveringen zijn.
-- Toevoegen: contextmenu → "Toevoegen aan Mijn Series".
-- Synchroniseert met je NLZiet-account.
+### My Series (Mijn Series)
+- Follow whole series. Each series shows whether new episodes are available.
+- Add: context menu → "Add to My Series".
+- Syncs with your NLZiet account.
 
-### Mijn Lijst (My List)
-- Verwijderd in v2.0.0; bestaande items zijn gemigreerd naar **Kijk Later**.
+### My List (Mijn Lijst)
+- Removed in v2.0.0; existing items were migrated to **Watch Later**.
 
-## 📚 Kodi-bibliotheek (automatisch)
+## 📚 Kodi library (automatic)
 
-De add-on schrijft series en films als `.strm` + `.nfo` naar een map in je Kodi-profiel. Vanaf v2.0.0 gebeurt dit **volledig automatisch**:
+The add-on writes series and movies as `.strm` + `.nfo` into a folder in your Kodi profile. From v2.0.0 this happens **fully automatically**:
 
-- **Bronnen**: de mappen worden automatisch als videobron in Kodi geregistreerd (sources.xml + content-type + scraper "Lokale informatie").
-- **Scan**: Kodi scant de mappen automatisch; series verschijnen onder **Video's → Series**, films onder **Video's → Films**.
-- **Updates**: nieuwe afleveringen worden automatisch toegevoegd, verlopen afleveringen verwijderd (standaard elke 12 uur).
-- **Metadata**: ontbrekende gegevens (beschrijving, plaatjes, genres, titels) worden aangevuld via TMDb (gratis API-sleutel, optioneel) en TVmaze. NLZiet's eigen gegevens gaan altijd voor.
-- **Seizoensposters en logo's** (clearlogo) worden ook in de bladerlijsten getoond.
+- **Sources**: the folders are registered as Kodi video sources automatically (sources.xml + content type + "Local information only" scraper).
+- **Scan**: Kodi scans the folders automatically; series appear under **Videos → Series**, movies under **Videos → Movies**.
+- **Updates**: new episodes added automatically, expired ones removed (default every 12 hours).
+- **Metadata**: missing details (description, artwork, genres, titles) filled in via TMDb (free API key, optional) and TVmaze. NLZiet's own data always comes first.
+- **Season posters and logos** (clearlogo) also shown in browse lists.
 
-### Handmatig toevoegen
-- Contextmenu op een serie/film → "Toevoegen aan bibliotheek".
+### Add manually
+- Context menu on a series/movie → "Add to library".
 
-### Bulk-actie
-- Instellingen → Bibliotheek → "Mijn series en Kijk later nu naar de bibliotheek" (of automatisch via de instelling "Mijn series en Kijk later automatisch in de bibliotheek").
+### Bulk action
+- Settings → Library → "Add My Series and Watch Later to the library now" (or automatically via the setting "Keep My Series and Watch Later in the library automatically").
 
-### Trakt-kijklijst importeren
-- Instellingen → Bibliotheek → "Trakt-kijklijst importeren": matcht titels op NLZiet en voegt ze toe.
+### Import Trakt watchlist
+- Settings → Library → "Import Trakt watchlist": matches titles on NLZiet and adds them.
 
-## 🔒 Ouderlijk toezicht
+## 🔒 Parental control
 
-- Stel een pincode in per profiel (Instellingen → Ouderlijk toezicht).
-- Kies welke profielen vergrendeld zijn.
-- Optioneel: pincode voor live tv.
-- Kinderprofielen worden gemarkeerd.
+- Set a PIN per profile (Settings → Parental control).
+- Choose which profiles are locked.
+- Optionally: PIN for live TV.
+- Kids profiles are marked.
 
-## 📊 Trakt-integratie
+## 📊 Trakt integration
 
-- **Bekeken-status tonen**: in menu's zie je of een titel op Trakt als bekeken is gemarkeerd.
-- **Live scrobbling**: tijdens het kijken wordt de voortgang naar Trakt gestuurd.
-- **Watchlist importeren**: je Trakt-kijklijst importeren naar de bibliotheek.
-- Vereist de officiële Kodi `script.trakt` add-on (geïnstalleerd en geautoriseerd).
+- **Watched status in menus**: see whether a title is marked watched on Trakt.
+- **Live scrobbling**: playback progress sent to Trakt while watching.
+- **Watchlist import**: import your Trakt watchlist into the library.
+- Requires the official Kodi `script.trakt` add-on (installed and authorized).
 
-## 💾 Backup en herstel
+## 💾 Backup and restore
 
-- Instellingen → Bibliotheek → Backup/Herstel: sla je lijsten en instellingen op en herstel ze later.
+- Settings → Library → Maintenance → Backup/Restore: save your lists and settings, restore them later.
 
-## 🔍 Zoeken
+## 🔍 Search
 
-- Zoek op titel (series, films, afleveringen).
-- Filter resultaten op periode en genre.
-- "Zoekopdracht ook in Videoland aanbieden" — dezelfde zoekterm in de Videoland-add-on.
+- Search by title (series, movies, episodes).
+- Filter results by period and genre.
+- "Search in Videoland" entry on search results.
 
-## 🩺 Diagnose en betrouwbaarheid
+## 🩺 Diagnostics and reliability
 
-- **Diagnosescherm**: Instellingen → Bibliotheek → Onderhoud → "Diagnose uitvoeren".
-  - Toont inlogstatus, InputStream/Widevine, verbindingen, TMDb-sleutel, bibliotheekbronnen, Kodi-vs-bibliotheek aantallen.
-  - Privacy-vriendelijk rapport opslaan.
-- **Dagelijkse achtergrondcontrole**: melding bij problemen.
-- **Duidelijke foutmeldingen**: bij offline, timeout, sessie verlopen, geen abonnement, niet gevonden, druk, storing — één duidelijke zin, details in het logboek.
-- **Toegankelijkheid**: tekst in plaats van emoji/kleur-only markers, statuswoorden in diagnose.
+- **Diagnostics screen**: Settings → Library → Maintenance → "Run diagnostics".
+  - Shows login status, InputStream/Widevine, connections, TMDb key, library sources, Kodi-vs-library counts.
+  - Save a privacy-friendly report.
+- **Daily background check**: notification on problems.
+- **Clear error messages**: offline, timeout, session expired, no subscription, not found, busy, outage — one clear sentence, details in the log.
+- **Accessibility**: text instead of emoji/colour-only markers, status words in diagnostics.
 
-## ⚙️ Belangrijke instellingen
+## ⚙️ Important settings
 
-| Instelling | Waar | Uitleg |
+| Setting | Where | Explanation |
 |---|---|---|
-| Kijkstatus naar NLZiet sturen | Afspelen | Stuurt bekeken-status terug naar NLZiet |
-| Percentage bekeken | Afspelen | Wanneer een video als "bekeken" telt |
-| Volgende aflevering | Afspelen | Up Next / eigen prompt / automatisch / uit |
-| Binge-modus | Afspelen | Automatisch door naar volgende aflevering |
-| Vaste taal/ondertitels | Afspelen | Voorkeur voor gesproken taal en ondertitels |
-| Mijn series en Kijk later automatisch in de bibliotheek | Bibliotheek | Automatisch toevoegen (standaard aan) |
-| Titels die uit deze lijsten verdwijnen ook verwijderen | Bibliotheek | Opruimen bij veranderingen |
-| Bibliotheek automatisch bijwerken | Bibliotheek | Interval in uren |
-| TMDb API-sleutel | Bibliotheek → Metadata | Gratis sleutel voor extra metadata/plaatjes |
-| Ouderlijk toezicht | Ouderlijk toezicht | Pincode/profielslot |
-| Backup/Herstel | Bibliotheek → Onderhoud | Lijsten en instellingen opslaan/herstellen |
-| Melding bij achtergrond-synchronisatie | Synchronisatie | Alleen als er iets gewijzigd is |
+| Send watched status to NLZiet | Playback | Sends watched status back to NLZiet |
+| Watched percentage | Playback | When a video counts as "watched" |
+| Next episode | Playback | Up Next / built-in prompt / automatic / off |
+| Binge mode | Playback | Automatically play next episode |
+| Fixed language/subtitles | Playback | Preference for spoken language and subtitles |
+| Keep My Series and Watch Later in the library automatically | Library | Auto-add (default on) |
+| Remove titles that left these lists | Library | Clean up on changes |
+| Library auto-update | Library | Interval in hours |
+| TMDb API key | Library → Metadata | Free key for extra metadata/artwork |
+| Parental control | Parental control | PIN/profile lock |
+| Backup/Restore | Library → Maintenance | Save/restore lists and settings |
+| Notification on background sync | Synchronization | Only when something changed |
 
-## 🐛 Problemen?
+## 🐛 Problems?
 
-- **Diagnose-rapport**: Instellingen → Bibliotheek → Onderhoud → Diagnose uitvoeren → Rapport opslaan.
+- **Diagnostics report**: Settings → Library → Maintenance → Run diagnostics → Save report.
 - **Issues**: https://github.com/Nigel1992/NLZiet-Kodi-Addon/issues
 - **Discord**: https://discord.gg/UbPRh74PzV
 
-## 📄 Licentie
+## 📄 License
 
-MIT. Zie [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ---
 
-## 🙏 Dankwoord
+## 🙏 Acknowledgements
 
-- **[@djdirty](https://github.com/djdirty60) (Wilfried)** — auteur van pull request #48, die de Kodi-bibliotheek, afspeelfuncties, widgets, diagnose, ouderlijk toezicht, Trakt-integratie, backup/herstel en nog veel meer bracht, plus Nederlandse/Engelse vertalingen en ~299 unit-tests. Enorm bedankt! 🙏
-- Icons: Lucide (https://lucide.dev)
+- **[@djdirty](https://github.com/djdirty60) (Wilfried)** — author of pull request #48, which brought the Kodi library, playback extras, widgets, diagnostics, parental controls, Trakt integration, backup/restore and many other features, plus Dutch/English translations and ~299 unit tests. Huge thanks! 🙏
+- Icons: [Lucide](https://lucide.dev)
 
 ## ⚠️ Disclaimer
 
-Dit project is niet gelieerd aan of onderschreven door NLZiet. Gebruik op eigen risico. Alleen voor persoonlijk, niet-commercieel gebruik.
-```
+This project is not affiliated with or endorsed by NLZiet. Use at your own risk. For personal, non-commercial use only.

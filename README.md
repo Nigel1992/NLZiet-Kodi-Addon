@@ -115,7 +115,7 @@ This project is not affiliated with or endorsed by NLZiet. Use at your own risk.
 
 Kies de versie die bij je past:
 
-- **📖 [Eenvoudige taal — voor iedereen](docs/USER_GUIDE.md)** — alles stap voor stap uitgelegd, in gewone woorden, geen technische kennis nodig.
+- **📖 [Eenvoudige taal — voor iedereen](docs/USER_GUIDE_NL.md)** — alles stap voor stap uitgelegd, in gewone woorden, geen technische kennis nodig.
 - **🔧 [Technische versie — voor ontwikkelaars](docs/TECHNICAL.md)** — architectuur, modules, API, testen, bouwen en releasen.
 
 ---
