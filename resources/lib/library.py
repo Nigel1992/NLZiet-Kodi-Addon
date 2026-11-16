@@ -238,8 +238,11 @@ class LocalFS:
         """Write ``text``; skip when unchanged so Kodi does not rescan."""
         if self.read(path) == text:
             return False
-        folder = path.rsplit('/', 1)[0] if self._remote(path) else os.path.dirname(path)
         if self._remote(path):
+            if '/' in str(path):
+                folder = str(path).rsplit('/', 1)[0]
+            else:
+                folder = str(path)
             xbmcvfs.mkdirs(folder + '/')
             f = xbmcvfs.File(path, 'w')
             try:
@@ -247,6 +250,7 @@ class LocalFS:
             finally:
                 f.close()
         else:
+            folder = os.path.dirname(path)
             os.makedirs(folder, exist_ok=True)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(text)
@@ -320,7 +324,10 @@ class LibraryStore:
         except Exception:
             return self._empty()
         base = self._empty()
-        base.update(data)
+        # Only accept known top-level keys; ignore version overrides from file.
+        for key in ('series', 'movies', 'last_update'):
+            if key in data:
+                base[key] = data[key]
         for key in ('series', 'movies'):
             if not isinstance(base.get(key), dict):
                 base[key] = {}
@@ -504,14 +511,11 @@ class Library:
     def _remember_hints(self, kind, item_id, poster, fanart):
         if not (poster or fanart):
             return
-        section = self.store.section(kind)
-        entry = section.setdefault(str(item_id), {}) if str(item_id) in section else None
         hints = {'poster_hint': poster or '', 'fanart_hint': fanart or ''}
-        if entry is not None:
-            entry.update({k: v for k, v in hints.items() if v})
-        else:
-            self._pending_hints = getattr(self, '_pending_hints', {})
-            self._pending_hints[(kind, str(item_id))] = hints
+        self._pending_hints = getattr(self, '_pending_hints', {})
+        # Always keep hints pending so they are only applied when the item is
+        # actually synced; never mutate a (possibly not-yet-synced) store entry.
+        self._pending_hints[(kind, str(item_id))] = hints
 
     def _hints(self, kind, item_id, entry):
         pending = getattr(self, '_pending_hints', {}).pop((kind, str(item_id)), {})

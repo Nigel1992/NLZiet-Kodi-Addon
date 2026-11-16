@@ -88,11 +88,18 @@ def _load_cache(cache_path):
 
 def _save_cache(cache_path, cache):
     try:
-        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-        with open(cache_path, 'w', encoding='utf-8') as handle:
+        folder = os.path.dirname(cache_path)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        tmp = cache_path + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as handle:
             json.dump(cache, handle)
+        os.replace(tmp, cache_path)
     except Exception:
-        pass
+        try:
+            os.remove(cache_path + '.tmp')
+        except OSError:
+            pass
 
 
 def lookup_season_episode(series_title, episode_title, cache_path=None):

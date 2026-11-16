@@ -8,6 +8,11 @@ import zipfile
 root = Path(__file__).resolve().parent.parent
 metadata = ET.parse(root / 'addon.xml').getroot()
 addon_id, version = metadata.attrib['id'], metadata.attrib['version']
+# Validate so a tampered addon.xml cannot escape the build directory.
+if not addon_id or '/' in addon_id or '\\' in addon_id or '..' in addon_id:
+    raise SystemExit('invalid addon id in addon.xml')
+if not version or '/' in version or '\\' in version or '..' in version:
+    raise SystemExit('invalid version in addon.xml')
 output = root / 'build' / f'{addon_id}-{version}.zip'
 output.parent.mkdir(exist_ok=True)
 files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).decode().split('\0')

@@ -153,9 +153,13 @@ def _certifi_context():
 
 def _default_http(url, headers):
     request = urllib.request.Request(url, headers=headers)
+    MAX_RESPONSE = 5 * 1024 * 1024
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            return json.loads(response.read().decode("utf-8"))
+            data = response.read(MAX_RESPONSE + 1)
+            if len(data) > MAX_RESPONSE:
+                raise ValueError("response too large")
+            return json.loads(data.decode("utf-8"))
     except urllib.error.URLError as exc:
         # Some Kodi builds (Android) ship no system certificates: retry with certifi's.
         if "CERTIFICATE" not in str(getattr(exc, "reason", exc)).upper():
@@ -164,7 +168,10 @@ def _default_http(url, headers):
         if context is None:
             raise
         with urllib.request.urlopen(request, timeout=TIMEOUT, context=context) as response:
-            return json.loads(response.read().decode("utf-8"))
+            data = response.read(MAX_RESPONSE + 1)
+            if len(data) > MAX_RESPONSE:
+                raise ValueError("response too large")
+            return json.loads(data.decode("utf-8"))
 
 
 def test_tmdb_key(key, http=None):

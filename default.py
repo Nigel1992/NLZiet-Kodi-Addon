@@ -816,7 +816,8 @@ def _clear_resume_bookmark(content_id):
         import sqlite3
 
         db_dir = xbmc.translatePath('special://userdata/Database/')
-        pattern = 'plugin://plugin.video.nlziet/?mode=play&id={0}'.format(content_id)
+        escaped_id = str(content_id).replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        pattern = 'plugin://plugin.video.nlziet/?mode=play&id={0}'.format(escaped_id)
         for db_path in glob.glob(os.path.join(db_dir, 'MyVideos*.db')):
             try:
                 conn = sqlite3.connect(db_path, timeout=1)
@@ -824,7 +825,7 @@ def _clear_resume_bookmark(content_id):
                     cur = conn.cursor()
                     cur.execute(
                         "DELETE FROM bookmark WHERE idFile IN "
-                        "(SELECT idFile FROM files WHERE strFilename LIKE ?)",
+                        "(SELECT idFile FROM files WHERE strFilename LIKE ? ESCAPE '\\')",
                         (pattern + '%',),
                     )
                     conn.commit()
