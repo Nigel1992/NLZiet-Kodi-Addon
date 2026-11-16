@@ -300,9 +300,20 @@ def wait_for_playback(player, timeout=30, monitor=None):
     return False
 
 
+def _ask_skip(ask, kind, seconds):
+    """Call the skip callback, supporting both ``ask(kind)`` and
+    ``ask(kind, seconds)`` signatures."""
+    try:
+        return ask(kind, seconds)
+    except TypeError:
+        return ask(kind)
+
+
 def start_skip_watcher(markers, ask, player=None, monitor=None):
-    """Offer to skip intro/recap while it plays. ``ask(kind)`` shows the
-    question and returns True to skip. Runs in a background thread."""
+    """Offer to skip intro/recap while it plays. ``ask(kind, seconds)`` shows
+    the button and returns True to skip; ``seconds`` is how long the part still
+    lasts, so the button can stay for the whole intro/recap. Runs in a
+    background thread."""
     spans = [(kind, s, e) for kind, (s, e) in markers.items() if kind in ('intro', 'recap') and e]
     if not spans or xbmc is None:
         return None
@@ -324,7 +335,10 @@ def start_skip_watcher(markers, ask, player=None, monitor=None):
                 start = start or 0
                 if kind not in offered and start <= now < end - 3:
                     offered.add(kind)
-                    if ask(kind):
+                    # Keep the button up until the part is over (at least a few
+                    # seconds), so it behaves like the streaming apps.
+                    seconds = max(5, int(end - now))
+                    if _ask_skip(ask, kind, seconds):
                         try:
                             player.seekTime(float(end))
                         except Exception:

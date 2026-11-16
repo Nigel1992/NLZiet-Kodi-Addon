@@ -1,6 +1,12 @@
 # Changelog
 
-> **Latest Version:** v2.6.2 (November 16, 2026)
+> **Latest Version:** v2.6.3 (November 16, 2026)
+
+## [2.6.3] - 2026-11-16
+
+### Gewijzigd
+- **Geen "Kijk Later gesynchroniseerd"-meldingen meer op de achtergrond.** De melding bij de automatische Kijk Later-sync staat nu standaard uit (achtergrond-huishouding hoort stil te zijn). Handmatig synchroniseren toont de uitkomst nog wel. Weer aan te zetten met de instelling *Melding bij achtergrond-synchronisatie*.
+- **Hoek-knop ("Overslaan"/"Volgende aflevering") blijft staan tot de intro/recap voorbij is.**
 
 ## [2.6.2] - 2026-11-16
 

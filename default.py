@@ -6788,11 +6788,11 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
     except Exception as exc:
         xbmc.log('NLZiet chapters failed: {}'.format(exc), xbmc.LOGINFO)
     if markers and _setting_on('skip_markers', True):
-        def ask(kind):
+        def ask(kind, seconds=12):
             # A small corner button (like the streaming apps), not a full-screen
-            # yes/no dialog.
+            # yes/no dialog. It stays until the intro/recap is over.
             label = get_string('skip_recap_label' if kind == 'recap' else 'skip_intro_label')
-            return corner.ask(label, seconds=12)
+            return corner.ask(label, seconds=seconds)
         try:
             playback_extras.start_skip_watcher(markers, ask)
         except Exception as exc:
