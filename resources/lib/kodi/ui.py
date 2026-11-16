@@ -18,8 +18,9 @@ def make_color_tag(color_raw, text):
 
 
 def pick_menu_icon(addon_path, name):
-    """Prefer menu_{name}.png, then .svg, then fall back to the addon icon."""
+    """Prefer media/menu/{name}.png, then menu_{name}.png/.svg, then the addon icon."""
     candidates = [
+        os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png'),
         os.path.join(addon_path, 'resources', 'media', f'menu_{name}.svg'),
         os.path.join(addon_path, 'icon.png'),
@@ -34,13 +35,15 @@ def pick_menu_icon(addon_path, name):
 
 
 def pick_menu_png(addon_path, name):
-    """Explicit PNG-first picker (prefer exact menu_{name}.png when available)."""
-    try:
-        png = os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')
-        if png and os.path.exists(png):
-            return png
-    except Exception:
-        pass
+    """Explicit PNG-first picker (media/menu/{name}.png, a new path so Kodi's
+    texture cache never shows the older icons that used the same file names)."""
+    for png in (os.path.join(addon_path, 'resources', 'media', 'menu', f'{name}.png'),
+                os.path.join(addon_path, 'resources', 'media', f'menu_{name}.png')):
+        try:
+            if png and os.path.exists(png):
+                return png
+        except Exception:
+            pass
     return pick_menu_icon(addon_path, name)
 
 
@@ -50,6 +53,9 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                        content=None, playback_state=None, is_live=False,
                        group=None,
                        add_to_library_label='Add to library',
+                       remove_from_library_label='Remove from library',
+                       library_check=None,
+                       extra_art=None,
                        mylist_add_label='Add to My List',
                        mylist_remove_label='Remove from My List',
                        watch_later_add_label='Add to Watch Later',
@@ -74,6 +80,11 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
         # Use smart artwork assignment to respect aspect ratios
         # Prevents face-cutting and image stretching by assigning portraits to poster, landscapes to fanart
         set_smart_artwork(li, content, thumb=thumb)
+    if extra_art:
+        try:
+            li.setArt(dict(extra_art))
+        except Exception:
+            pass
 
     item_info = dict(info or {})
 
@@ -175,21 +186,6 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
             is_series_item = 'series' in ctype_l or 'tvshow' in ctype_l or grp_l == 'series'
             is_channel_item = 'channel' in ctype_l or 'live' in ctype_l or grp_l == 'channels'
 
-            if allow_mylist:
-                mylist_label = mylist_remove_label if _check('is_in_my_list') else mylist_add_label
-
-                mylist_query = {'mode': 'toggle_mylist', 'id': str(content_id), 'title': title}
-                if content_type:
-                    mylist_query['type'] = content_type
-                if group:
-                    mylist_query['group'] = group
-                if thumb:
-                    mylist_query['thumb'] = thumb
-                try:
-                    context_items.append((mylist_label, f"RunPlugin({build_url_func(mylist_query)})"))
-                except Exception:
-                    pass
-
             if allow_mylist and is_series_item:
                 my_series_label = my_series_remove_label if _check('is_in_my_series') else my_series_add_label
                 my_series_query = {'mode': 'toggle_my_series', 'id': str(content_id), 'title': title}
@@ -228,10 +224,36 @@ def add_directory_item(addon, handle, build_url_func, api_instance_getter,
                 except Exception:
                     pass
 
-        if allow_mylist and content_id and isinstance(query, dict) and query.get('mode') == 'series_detail':
+        # Kodi library: series (folders) and movies (playable items).
+        library_kind = None
+        if content_id and isinstance(query, dict):
+            ctype_lib = str(content_type or '').lower()
+            if query.get('mode') == 'series_detail':
+                library_kind = 'series'
+            elif (query.get('mode') == 'play' and not is_live
+                  and (str(group or '').lower() == 'movies' or 'movie' in ctype_lib or 'film' in ctype_lib)):
+                library_kind = 'movie'
+        if library_kind:
             try:
-                cm_url = build_url_func({'mode': 'export_series_library', 'series_id': str(content_id)})
-                context_items.append((add_to_library_label, f"RunPlugin({cm_url})"))
+                in_library = bool(library_check and library_check(library_kind, content_id))
+            except Exception:
+                in_library = False
+            try:
+                cm_query = {'mode': 'library_toggle', 'kind': library_kind, 'id': str(content_id)}
+                lib_title = (content.get('title') if isinstance(content, dict) else None) or title
+                if lib_title:
+                    cm_query['title'] = lib_title
+                if isinstance(content, dict):
+                    lib_poster = pick_portrait_thumb(content)
+                    lib_fanart = pick_landscape_thumb(content)
+                    if lib_poster:
+                        cm_query['poster'] = lib_poster
+                    if lib_fanart:
+                        cm_query['fanart'] = lib_fanart
+                elif thumb:
+                    cm_query['poster'] = thumb
+                label = remove_from_library_label if in_library else add_to_library_label
+                context_items.append((label, f"RunPlugin({build_url_func(cm_query)})"))
             except Exception:
                 pass
 
@@ -256,12 +278,27 @@ def optimize_image_url(url):
     if not url or not isinstance(url, str):
         return url
 
-    # Remove any existing width/crop parameters
+    # Never touch signed/expiring URLs: stripping their query string would
+    # remove tokens/signatures and break the image.
     if '?' in url:
-        url = url.split('?')[0]
+        try:
+            from urllib.parse import urlparse, parse_qsl, urlencode
+            parsed = urlparse(url)
+            params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            auth_keys = {'token', 'sig', 'signature', 'key', 'auth', 'expires',
+                         'expiry', 'exp', 'hash', 'hmac'}
+            if auth_keys & {k.lower() for k in params}:
+                return url
+            # Drop only known width/crop params, keep the rest.
+            for k in ('width', 'w', 'crop', 'resize', 'size', 'quality', 'q'):
+                params.pop(k, None)
+            params['width'] = '3840'
+            new_query = urlencode(params)
+            return parsed._replace(query=new_query).geturl()
+        except Exception:
+            return url
 
-    # Request a much larger width for fanart (3840px = 4K width)
-    # This ensures crisp display even on large screens
+    # Plain URL: append the width hint.
     return url + '?width=3840'
 
 

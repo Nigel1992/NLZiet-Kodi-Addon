@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Small corner button (bottom right) for "Skip intro/recap" and "Next
+     episode", like the Videoland app. Driven by resources/lib/corner.py. -->
+<window type="dialog">
+  <defaultcontrol always="true">10</defaultcontrol>
+  <animation effect="slide" start="0,40" end="0,0" time="250" tween="cubic" easing="out">WindowOpen</animation>
+  <animation effect="fade" start="0" end="100" time="250">WindowOpen</animation>
+  <animation effect="fade" end="0" time="180">WindowClose</animation>
+  <controls>
+    <control type="group">
+      <left>1360</left>
+      <top>902</top>
+      <width>480</width>
+      <height>96</height>
+      <!-- soft shadow behind the pill -->
+      <control type="image">
+        <left>8</left>
+        <top>12</top>
+        <width>472</width>
+        <height>88</height>
+        <texture border="40">pill_shadow.png</texture>
+        <colordiffuse>66000000</colordiffuse>
+      </control>
+      <control type="button" id="10">
+        <left>0</left>
+        <top>0</top>
+        <width>480</width>
+        <height>84</height>
+        <font>font13</font>
+        <align>center</align>
+        <aligny>center</aligny>
+        <textcolor>FF17202A</textcolor>
+        <focusedcolor>FF000000</focusedcolor>
+        <disabledcolor>FF17202A</disabledcolor>
+        <texturefocus border="40">pill.png</texturefocus>
+        <texturenofocus border="40" colordiffuse="F2FFFFFF">pill.png</texturenofocus>
+        <pulseonselect>false</pulseonselect>
+        <label>$INFO[Window.Property(label)]</label>
+      </control>
+    </control>
+  </controls>
+</window>

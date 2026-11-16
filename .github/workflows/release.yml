@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag like v1.7.3 to publish a GitHub release with the installable zip.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check the tag matches addon.xml
+        run: |
+          VERSION=$(python -c "import xml.etree.ElementTree as ET; print(ET.parse('addon.xml').getroot().attrib['version'])")
+          test "v${VERSION}" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} does not match addon.xml version ${VERSION}"; exit 1; }
+      - name: Run tests
+        run: |
+          python -m pip install --upgrade pip pytest
+          python -m pytest -q
+      - name: Build add-on zip
+        run: python scripts/build-release.py
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" build/*.zip --title "${GITHUB_REF_NAME}" --generate-notes

@@ -104,6 +104,15 @@ def reset_recorder():
     RECORDER.reset()
 
 
+@pytest.fixture(autouse=True)
+def reset_tvmaze_offline_state():
+    """A failed network call in one test must not mark TVmaze offline for the next."""
+    from resources.lib import tvmaze
+    tvmaze._offline_until = 0
+    yield
+    tvmaze._offline_until = 0
+
+
 @pytest.fixture
 def kodi_recorder():
     return RECORDER

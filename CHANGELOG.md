@@ -1,6 +1,303 @@
 # Changelog
 
-> **Latest Version:** v1.6.4 (November 13, 2026)
+> **Latest Version:** v2.0.0 (November 17, 2026)
+
+## [2.0.0] - 2026-11-17
+
+### Toegevoegd
+- **Kodi-bibliotheek**: series en films exporteren naar `.strm/.nfo`, met automatische updates (nieuwe afleveringen erbij, verlopen verwijderen), TMDb/TVmaze-metadata-aanvulling, seizoensposters, clearlogo's, artwork-repair via JSON-RPC.
+- **Kijken**: kijkstatus terug naar NLZiet, Up Next + intro/recap overslaan, binge-modus, "stop na deze aflevering", shuffle, vaste taal/ondertitel-voorkeur, VOD resume-posities (lokaal + cross-device sync).
+- **Overzicht & gemak**: widgets, "verloopt binnenkort"-lijst, favoriete kanalen, lokale kijkgeschiedenis, melding nieuwe aflevering/seizoen, EPG-herinnering, zoeken in Videoland, hele serie als bekeken markeren, sorteeropties, zoekfilters.
+- **Betrouwbaarheid & beheer**: diagnosescherm + dagelijkse achtergrondcontrole, duidelijke foutmeldingen, toegankelijkheid, ouderlijk toezicht, Trakt (status + live scrobble + import), backup/herstel, CI (tests + zip + release).
+- **Automatische bron-registratie**: de add-on voegt de bibliotheekmappen zelf toe aan Kodi (sources.xml + content type/scraper in de database) en scant ze, zonder handmatige stappen.
+- **Huge thanks aan djdirty (Wilfried)** voor de oorspronkelijke pull request (#48) met al deze functies, vertalingen en 299 unit-tests.
+
+### Gewijzigd
+- Licentie blijft CC-BY-NC 4.0.
+- "My List (Kodi only)" verwijderd; leftovers gemigreerd naar Kijk Later.
+
+### Gefixt (review van PR #48)
+- Path traversal in de bibliotheek (folder-veld in `library.json` + symlinks in legacy-migratie).
+- Command injection in `RunPlugin`-URLs.
+- Ongevalideerde `int()`-conversies in de router.
+- Ouderlijk toezicht bypass via `inf`.
+- Signed image-URLs die braken door `optimize_image_url`.
+- Verouderde settings in de service (cached `ADDON`).
+- Diverse robustheidsissues (remote-detectie, cache-parsing, `sync-shared --check`, etc.).
+- `xbmc.translatePath` → `xbmcvfs.translatePath` (Kodi 20+ compatibiliteit).
+
+## [2.6.3] - 2026-11-16
+
+### Gewijzigd
+- **Geen "Kijk Later gesynchroniseerd"-meldingen meer op de achtergrond.** De melding bij de automatische Kijk Later-sync staat nu standaard uit (achtergrond-huishouding hoort stil te zijn). Handmatig synchroniseren toont de uitkomst nog wel. Weer aan te zetten met de instelling *Melding bij achtergrond-synchronisatie*.
+- **Hoek-knop ("Overslaan"/"Volgende aflevering") blijft staan tot de intro/recap voorbij is.**
+
+## [2.6.2] - 2026-11-16
+
+### Verwijderd
+- De tijdelijke marker-probe. (Uit de log bleek dat NLZiet voor het geteste materiaal geen hoofdstukken teruggeeft; de intro-skip verschijnt zodra NLZiet wél markeringen levert.)
+
+## [2.6.1] - 2026-11-16
+
+### Diagnose
+- Probe om te vinden of/waar NLZiet intro-markeringen levert (logt `NLZiet marker-probe …` met de rauwe chapters-respons en marker-achtige velden). Voor de intro-skip. Wordt daarna weggehaald.
+
+## [2.6.0] - 2026-11-16
+
+### Gewijzigd
+- **"Overslaan" en "Volgende aflevering" nu als klein knopje in de hoek.** De intro-overslaan-vraag en de volgende-aflevering-vraag verschijnen niet meer als beeldvullend ja/nee-venster, maar als een wit pilletje rechtsonder (druk op OK om te doen, negeren om door te kijken). De video blijft erachter zichtbaar.
+
+### Opgelost
+- **Niet meer twee keer de "volgende aflevering"-vraag** bij de overgang naar de volgende aflevering.
+
+## [2.5.9] - 2026-11-15
+
+### Opgelost
+- **"Nee" bij de vraag start de volgende aflevering niet meer.** Oorzaak: de achtergronddienst hield de instelling vast zoals die bij het opstarten was. Zette je daarna "met vraag" aan, dan dacht de dienst nog "automatisch" en speelde bij de kijk-drempel tóch door. De dienst leest de instelling nu **vers** bij elke beslissing. Daarnaast zet "Nee" nu een "stop na deze"-vlag, zodat de dienst sowieso niets meer doet.
+
+## [2.5.8] - 2026-11-15
+
+### Opgelost
+- **Automatisch doorspelen werkt nu echt.** De volgende aflevering start nu zodra de aflevering als *bekeken* telt (voorbij de drempel), net zoals de Lucent Video-add-on het doet — niet meer alleen bij het "afgelopen"-signaal, dat bij DRM vaak als "gestopt" met een iets verouderde positie binnenkomt. Uit de log bleek dat precies het probleem (`watched=True`, maar geen volgende).
+- Tijdelijke diagnose-meldingen weer verwijderd.
+
+## [2.5.7] - 2026-11-15
+
+### Diagnose
+- **Melding aan het eind van elke aflevering.** Toont "Einde afg=.. eind=.. pos=../.. id=.." zodat zichtbaar is of de dienst het einde herkent en de aflevering volgt. Hiermee kan de "volgende aflevering" worden opgespoord. Wordt daarna weggehaald.
+
+## [2.5.6] - 2026-11-15
+
+### Diagnose
+- **Tijdelijke meldingen om "volgende aflevering" te vinden.** Aan het eind tonen "Einde: volgende aflevering zoeken…", en daarna "Volgende: <titel>" of "Geen volgende aflevering gevonden". Zo is zichtbaar waar het vastloopt. Worden later weer weggehaald.
+
+## [2.5.5] - 2026-11-15
+
+### Opgelost
+- **Dubbele "volgende aflevering"-vraag echt weg.** Het slot stond in de achtergrondtaak en het wissen bij het starten maakte het stuk (een race). Het slot wordt nu meteen in de afspeel-aanroep gezet, zodat een tweede start het al ziet voordat er iets draait. Eén vraag (of melding) per aflevering.
+
+## [2.5.4] - 2026-11-15
+
+### Opgelost
+- **De vraag komt nu maar één keer.** Kodi start hetzelfde afspelen soms dubbel, waardoor "Volgende aflevering afspelen?" twee keer verscheen. Er zit nu een slot op: per aflevering één keer.
+
+## [2.5.3] - 2026-11-15
+
+### Opgelost
+- **Automatisch doorspelen werkt nu ook bij DRM-afspelen.** Kodi meldt het einde van een beveiligde video (inputstream adaptive) vaak als "gestopt" in plaats van "afgelopen", waardoor de volgende aflevering niet startte. De add-on ziet nu aan de positie (laatste seconden) dat de aflevering klaar is en speelt in de stand "automatisch" de volgende af.
+
+## [2.5.2] - 2026-11-15
+
+### Opgelost
+- **Speelt nooit meer dezelfde aflevering opnieuw.** Als de "volgende" aflevering toch de huidige blijkt te zijn, slaat de add-on het over in plaats van opnieuw te starten.
+- **Je ziet nu waarom er geen popup komt.** In de stand "met vraag" toont de add-on kort op het scherm "Geen volgende aflevering gevonden" als er geen volgende is, zodat duidelijk is of het aan de detectie ligt of aan de timing.
+- **Betere timing van de popup.** De aftiteling-markering wordt alleen gebruikt als die in de tweede helft van de aflevering ligt; anders komt de vraag ~45 sec voor het eind.
+
+## [2.5.1] - 2026-11-15
+
+### Opgelost
+- **Eigen "volgende aflevering"-popup kwam soms niet.** De wachter die de vraag toont draait nu in een thread die Kodi niet voortijdig afbreekt, en er is een logregel toegevoegd (`Next episode prompt at ...`) zodat te zien is wanneer hij afgaat.
+
+## [2.5.0] - 2026-11-15
+
+### Gewijzigd
+- **Volgende aflevering: nu zonder Up Next te kunnen.** Nieuwe instelling *Volgende aflevering* met vier keuzes: **Up Next-add-on** (zoals voorheen, de bekende kaart), **Door de add-on zelf (met vraag)** — een ingebouwde "Volgende aflevering afspelen?" vlak voor het einde, zonder dat `service.upnext` nodig is, **Door de add-on zelf (automatisch)** — de volgende aflevering begint vanzelf, en **Uit**. Handig als de Up Next-add-on bij jou problemen geeft. De oude losse schakelaars "Up Next" en "Automatisch doorspelen" zijn hierin samengevoegd.
+
+## [2.4.6] - 2026-11-14
+
+### Gewijzigd
+- **Net-elders-gekeken titels komen vooraan.** Bij het overnemen van je kijkpositie schrijft NLZiet nu ook de tijd mee (`lastplayed`), zodat een aflevering die je zojuist op je telefoon keek vooraan in de skin-rij "Afleveringen die je kijkt" verschijnt (die sorteert op laatst gekeken), en niet ergens in het midden.
+- **Geen onnodige verversing meer.** De sync laat het beeld niet meer apart verversen; Kodi werkt de bibliotheekrijen op het hoofdscherm vanzelf bij. Zo springt een lijst waar je op dat moment doorheen bladert niet meer op het verkeerde moment terug.
+
+## [2.4.5] - 2026-11-14
+
+### Toegevoegd
+- **Ook tonen wat je op een ander apparaat keek.** Eén keer per uur (en kort na het opstarten) haalt NLZiet je kijkpositie uit je "Verder kijken"-rij op en zet die als hervatpunt in de Kodi-bibliotheek. Zo verschijnt een aflevering of film die je op je telefoon, tablet of in de NLZiet-app begon ook hier in de rij "Afleveringen die je kijkt" van de skin. Uit te zetten met de nieuwe instelling *Ook tonen wat je op een ander apparaat keek* (standaard aan). Raakt alleen titels die NLZiet zelf in je bibliotheek heeft gezet.
+
+## [2.4.4] - 2026-11-14
+
+### Fixed
+- **Datum-reparatie draait één keer opnieuw met de melding.** In 2.4.2 draaide de reparatie al stil en zette zichzelf op "klaar", waardoor 2.4.3 geen melding toonde. Hij draait nu nog één keer en toont dan "Bibliotheekdatums bijgewerkt (N afleveringen)".
+## [2.4.3] - 2026-11-14
+
+### Added
+- **Melding als de datum-reparatie klaar is.** De eenmalige achtergrondreparatie van de bibliotheekdatums toont nu een melding "Bibliotheekdatums bijgewerkt (N afleveringen)" zodra hij klaar is, en ververst de huidige lijst.
+## [2.4.2] - 2026-11-14
+
+### Changed
+- **"Recent toegevoegd" volgt nu de uitzenddatum, met terugwerkende kracht.** De datum van een aflevering in de bibliotheek volgt nu de uitzenddatum, zodat de nieuwste aflevering vanzelf bovenaan "recent toegevoegde afleveringen" komt en oude content wegzakt. Een eenmalige reparatie op de achtergrond zet dit ook recht voor afleveringen die al in je bibliotheek stonden (direct in de Kodi-database, dus zonder opnieuw toe te voegen).
+## [2.4.1] - 2026-11-14
+
+### Fixed
+- **Dubbele "verder kijken"-vraag.** NLZiet toonde bij afspelen uit de bibliotheek z'n eigen hervat-vraag bovenop die van Kodi/de skin. De addon laat het hervatten nu volledig aan Kodi (en je skin) over: bibliotheek-.strm's zijn gemarkeerd (inlib=1) en in de addon zelf wordt de positie stil toegepast zonder eigen venster. Nog maar één keuze.
+- **Nieuwe afleveringen verschijnen in "recent toegevoegd".** Nieuw toegevoegde afleveringen krijgen nu een `dateadded` op het moment van toevoegen, zodat ze bovenaan komen in "recent toegevoegde afleveringen"-widgets. Bestaande afleveringen houden hun datum.
+## [2.4.0] - 2026-11-14
+
+### Changed
+- **"Mijn lijst (alleen Kodi)" verwijderd.** Nu er een Kodi-bibliotheek is en Kijk Later met je NLZiet-account wordt gesynchroniseerd, was de lokale lijst "Mijn lijst (alleen Kodi)" overbodig. Weg zijn: de map in het hoofdmenu, de contextmenu-opties, de bijbehorende meldingen en de vraag bij uitloggen. Het contextmenu toont nu alleen nog Kijk Later en Toevoegen aan/uit bibliotheek.
+- **Niets kwijt:** stond er nog iets op Mijn lijst, dan wordt dat bij de eerste keer openen eenmalig overgezet naar **Kijk Later** (dat ook in de NLZiet-app zichtbaar is), met de melding "Mijn lijst is overgezet naar Kijk Later (N titels)". Het oude bestand wordt pas verwijderd als dat gelukt is.
+## [2.3.2] - 2026-11-14
+
+### Added
+- **Nieuwe afleveringen automatisch in de bibliotheek.** Als een serie die je volgt een nieuwe aflevering krijgt, werkt de addon de bibliotheek bij zodat die aflevering meteen bij de rest van de serie komt te staan (Instellingen → Bibliotheek → Automatisch; standaard aan). De controle draait op de achtergrond.
+## [2.3.1] - 2026-11-14
+
+### Fixed
+- **NLZiet onthield niet waar je gebleven was.** Voor gewone video's (VOD) werd geen hervatpunt bewaard, dus alles begon weer vanaf 0 (de bestaande hervat-code werd nergens gebruikt). De service onthoudt nu je positie bij het stoppen en NLZiet biedt bij opnieuw afspelen aan "Verder kijken vanaf ...". Een (bijna) uitgekeken video wordt niet meer hervat. Aan/uit en wel/niet vragen staat bij Instellingen → Afspelen.
+
+### Development
+- Nieuwe module `resume_store.py` (lokaal, met tests).
+## [2.3.0] - 2026-11-14
+
+### Added
+- **EPG-herinnering**: in de tv-gids kun je op een toekomstig programma "Herinnering instellen"; vlak voor het begint krijg je een Kodi-melding. De controle draait op de achtergrond, elke minuut.
+- **Trakt-kijklijst importeren**: een knop (Instellingen → Synchronisatie) die de series en films van je Trakt-kijklijst opzoekt in NLZiet en de gevonden titels aan je bibliotheek toevoegt.
+- **Ondertitels zoeken als de stream er geen heeft**: optioneel opent de addon automatisch de ondertitelzoeker van Kodi, zodat je eigen ondertitel-addon (bijv. OpenSubtitles) er een kan vinden (Instellingen → Afspelen).
+
+### Development
+- Nieuwe module `reminders.py` met tests; Trakt-watchlist-import en `subtitles_present`-helper.
+## [2.2.0] - 2026-11-14
+
+### Added
+- **Hele serie als bekeken markeren**: contextmenu op een serie in je bibliotheek stuurt alle afleveringen als bekeken naar NLZiet.
+- **Melding bij nieuwe afleveringen**: een Kodi-melding als een serie die je volgt een nieuwe aflevering krijgt (Instellingen → Synchronisatie; achtergrondcontrole elke paar uur).
+- **Verloopt binnenkort**: een lijst en widget met titels uit je lijsten die binnenkort van NLZiet verdwijnen, met "nog X dagen".
+- **Favoriete kanalen**: een snelle lijst met je ingeschakelde kanalen vooraan, in het hoofdmenu.
+- **Aanbevolen / Nieuw-widgets**: lijsten op basis van NLZiet's eigen aanbevelingen en placement-rijen.
+- **Verder kijken (beide diensten)**: een widget die NLZiet's Verder kijken toont met een snelkoppeling naar die van Videoland.
+- **Instelbaar bekeken-percentage**: kies bij hoeveel procent een video als bekeken naar NLZiet gaat (Instellingen → Synchronisatie, standaard 90%).
+- **Live Trakt-scrobbelen**: geef Trakt tijdens het kijken live door wat er speelt (vereist de aangemelde Trakt-addon).
+
+### Development
+- Nieuwe gedeelde `watch_history` al in gebruik; extra Trakt-scrobble-helpers en tests.
+## [2.1.0] - 2026-11-14
+
+### Added
+- **Binge-modus**: nieuwe schakelaar "Volgende aflevering automatisch afspelen" (Instellingen → Afspelen). Als een bibliotheek-aflevering eindigt, start de volgende vanzelf. Heb je Up Next, laat dit uit en laat Up Next het doen.
+- **Stop na deze aflevering**: via het contextmenu/een actie kun je de automatische volgende aflevering voor die avond uitzetten.
+- **Willekeurige aflevering (shuffle)**: contextmenu op een serie in je bibliotheek → "Willekeurige aflevering afspelen".
+- **Vaste taal- en ondertitelvoorkeur**: kies een gesproken taal en/of ondertiteltaal die automatisch gekozen wordt als een video start (Instellingen → Afspelen).
+- **Kijkgeschiedenis**: een lokale lijst (alleen op dit apparaat) van wat je gekeken hebt, in het hoofdmenu en als widget; met een knop om te wissen.
+
+### Development
+- Nieuwe gedeelde module `watch_history.py` en uitbreiding van `playback_extras.py` (taalkeuze), gedeeld met Videoland. Extra tests.
+## [2.0.0] - 2026-11-14
+
+### Added
+- **Watched status back to NLZiet**: when you watch something (almost) to the end, or mark it as watched/unwatched in Kodi's own library, NLZiet gets the same status. Turn it off under Settings → Synchronisation. Uses NLZiet's own "watched" feature.
+- **Next episode (Up Next)**: with the Up Next add-on installed, the next episode is offered near the end of a library episode so it starts by itself (Settings → Playback → While watching; includes an install button).
+- **Skip intro/recap**: during playback "Skip the intro?" or "Skip the recap?" appears when NLZiet sends chapter times for the video. Whether they are present is logged per video ("chapters ... markers found").
+- **Widgets for the home screen**: ready-made lists (Continue watching, Watch later, My series, My list) for your skin's home-screen widgets, under a new "Widgets" menu. "Continue watching" is also added to the main menu.
+- **Backup and restore of your lists**: a button that saves My list, Watch later, My series, the library list and your settings (without password) to one file, and a button to restore them (Settings → Library → Backup and restore).
+- **Daily automatic check**: once a day the add-on checks in the background whether everything still works and notifies you only when something needs attention (Settings → Library → Maintenance).
+- **Search both services**: when Videoland is installed, a search also offers the same search in Videoland at the top of the results.
+
+### Development
+- New shared modules `playback_extras.py` (chapters/markers + Up Next) and `watch_sync.py` (watched-status logic), kept identical with Videoland via `scripts/sync-shared.py`.
+- 39 new unit tests (watch_sync, chapter markers, next-episode selection).
+
+## [1.9.3] - 2026-11-14
+
+### Fixed
+- **No TMDb match for some series** (e.g. Chateau Meiland): when the title on NLZiet's series page finds nothing on TMDb, the title of the card you added the series from is tried as well.
+
+## [1.9.2] - 2026-11-14
+
+### Fixed
+- **No TMDb match for some series**: site suffixes such as " - Kijk online ..." and trailing years are stripped before searching TMDb; the Kodi log shows per series which match was found ("metadata for ...").
+
+## [1.9.1] - 2026-11-14
+
+### Changed
+- **Settings → Library** is now right below Account and split into groups with a heading: Folders, Lists to the library, Automatic updates, Extra metadata and Maintenance.
+
+### Development
+- Modules shared with the other add-on are listed in `scripts/sync-shared.py` and pinned in `SHARED.lock`; a test fails when one is changed without copying it to the other add-on.
+
+## [1.9.0] - 2026-11-14
+
+### Added
+- **Posters and backgrounds: TMDb first** (Settings → Library → Extra metadata, on by default): posters and backgrounds come from TMDb when it has them, with the service's own images as fallback; descriptions stay service-first. Artwork the add-on set earlier in Kodi is replaced when a better image is known (Kodi gets the image url, so the change shows at once); artwork you chose yourself in Kodi is never replaced.
+- **Choose the right TMDb title** (Library menu, context menu of a title): pick the matching TMDb series or film by hand, or search with another term, when the automatic match missed it. Titles with a trailing year or "- Seizoen N" now also match automatically.
+- **Season posters**: each season gets its own poster from TMDb (`season01-poster.jpg`), also for seasons Kodi already scanned.
+- **Logos in the menus**: logos of titles outside the library are looked up on TMDb in the background and appear the next time a list is opened (setting "Show logos in the menus too", needs the TMDb key).
+- **My Series and Watch Later in the library**: "Add My Series and Watch Later to the library now" (Library menu and settings), plus an automatic option and an optional removal of titles that left these lists. An episode in Watch Later adds its series.
+
+## [1.8.2] - 2026-11-14
+
+### Added
+- **Series and film logos (clearlogo)**: with a TMDb key, every series and film in the library gets its logo (Dutch first, then English, then one without text) as `clearlogo.png` (films: `<name>-clearlogo.png`) and in the `.nfo`. Titles Kodi already scanned get the logo through the artwork repair. Skins that show logos instead of titles (widgets, info screens) now use them; browse lists in the add-on show the logo for titles that are in the library.
+
+## [1.8.1] - 2026-11-14
+
+### Fixed
+- **Diagnostics**: a library folder is no longer reported as "not a Kodi source" when Kodi already has titles from it (for example when the parent folder was added as the source). The hint now also says which content type and scraper to choose.
+
+## [1.8.0] - 2026-11-14
+
+### Added
+- **Parental control** (Settings → Parental control): set a PIN, choose per profile (Profiles → long press) whether switching to it needs the PIN, and optionally require the PIN for live tv and the TV guide. Kids profiles are marked. The PIN is stored only as a salted hash; after a correct PIN the lock stays open for 30 minutes.
+- **Search filters**: a Filter entry on top of search results narrows them by period (2020 and later, 2010s, 2000s, 1990s, before 1990) and genre, when NLZiet supplies that information.
+- **Trakt watched status in menus** (Settings → Synchronization, opt-in): films and episodes watched on Trakt show as watched, using the account connected in script.trakt. Episodes are matched by show title, season and episode number; nothing is guessed.
+- The diagnostics button moved to Settings → Library.
+
+## [1.7.5] - 2026-11-14
+
+### Fixed
+- **Library titles missing from Kodi**: Kodi ignores a scan request while it is still scanning, so titles added in quick succession were written to the library folder but never scanned. Such a request now waits and runs as soon as Kodi's scan is finished, and **Update library now** always lets Kodi scan, so titles that were skipped before get in too.
+
+### Added
+- **Diagnostics** (Settings): one screen that checks sign-in, InputStream Adaptive, Widevine, the connection to the service, TMDb and TVmaze, the TMDb key, whether the library folders are Kodi sources, and how many library titles Kodi really has. A privacy-safe report with a log excerpt is saved for bug reports.
+
+## [1.7.4] - 2026-11-14
+
+### Added
+- **Sorting**: list pages offer Kodi's sort options (default order, title, year; episode and date inside seasons).
+- **Clear error messages**: unexpected problems show one sentence that says what happened (no internet, slow response, session expired, not in your subscription, no longer available, too many requests, service outage); the details go to the Kodi log.
+- **GitHub Actions**: tests and an installable zip on every push and pull request; pushing a `v*` tag publishes a release with the zip.
+
+### Fixed
+- **TMDb key test**: the button now saves the settings first (Kodi only saves when the settings window closes, so the test used to see an empty key) and says exactly what is wrong: no key saved, key not accepted, or TMDb not reachable. Connections retry with a bundled certificate list on devices without system certificates.
+- **Menu icons not changing**: the new icons now live in `resources/media/menu/`. Kodi caches images by file name, so with the old names it kept showing the previous icons.
+
+## [1.7.3] - 2026-11-14
+
+### Changed
+- **Menu icons**: a new consistent icon set: coloured tiles per menu group (blue = browse, purple = your own lists, red = live tv, grey = account) with white line glyphs. No text is baked into the images any more, so labels are not shown twice and follow Kodi's language. The unused Live TV image was removed; `scripts/build-menu-icons.py` rebuilds the set.
+- **Main menu order**: search and browsing first, then your own lists and the library, then profiles and sign out at the bottom.
+
+### Fixed
+- **Library posters**: series and films now get their poster and background in Kodi's library. The images are picked the same way as when browsing, the poster of the item you added is remembered when the detail page has none, and the images are saved as `poster.jpg`/`fanart.jpg` (films: `<name>-poster.jpg`/`<name>-fanart.jpg`) next to the files, which Kodi always uses.
+- **Library posters**: titles Kodi had already scanned without artwork get their poster and background filled in after every library update and after every Kodi library scan. Artwork you chose yourself in Kodi is never replaced. Settings → Library has a "Repair artwork in the Kodi library" button.
+
+## [1.7.2] - 2026-11-14
+
+### Changed
+- **Library folder**: the library now always lives in the add-on's own folder (`special://profile/addon_data/plugin.video.nlziet/library/`). Series exported by older versions to `/storage/emulated/0/KodiNLZietLibrary/TV Shows` are moved there automatically, once (on first library use, or about two minutes after Kodi starts). The empty old folder is removed, and the folder setting is reset if it still pointed to the old location. A notification asks to add the new folder as a Kodi source; Kodi's library is cleaned and rescanned.
+
+## [1.7.1] - 2026-11-14
+
+### Added
+- **Library metadata**: NLZiet's own data is always used first; only empty fields are filled in from TMDb (series and films, needs a free TMDb API key) and TVmaze (series, no key needed): description, poster, background, year, genres, rating, network/studio, and per-episode titles, descriptions and images. Placeholder titles such as "Aflevering 3" are replaced by the real episode title.
+- **Library metadata**: `.nfo` files now also carry TMDb, TVDB, IMDb and TVmaze ids, so Kodi, skins and Trakt match titles reliably. (TVDB is not queried directly because its API needs a paid key; the id comes from TMDb/TVmaze.)
+- **Settings → Library → Extra metadata**: on/off switch, a field for the TMDb API key and a "Test TMDb key" button.
+- Only exact title matches are used (films also need a matching year), answers are cached for 7 days, and a slow or unreachable service is skipped for a few minutes so library updates never hang.
+
+## [1.7.0] - 2026-11-14
+
+### Added
+- **Library**: movies can now be added to the Kodi library too (context menu "Add to library" on a movie). Movies are written to their own folder (Settings → Library → Folder for movies).
+- **Library**: the context menu shows "Remove from library" for series and movies that are already in the library; removing deletes the files and cleans the Kodi library.
+- **Library**: added series and movies are remembered and updated automatically in the background (default every 12 hours, never during playback): new episodes are added and episodes or movies that are no longer available are removed.
+- **Library**: new main menu entry "Library" with everything that was added, an "Update library now" action and a remove option per item.
+- **Library**: new settings category "Library" with folders for TV shows and movies, automatic update and interval, and options to scan and clean the Kodi library after a change.
+- **Library**: `.nfo` files now include artwork, a unique NLZiet id and runtime, so Kodi shows posters and thumbnails without an external scraper.
+
+### Changed
+- **Library**: episode numbers are assigned once and stored per episode, so file names stay the same when older episodes expire. Kodi keeps watched status and resume points.
+- **Library**: series with real season/episode numbers use those numbers; daily programmes keep using the broadcast year as season.
+- **Library**: the default library folder is now inside the addon data folder (`special://profile/addon_data/plugin.video.nlziet/library/`), so it works on every platform. (See 1.7.2: the old Android folder is moved there.) Folder settings now open Kodi's folder browser, and network shares (smb://, nfs://) are supported.
+- **Library**: a failed or empty answer from NLZiet never deletes library files.
 
 ## [1.6.4] - 2026-11-13
 
