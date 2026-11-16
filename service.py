@@ -372,6 +372,18 @@ def main():
             except Exception as exc:
                 xbmc.log('NLZiet service: dateadded repair failed: {}'.format(exc), xbmc.LOGWARNING)
 
+        # Make sure the library folders have a content type + local scraper in
+        # Kodi's database, otherwise .strm/.nfo files never become entries.
+        if now - started >= LIBRARY_STARTUP_DELAY and not _setting_on('library_sources_fixed', False):
+            try:
+                xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=fix_library_sources&background=1)'.format(ADDON_ID))
+                try:
+                    _addon().setSetting('library_sources_fixed', 'true')
+                except Exception:
+                    pass
+            except Exception as exc:
+                xbmc.log('NLZiet service: fix library sources failed: {}'.format(exc), xbmc.LOGWARNING)
+
         # EPG reminders about to start (checked here, no plugin round-trip).
         try:
             _check_reminders()

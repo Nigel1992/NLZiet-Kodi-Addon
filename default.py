@@ -2190,6 +2190,15 @@ def _scan_library_paths(lib):
                 pass
 
 
+def fix_library_sources():
+    """Set content type/scraper on library paths and trigger a scan."""
+    _fix_library_sources_db()
+    try:
+        _scan_library_paths(_get_library())
+    except Exception:
+        pass
+
+
 def register_library_sources():
     """Add the library folders as Kodi video sources (idempotent).
 
@@ -2198,6 +2207,7 @@ def register_library_sources():
     new sources."""
     import os
     import xml.etree.ElementTree as ET
+    _fix_library_sources_db()
     lib = _get_library()
     paths = [p for p in (lib.tv_root(), lib.movies_root()) if p]
     names = ['NLZiet Series', 'NLZiet Movies']
@@ -2242,6 +2252,42 @@ def register_library_sources():
         xbmcgui.Dialog().notification('NLZiet', 'Bronnen toevoegen mislukt: {}'.format(exc), xbmcgui.NOTIFICATION_ERROR)
 
 
+def _fix_library_sources_db():
+    '''Set content type + local scraper on the library paths in Kodi's DB.'''
+    import glob
+    import os
+    import sqlite3
+    lib = _get_library()
+    pairs = [(lib.tv_root(), 'tvshows'), (lib.movies_root(), 'movies')]
+    db_dir = xbmcvfs.translatePath('special://userdata/Database/')
+    dbs = sorted(glob.glob(os.path.join(db_dir, 'MyVideos*.db')))
+    if not dbs:
+        return
+    db_path = dbs[-1]
+    try:
+        conn = sqlite3.connect(db_path, timeout=5)
+        cur = conn.cursor()
+        for path, content in pairs:
+            if not path:
+                continue
+            norm = path.rstrip('/') + '/'
+            # Update existing rows.
+            cur.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=1, "
+                        "useFolderNames=0, noUpdate=0, exclude=0, strSettings=? "
+                        "WHERE strPath=? OR strPath=?",
+                        (content, 'metadata.local', '', norm, path))
+            if cur.rowcount == 0:
+                cur.execute("INSERT INTO path (strPath, strContent, strScraper, scanRecursive, "
+                            "useFolderNames, noUpdate, exclude, strSettings, dateAdded) "
+                            "VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
+                            (norm, content, 'metadata.local', 1, 0, 0, 0, ''))
+        conn.commit()
+        conn.close()
+        xbmc.log('NLZiet: library sources fixed in DB', xbmc.LOGINFO)
+    except Exception as exc:
+        xbmc.log('NLZiet: fix library sources DB failed: {}'.format(exc), xbmc.LOGERROR)
+
+
 def library_from_lists(background=False):
     """Menu/settings action: put My Series and Watch Later in the Kodi library."""
     if background and xbmc.Player().isPlaying():
@@ -2261,6 +2307,7 @@ def library_from_lists(background=False):
     finally:
         if dialog is not None:
             dialog.close()
+    _fix_library_sources_db()
     if added or removed:
         library_mod.run_library_jobs(scan=True, clean=bool(removed) and _setting_on('library_clean_after', True))
     _scan_library_paths(lib)
@@ -2394,6 +2441,7 @@ def library_update(background=False):
             except Exception:
                 pass
     changed = bool(totals.get('added') or totals.get('removed'))
+    _fix_library_sources_db()
     if changed or not background:
         # A manual update always scans, so titles a busy Kodi skipped get in too.
         library_mod.run_library_jobs(scan=True, clean=bool(totals.get('removed')) and _setting_on('library_clean_after', True))
@@ -8221,6 +8269,7 @@ def get_route_handlers():
         'check_tmdb_key': check_tmdb_key,
         'repair_library_art': repair_library_art,
         'register_library_sources': register_library_sources,
+        'fix_library_sources': fix_library_sources,
         'run_diagnostics': run_diagnostics,
         'widgets_menu': widgets_menu,
         'widget_list': widget_list,
