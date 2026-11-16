@@ -1573,3 +1573,8 @@ msgstr ""
 msgctxt "#33369"
 msgid "Next episode"
 msgstr ""
+
+
+msgctxt "#33370"
+msgid "Add Kodi sources for the library (restart Kodi)"
+msgstr ""

@@ -201,7 +201,7 @@
             <close>false</close>
           </control>
         </setting>
-        <setting id="register_library_sources" type="action" label="33099" help="">
+        <setting id="register_library_sources" type="action" label="33370" help="">
           <level>0</level>
           <data>RunPlugin(plugin://$ID?mode=register_library_sources)</data>
           <control type="button" format="action">

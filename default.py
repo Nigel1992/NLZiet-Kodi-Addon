@@ -472,7 +472,7 @@ STRING_IDS = {
     'max_devices_label': 33064,
     'expires_label': 33065,
     'add_to_library': 33066,
-    'register_sources': 33144,
+    'register_sources': 33370,
     'library_exported': 33067,
     'library_export_failed': 33068,
     'remove_from_library': 33187,

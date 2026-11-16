@@ -1590,3 +1590,8 @@ msgstr "Terugblik overslaan"
 msgctxt "#33369"
 msgid "Next episode"
 msgstr "Volgende aflevering"
+
+
+msgctxt "#33370"
+msgid "Add Kodi sources for the library (restart Kodi)"
+msgstr "Kodi-bronnen voor de bibliotheek toevoegen (herstart Kodi)"
