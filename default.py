@@ -2258,7 +2258,14 @@ def _fix_library_sources_db():
     import os
     import sqlite3
     lib = _get_library()
-    pairs = [(lib.tv_root(), 'tvshows'), (lib.movies_root(), 'movies')]
+    # Both the translated (absolute) and untranslated (special://) forms may
+    # exist in the DB, so handle both.
+    tv_special = 'special://profile/addon_data/plugin.video.nlziet/library/TV Shows'
+    mv_special = 'special://profile/addon_data/plugin.video.nlziet/library/Movies'
+    pairs = [
+        (lib.tv_root(), tv_special, 'tvshows'),
+        (lib.movies_root(), mv_special, 'movies'),
+    ]
     db_dir = xbmcvfs.translatePath('special://userdata/Database/')
     dbs = sorted(glob.glob(os.path.join(db_dir, 'MyVideos*.db')))
     if not dbs:
@@ -2267,20 +2274,30 @@ def _fix_library_sources_db():
     try:
         conn = sqlite3.connect(db_path, timeout=5)
         cur = conn.cursor()
-        for path, content in pairs:
-            if not path:
-                continue
-            norm = path.rstrip('/') + '/'
-            # Update existing rows.
-            cur.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=1, "
-                        "useFolderNames=0, noUpdate=0, exclude=0, strSettings=? "
-                        "WHERE strPath=? OR strPath=?",
-                        (content, 'metadata.local', '', norm, path))
-            if cur.rowcount == 0:
+        # Remove duplicate absolute-path rows (Kodi uses special:// paths).
+        cur.execute("DELETE FROM path WHERE strPath LIKE '/%addon_data/plugin.video.nlziet/library/%'")
+        for abs_path, special_path, content in pairs:
+            for base in (abs_path, special_path):
+                if not base:
+                    continue
+                norm = base.rstrip('/') + '/'
+                cur.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=1, "
+                            "useFolderNames=0, noUpdate=0, exclude=0, strSettings=? "
+                            "WHERE (strPath=? OR strPath=?) AND (strContent IS NULL OR strContent='' OR strContent=? )",
+                            (content, 'metadata.local', '', norm, base, ''))
+                # Also update rows that have NULL/empty regardless, force content type.
+                cur.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=1, "
+                            "useFolderNames=0, noUpdate=0, exclude=0, strSettings=? "
+                            "WHERE strPath=? OR strPath=?",
+                            (content, 'metadata.local', '', norm, base))
+            # Insert if missing (using special:// form, which Kodi prefers).
+            cur.execute("SELECT 1 FROM path WHERE strPath=? OR strPath=?",
+                        (special_path.rstrip('/') + '/', abs_path.rstrip('/') + '/'))
+            if not cur.fetchone():
                 cur.execute("INSERT INTO path (strPath, strContent, strScraper, scanRecursive, "
                             "useFolderNames, noUpdate, exclude, strSettings, dateAdded) "
                             "VALUES (?,?,?,?,?,?,?,?,datetime('now'))",
-                            (norm, content, 'metadata.local', 1, 0, 0, 0, ''))
+                            (special_path.rstrip('/') + '/', content, 'metadata.local', 1, 0, 0, 0, ''))
         conn.commit()
         conn.close()
         xbmc.log('NLZiet: library sources fixed in DB', xbmc.LOGINFO)
