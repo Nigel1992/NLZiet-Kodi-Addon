@@ -73,7 +73,7 @@
       <group id="2" label="33260">
         <setting id="library_lists_sync" type="boolean" label="33248" help="33249">
           <level>0</level>
-          <default>false</default>
+          <default>true</default>
           <control type="toggle"/>
         </setting>
         <setting id="library_lists_remove" type="boolean" label="33250" help="33251">

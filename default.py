@@ -2432,7 +2432,7 @@ def library_update(background=False):
     if background and xbmc.Player().isPlaying():
         return
     lib = _get_library()
-    if _setting_on('library_lists_sync', False):
+    if _setting_on('library_lists_sync', True):
         try:
             sync_lists_to_library(lib)
         except Exception as e:
