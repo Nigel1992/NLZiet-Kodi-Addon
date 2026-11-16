@@ -1876,13 +1876,6 @@ class NLZietAPI:
         chapters = data.get('chapters')
         return chapters if isinstance(chapters, list) else []
 
-    def get_chapters_raw(self, content_id):
-        """The raw /v7/chapters answer (for diagnostics), or None."""
-        if not content_id:
-            return None
-        ok, data = self._api_call('GET', '/v7/chapters/' + urllib.parse.quote(str(content_id), safe=''))
-        return data if ok else None
-
     def get_surrounding_episodes(self, content_id):
         """NLZiet's previous/next episode answer for an episode (raw), or None."""
         if not content_id:

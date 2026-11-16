@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.6.1 (November 16, 2026)
+> **Latest Version:** v2.6.2 (November 16, 2026)
+
+## [2.6.2] - 2026-11-16
+
+### Verwijderd
+- De tijdelijke marker-probe. (Uit de log bleek dat NLZiet voor het geteste materiaal geen hoofdstukken teruggeeft; de intro-skip verschijnt zodra NLZiet wél markeringen levert.)
 
 ## [2.6.1] - 2026-11-16
 

@@ -6787,33 +6787,6 @@ def _after_playback_started(api, content_id, fmt, metadata, stream_info):
             playback_extras.marker_summary(markers)), xbmc.LOGINFO)
     except Exception as exc:
         xbmc.log('NLZiet chapters failed: {}'.format(exc), xbmc.LOGINFO)
-    # Diagnostic: show the raw chapters answer and any marker-like fields in the
-    # playback data, so NLZiet's intro/credits source (if any) can be found.
-    try:
-        import json as _pj
-        _raw = api.get_chapters_raw(content_id)
-        _hits, _seen = {}, 0
-        _pat = ('marker', 'chapter', 'segment', 'intro', 'credit', 'skip',
-                'recap', 'tcin', 'tcout', 'timecode', 'highlight', 'start', 'end')
-        _stack = [('meta', metadata or {}), ('stream', stream_info)]
-        while _stack and _seen < 500:
-            _name, _node = _stack.pop()
-            _seen += 1
-            if isinstance(_node, dict):
-                for _k, _v in _node.items():
-                    if any(p in str(_k).lower() for p in _pat) and not isinstance(_v, (dict, list)):
-                        _hits[_name + '.' + str(_k)] = _v
-                    if isinstance(_v, (dict, list)):
-                        _stack.append((_name + '.' + str(_k), _v))
-            elif isinstance(_node, list):
-                for _i, _v in enumerate(_node[:20]):
-                    if isinstance(_v, (dict, list)):
-                        _stack.append(('{}[{}]'.format(_name, _i), _v))
-        xbmc.log('NLZiet marker-probe {} chapters_raw={} hits={}'.format(
-            content_id, _pj.dumps(_raw, default=str)[:900], _pj.dumps(_hits, default=str)[:900]),
-            xbmc.LOGINFO)
-    except Exception as _pe:
-        xbmc.log('NLZiet marker-probe failed ({})'.format(type(_pe).__name__), xbmc.LOGINFO)
     if markers and _setting_on('skip_markers', True):
         def ask(kind):
             # A small corner button (like the streaming apps), not a full-screen
