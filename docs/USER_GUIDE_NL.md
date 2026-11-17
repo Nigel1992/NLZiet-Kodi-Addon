@@ -155,7 +155,7 @@ De add-on schrijft series en films als `.strm` + `.nfo` naar een map in je Kodi-
 
 - **Diagnose-rapport**: Instellingen → Bibliotheek → Onderhoud → Diagnose uitvoeren → Rapport opslaan.
 - **Issues**: https://github.com/Nigel1992/NLZiet-Kodi-Addon/issues
-- **Discord**: https://discord.gg/UbPRh74PzV
+- **Discord**: https://discord.gg/9F2NZuydXT
 
 ## 📄 Licentie
 

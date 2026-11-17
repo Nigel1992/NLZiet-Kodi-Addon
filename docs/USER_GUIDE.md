@@ -155,7 +155,7 @@ The add-on writes series and movies as `.strm` + `.nfo` into a folder in your Ko
 
 - **Diagnostics report**: Settings → Library → Maintenance → Run diagnostics → Save report.
 - **Issues**: https://github.com/Nigel1992/NLZiet-Kodi-Addon/issues
-- **Discord**: https://discord.gg/UbPRh74PzV
+- **Discord**: https://discord.gg/9F2NZuydXT
 
 ## 📄 License
 
