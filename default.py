@@ -4425,6 +4425,14 @@ def _auto_add_sources(api):
             sources['title:' + _item_title(series).casefold()] = (str(series['id']), _item_title(series))
     for item in api.get_watch_later() or []:
         key = _watch_later_collection_id(item)
+        if not key and isinstance(item, dict):
+            # BBCNL and other "programme" entries are not always typed as
+            # episodes, but still represent a followed title whose new episodes
+            # we want to pick up. Group them by title (excluding movies/channels).
+            if _content_group(item) not in ('movies', 'channels'):
+                title = _item_title(item)
+                if title:
+                    key = 'title:' + title.casefold()
         if key and key not in sources:
             sources[key] = (None, _item_title(item))
     return sources
@@ -4453,8 +4461,19 @@ def _run_auto_add(api):
         try:
             series_title, episodes = _collect_series_episodes(api, sid)
         except Exception:
-            continue
-        episodes = [ep for ep in episodes if isinstance(ep, dict) and ep.get('id')]
+            series_title, episodes = '', []
+        episodes = [ep for ep in (episodes or []) if isinstance(ep, dict) and ep.get('id')]
+        # BBCNL and other titles that are not exposed as series still carry
+        # episodes under their title; fall back to a title-based search so
+        # auto-add keeps working for them.
+        if not episodes:
+            try:
+                episodes = _find_episodes_by_title(api, series_title or title)
+            except Exception:
+                episodes = []
+            episodes = [ep for ep in (episodes or []) if isinstance(ep, dict) and ep.get('id')]
+            if episodes and not series_title:
+                series_title = title
         if not episodes:
             continue
         seen = set(entry.get('seen') or [])
@@ -4770,6 +4789,7 @@ def _check_my_series_new_episodes(api, items):
         new_ids, state = _new_my_series_ids(api, items)
         _save_my_series_state(api, state)
         if new_ids:
+            _save_my_series_highlights(api, new_ids)
             try:
                 xbmc.executebuiltin('Container.Refresh')
             except Exception:
@@ -4790,6 +4810,54 @@ def _save_my_series_state(api, state):
         xbmc.log('NLZiet: could not save My Series state: {0}'.format(exc), xbmc.LOGWARNING)
 
 
+def _my_series_highlights_path(api):
+    sync_file = getattr(api, 'watchlater_sync_file', None)
+    if not sync_file:
+        return None
+    return os.path.join(os.path.dirname(sync_file), 'my_series_highlights.json')
+
+
+def _load_my_series_highlights(api):
+    path = _my_series_highlights_path(api)
+    if not path:
+        return set()
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            data = json.load(handle)
+    except (OSError, TypeError, ValueError):
+        return set()
+    if isinstance(data, (list, tuple, set)):
+        return {str(item) for item in data if item is not None}
+    if isinstance(data, dict):
+        return {str(key) for key in data.keys()}
+    return set()
+
+
+def _save_my_series_highlights(api, ids):
+    path = _my_series_highlights_path(api)
+    if not path:
+        return
+    try:
+        merged = _load_my_series_highlights(api)
+        merged.update(str(item) for item in (ids or []) if item is not None)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as handle:
+            json.dump(sorted(merged), handle)
+    except OSError as exc:
+        xbmc.log('NLZiet: could not save My Series highlights: {0}'.format(exc), xbmc.LOGWARNING)
+
+
+def _clear_my_series_highlights(api):
+    path = _my_series_highlights_path(api)
+    if not path:
+        return
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
+
+
 def browse_my_series():
     """Show the followed-series list; the cloud sync runs after the list is shown."""
     api = _get_list_api()
@@ -4801,10 +4869,13 @@ def browse_my_series():
     if not items:
         xbmcgui.Dialog().notification('NLZiet', get_string('my_series_empty'), xbmcgui.NOTIFICATION_INFO)
     else:
-        # Detecting newly added episodes requires fetching every series' episodes,
-        # which is slow. Do it in the background so the list renders immediately;
-        # highlight/refresh happen after the directory has been shown.
-        _render_list_items(items, sync_mode='sync_my_series' if _my_series_sync_enabled() else None)
+        # Highlight series that gained new episodes since the last check. The
+        # detection itself runs in the background (see below); the pending set
+        # is persisted there and consumed here on every render.
+        highlights = _load_my_series_highlights(api)
+        _render_list_items(items, highlight_ids=highlights,
+                           sync_mode='sync_my_series' if _my_series_sync_enabled() else None)
+        _clear_my_series_highlights(api)
     _end_directory()
 
     _run_after_directory(_backfill_quietly, api, 'backfill_my_series')
@@ -7284,6 +7355,11 @@ def notify_new(background=True):
         _save_my_series_state(api, state)
     except Exception:
         pass
+    if new_ids:
+        try:
+            _save_my_series_highlights(api, new_ids)
+        except Exception:
+            pass
 
 
 def _library_rpc(method, params):

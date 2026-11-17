@@ -354,6 +354,7 @@ def main():
     last_daily = 0
     last_notify = 0
     last_resume_sync = 0
+    last_fix_sources = 0
     legacy_checked = False
     player = PlaybackFollower()
     while not MONITOR.abortRequested():
@@ -374,7 +375,11 @@ def main():
 
         # Make sure the library folders have a content type + local scraper in
         # Kodi's database, otherwise .strm/.nfo files never become entries.
-        if now - started >= LIBRARY_STARTUP_DELAY and not xbmc.Player().isPlaying():
+        # Run this at most once an hour (and only after startup) so it does not
+        # trigger a library scan/spinner every minute while navigating.
+        if (now - started >= LIBRARY_STARTUP_DELAY and not xbmc.Player().isPlaying()
+                and now - last_fix_sources >= 3600):
+            last_fix_sources = now
             try:
                 xbmc.executebuiltin('RunPlugin(plugin://{}/?mode=fix_library_sources&background=1)'.format(ADDON_ID))
             except Exception as exc:

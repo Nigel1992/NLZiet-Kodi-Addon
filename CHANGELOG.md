@@ -1,6 +1,13 @@
 # Changelog
 
-> **Latest Version:** v2.0.1 (November 17, 2026)
+> **Latest Version:** v2.0.2 (November 18, 2026)
+
+## [2.0.2] - 2026-11-18
+
+### Gefixt (hotfix)
+- **Mijn Series groene titel**: series met nieuwe afleveringen worden nu daadwerkelijk groen getoond. De achtergronddetectie persisteert de "nieuwe" series en de volgende render toont ze groen (was: detectie draaide, maar de highlight ging verloren).
+- **Auto-add nieuwe afleveringen voor BBCNL/programma's**: titels die niet als "series" in NLZiet staan, worden nu ook via titel-zoekopdracht opgepakt; Kijk Later-items die geen "episode"-type hebben, worden gegroepeerd op titel.
+- **Blauwe spinner elke minuut**: `fix_library_sources` (bibliotheekscan) draaide elke minuut via de service. Nu maximaal eens per uur, zodat navigeren niet meer elke minuut een spinner triggert.
 
 ## [2.0.1] - 2026-11-17
 
