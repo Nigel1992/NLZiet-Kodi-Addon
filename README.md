@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Vibe Coded](https://img.shields.io/badge/Vibe_Coded-✨-8A2BE2?style=for-the-badge)](https://github.com)
 
-**Latest release:** v2.0.1 — 2026-11-17 · [Changelog](CHANGELOG.md) · [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases)
+**Latest release:** v2.0.1 — 2026-11-17 · [Changelog](CHANGELOG.md) · [Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases) · [Wiki](https://github.com/Nigel1992/NLZiet-Kodi-Addon/wiki)
 
 <sub>Unofficial NLZiet Kodi Addon — watch live TV, series, movies and more from NLZiet directly in Kodi. Supports profiles, DRM and a modern UI.</sub>
 
