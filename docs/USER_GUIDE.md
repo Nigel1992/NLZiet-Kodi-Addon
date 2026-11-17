@@ -10,10 +10,14 @@
 
 ### Option A — via the Kodi repository (recommended, auto-updates)
 
-1. Download the latest `repository.nigel1992-*.zip` from the [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest).
-2. In Kodi: **Add-ons → Install from zip file** → select the repository zip (enable "Unknown sources" first if prompted).
-3. Go to **Add-ons → Install from repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Install**.
+**Using a URL (no manual download):**
+
+1. In Kodi: **Settings → File manager → Add source** → enter `https://nigel1992.github.io/kodi-repository/` → name it (e.g. "Nigel1992") → OK.
+2. **Add-ons → Install from zip file** → select the source → `repository.nigel1992-*.zip`.
+3. **Add-ons → Install from repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Install**.
 4. Kodi keeps the add-on updated automatically.
+
+**Or download the repo zip directly** from the [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest) and install via **Add-ons → Install from zip file** (enable "Unknown sources" first if prompted).
 
 ### Option B — manual zip (no auto-updates)
 

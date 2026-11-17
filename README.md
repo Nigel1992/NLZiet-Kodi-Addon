@@ -62,10 +62,14 @@ Choose the version that fits you:
 
 ### Option A — via the Kodi repository (recommended, auto-updates)
 
-1. Download the latest `repository.nigel1992-*.zip` from the [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest).
-2. In Kodi: **Add-ons → Install from zip file** and select the repository zip (enable "Unknown sources" first if prompted).
-3. Go to **Add-ons → Install from repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Install**.
-4. Kodi will now keep the add-on updated automatically.
+**Using a URL (no manual download):**
+
+1. In Kodi: **Settings → File manager → Add source** → enter `https://nigel1992.github.io/kodi-repository/` → give it a name (e.g. "Nigel1992") → OK.
+2. **Add-ons → Install from zip file** → select the source you just added → `repository.nigel1992-*.zip`.
+3. **Add-ons → Install from repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Install**.
+4. Kodi now keeps the add-on updated automatically.
+
+**Or download the repo zip directly** from the [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest) and install it via **Add-ons → Install from zip file** (enable "Unknown sources" first if prompted).
 
 ### Option B — manual zip (no auto-updates)
 
@@ -159,10 +163,14 @@ Kies de versie die bij je past:
 
 ### Optie A — via de Kodi repository (aanbevolen, automatische updates)
 
-1. Download de nieuwste `repository.nigel1992-*.zip` van de [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest).
-2. In Kodi: **Add-ons → Installeer vanuit zip-bestand** en selecteer de repository-zip (schakel eerst "Onbekende bronnen" in indien gevraagd).
-3. Ga naar **Add-ons → Installeer vanuit repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Installeer**.
+**Via een URL (geen handmatige download):**
+
+1. In Kodi: **Instellingen → Bestandsbeheer → Bron toevoegen** → voer `https://nigel1992.github.io/kodi-repository/` in → geef een naam (bijv. "Nigel1992") → OK.
+2. **Add-ons → Installeer vanuit zip-bestand** → selecteer de toegevoegde bron → `repository.nigel1992-*.zip`.
+3. **Add-ons → Installeer vanuit repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Installeer**.
 4. Kodi houdt de add-on daarna automatisch up-to-date.
+
+**Of download de repo-zip direct** van de [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest) en installeer via **Add-ons → Installeer vanuit zip-bestand** (schakel eerst "Onbekende bronnen" in indien gevraagd).
 
 ### Optie B — handmatige zip (geen automatische updates)
 
