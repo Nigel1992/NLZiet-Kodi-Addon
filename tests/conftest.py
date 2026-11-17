@@ -135,7 +135,17 @@ def _install_kodi_stubs():
     xbmc.translatePath = lambda path: path
     xbmc.log = lambda *args, **kwargs: None
     xbmc.executebuiltin = lambda *args, **kwargs: None
-    xbmc.Player = type('Player', (), {'isPlaying': lambda self: False})
+    xbmc.Player = type('Player', (), {'isPlaying': lambda self: False,
+                                     'isPlayingVideo': lambda self: False,
+                                     'getTime': lambda self: 0.0,
+                                     'getTotalTime': lambda self: 0.0})
+    xbmc.Monitor = type('Monitor', (), {
+        '__init__': lambda self: None,
+        'abortRequested': lambda self: False,
+        'waitForAbort': lambda self, *args, **kwargs: False,
+        'onScanFinished': lambda self, library: None,
+        'onNotification': lambda self, sender, method, data: None,
+    })
 
     xbmcgui = types.ModuleType('xbmcgui')
     xbmcgui.NOTIFICATION_INFO = 'info'

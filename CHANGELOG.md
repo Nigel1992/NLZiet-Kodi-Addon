@@ -1,6 +1,12 @@
 # Changelog
 
-> **Latest Version:** v2.0.0 (November 17, 2026)
+> **Latest Version:** v2.0.1 (November 17, 2026)
+
+## [2.0.1] - 2026-11-17
+
+### Gefixt (hotfix)
+- **"PY typo" in `service.py`**: een heredoc-terminator `PY` lekte af en toe in `service.py` (door shell-heredoc-gebruik bij het genereren/bewerken van het bestand), wat compileerde maar bij uitvoering `NameError: name 'PY' is not defined` gaf. De achtergrondservice start nu betrouwbaar.
+- **Preventie**: CI compileert nu ook `service.py`, draait de unit-tests (incl. import van `service`/`default`), en de release-build faalt bij een stray `PY`-regel. Zo kan deze fout niet meer in een release belanden.
 
 ## [2.0.0] - 2026-11-17
 

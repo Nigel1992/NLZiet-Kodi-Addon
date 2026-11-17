@@ -13,6 +13,18 @@ if not addon_id or '/' in addon_id or '\\' in addon_id or '..' in addon_id:
     raise SystemExit('invalid addon id in addon.xml')
 if not version or '/' in version or '\\' in version or '..' in version:
     raise SystemExit('invalid version in addon.xml')
+# Guard against recurring defects (e.g. a stray "PY" heredoc terminator leaking
+# into a Python file) before producing a release artifact.
+for path in root.rglob('*.py'):
+    rel = path.relative_to(root).as_posix()
+    if rel.startswith('resources/lib/') and any(part in rel for part in ('urllib3/', 'certifi/', 'charset_normalizer/', 'idna/')):
+        continue
+    compile(path.read_text(encoding='utf-8', errors='replace'), str(path), 'exec')
+    text = path.read_text(encoding='utf-8', errors='replace')
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if line.strip() == 'PY':
+            raise SystemExit('stray heredoc terminator "PY" in {} (line {})'.format(rel, lineno))
+
 output = root / 'build' / f'{addon_id}-{version}.zip'
 output.parent.mkdir(exist_ok=True)
 files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).decode().split('\0')

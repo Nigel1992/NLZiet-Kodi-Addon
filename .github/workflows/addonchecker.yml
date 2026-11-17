@@ -107,4 +107,26 @@ jobs:
 
       - name: Compile Python files
         run: |
-          python -m compileall default.py resources
+          python -m compileall default.py service.py resources
+
+  python-tests:
+    name: Python Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Run tests
+        run: |
+          python -m pytest -q

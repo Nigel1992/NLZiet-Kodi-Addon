@@ -123,7 +123,15 @@ for branch in "${BRANCHES[@]}"; do
 done
 
 echo "=== compileall START $(date -Iseconds) ==="
-"${PYTHON_BIN}" -m compileall "${TARGET_DIR}/default.py" "${TARGET_DIR}/resources"
+"${PYTHON_BIN}" -m compileall "${TARGET_DIR}/default.py" "${TARGET_DIR}/service.py" "${TARGET_DIR}/resources"
 echo "=== compileall END $(date -Iseconds) ==="
+
+if "${PYTHON_BIN}" -m pytest --version >/dev/null 2>&1; then
+  echo "=== pytest START $(date -Iseconds) ==="
+  "${PYTHON_BIN}" -m pytest -q
+  echo "=== pytest END $(date -Iseconds) ==="
+else
+  echo "WARNING: pytest not available in ${PYTHON_BIN}; skipping unit tests" >&2
+fi
 
 echo "Local addon-check workflow completed successfully."
