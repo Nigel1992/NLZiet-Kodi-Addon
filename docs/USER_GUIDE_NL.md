@@ -8,8 +8,20 @@
 
 ## 📥 Installeren
 
+### Optie A — via de Kodi repository (aanbevolen, automatische updates)
+
+1. Download de nieuwste `repository.nigel1992-*.zip` van de [Kodi repository releases](https://github.com/Nigel1992/kodi-repository/releases/latest).
+2. In Kodi: **Add-ons → Installeer vanuit zip-bestand** → selecteer de repository-zip (schakel eerst "Onbekende bronnen" in indien gevraagd).
+3. Ga naar **Add-ons → Installeer vanuit repository → Nigel1992 Kodi Repository → Video add-ons → NLZiet → Installeer**.
+4. Kodi houdt de add-on daarna automatisch up-to-date.
+
+### Optie B — handmatige zip (geen automatische updates)
+
 1. Download de nieuwste release-zip van [GitHub Releases](https://github.com/Nigel1992/NLZiet-Kodi-Addon/releases).
 2. In Kodi: **Add-ons → Installeer vanuit zip-bestand** → selecteer de zip.
+
+### Na installatie (beide opties)
+
 3. Open de add-on en log in met je NLZiet-account (knop **Inloggen**).
 4. Installeer `inputstream.adaptive` (voor DRM-afspelen) — de add-on controleert dit automatisch.
 5. (Optioneel) Installeer en autoriseer de officiële Kodi **Trakt**-add-on voor scrobbling.
