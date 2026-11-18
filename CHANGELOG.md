@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.0.2 (November 18, 2026)
+> **Latest Version:** v2.0.3 (November 18, 2026)
+
+## [2.0.3] - 2026-11-18
+
+### Gefixt (hotfix)
+- **"Speel vanaf begin" via TV-gids werkt niet tijdens live uitzending**: wanneer een aflevering nog bezig is en je via de TV-gids "Speel vanaf begin" (of "Afspelen (terugkijken)") kiest, begon de stream soms toch op het live-edge. De seek-naar-begin draaide dan tegen de *oude* (nog lopende) speler en werd genegeerd. Nu wacht de seek-thread eerst tot de lopende weergave is gestopt, start dan pas bij de nieuwe stream en seekt pas na het bufferen. Ook de bufferwachttijd is verhoogd (1s → 2s). (Issue #36)
 
 ## [2.0.2] - 2026-11-18
 

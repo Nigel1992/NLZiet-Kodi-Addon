@@ -19,6 +19,11 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
+# Defensive fallback for environments (e.g. unit tests) where the Kodi stub
+# does not provide executeJSONRPC. Real Kodi always provides it.
+if not hasattr(xbmc, 'executeJSONRPC'):
+    xbmc.executeJSONRPC = lambda payload: '{}'
+
 from resources.lib.nlziet_api import NLZietAPI
 from resources.lib.app_context import AddonContext
 from resources.lib.kodi import ui as kodi_ui
@@ -7582,6 +7587,19 @@ def play_item(content_id, fmt=None, **kwargs):
             import threading
             import json as _json
             def _seek_replay_to_start():
+                # If something is already playing (e.g. the live broadcast the
+                # user is currently watching), wait for that playback to stop
+                # first. Otherwise the speed check below would succeed against
+                # the *old* player and we would seek before the new stream has
+                # loaded, leaving playback at the live edge.
+                for _ in range(10):
+                    try:
+                        if not xbmc.Player().isPlaying():
+                            break
+                    except Exception:
+                        break
+                    time.sleep(0.5)
+                # Wait for the new (replay) playback to actually start.
                 for _ in range(60):
                     try:
                         state = xbmc.executeJSONRPC(_json.dumps({
@@ -7597,7 +7615,8 @@ def play_item(content_id, fmt=None, **kwargs):
                     time.sleep(0.5)
                 else:
                     return
-                time.sleep(1)
+                # Give the stream a moment to buffer so the seek is not dropped.
+                time.sleep(2)
                 try:
                     xbmc.executeJSONRPC(_json.dumps({
                         'jsonrpc': '2.0', 'method': 'Player.Seek',
