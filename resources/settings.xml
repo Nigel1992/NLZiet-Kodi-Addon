@@ -45,6 +45,118 @@
           </control>
         </setting>
       </group>
+      <group id="hidden_credentials" label="">
+        <setting id="username" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>username</heading>
+          </control>
+        </setting>
+        <setting id="password" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>password</heading>
+          </control>
+        </setting>
+        <setting id="save_credentials" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>save_credentials</heading>
+          </control>
+        </setting>
+        <setting id="profile_id" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>profile_id</heading>
+          </control>
+        </setting>
+        <setting id="profile_name" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>profile_name</heading>
+          </control>
+        </setting>
+        <setting id="subscription_type" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>subscription_type</heading>
+          </control>
+        </setting>
+        <setting id="access_token" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>access_token</heading>
+          </control>
+        </setting>
+        <setting id="refresh_token" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>refresh_token</heading>
+          </control>
+        </setting>
+        <setting id="token_expires_at" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>token_expires_at</heading>
+          </control>
+        </setting>
+        <setting id="search_history" type="string" label="" help="">
+          <level>3</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <visible>false</visible>
+          <control type="edit" format="string">
+            <heading>search_history</heading>
+          </control>
+        </setting>
+      </group>
     </category>
 
     <category id="category_library" label="33198" help="">

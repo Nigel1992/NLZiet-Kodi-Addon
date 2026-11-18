@@ -1,6 +1,13 @@
 # Changelog
 
-> **Latest Version:** v2.0.3 (November 18, 2026)
+> **Latest Version:** v2.0.4 (November 18, 2026)
+
+## [2.0.4] - 2026-11-18
+
+### Gefixt (hotfix)
+- **Crash bij "Speel vanaf begin" (Issue #36)**: de seek-naar-begin draaide in een achtergrondthread via JSON-RPC terwijl Kodi bezig was met het openen van de nieuwe stream, wat een "two concurrent busydialogs" crash kon veroorzaken. De thread gebruikt nu de lichte `Player()` API (`isPlaying()` / `seekTime(0)`) in plaats van JSON-RPC.
+- **Inloggen duidelijker**: bij "Hoe wilt u ingelogd blijven?" is de uitleg aangepast zodat duidelijk is dat "Alleen tokens" betekent dat je handmatig opnieuw moet inloggen wanneer de sessie verloopt, terwijl "E-mail en wachtwoord" automatisch opnieuw inlogt. Opgeslagen inloggegevens worden bovendien opnieuw gebruikt wanneer die aanwezig zijn (ook bij oudere/migratie-data).
+- **Instellingenpersistentie**: ontbrekende (verborgen) instellingen zoals username/password/save_credentials/access_token/refresh_token/token_expires_at zijn toegevoegd aan settings.xml, zodat Kodi ze daadwerkelijk bewaart.
 
 ## [2.0.3] - 2026-11-18
 

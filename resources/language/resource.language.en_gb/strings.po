@@ -238,20 +238,20 @@ msgid "How do you want to stay logged in?"
 msgstr "How do you want to stay logged in?"
 
 msgctxt "#33015"
-msgid "Save only tokens (recommended)"
-msgstr "Save only tokens (recommended)"
+msgid "Save only tokens (recommended, no auto-login)"
+msgstr "Save only tokens (recommended, no auto-login)"
 
 msgctxt "#33016"
-msgid "Save email and password (not recommended)"
-msgstr "Save email and password (not recommended)"
+msgid "Save email and password (auto re-login)"
+msgstr "Save email and password (auto re-login)"
 
 msgctxt "#33017"
-msgid "Only session tokens are saved. This is safer. You only need to login again when your session expires."
-msgstr "Only session tokens are saved. This is safer. You only need to login again when your session expires."
+msgid "Only session tokens are saved. Safer, but when the session/token expires you must log in again manually; automatic re-login is not possible."
+msgstr "Only session tokens are saved. Safer, but when the session/token expires you must log in again manually; automatic re-login is not possible."
 
 msgctxt "#33018"
-msgid "Email and password saved. These will be used to automatically refresh your session."
-msgstr "Email and password saved. These will be used to automatically refresh your session."
+msgid "Email and password saved. The addon can automatically log in again and refresh your session when it expires."
+msgstr "Email and password saved. The addon can automatically log in again and refresh your session when it expires."
 
 msgctxt "#33019"
 msgid "Session token obtained. You are logged in."

@@ -155,10 +155,10 @@ TRANSLATIONS = {
     'token_expired': {'nl': 'Sessie verlopen - opnieuw inloggen is vereist', 'en': 'Session expired - re-authentication required'},
     'login_again': {'nl': 'Uw sessie is verlopen. Klik op Inloggen om opnieuw in te loggen.', 'en': 'Your session has expired. Please click Login to re-authenticate.'},
     'save_options_title': {'nl': 'Hoe wilt u ingelogd blijven?', 'en': 'How do you want to stay logged in?'},
-    'save_option_tokens_only': {'nl': 'Alleen tokens opslaan (aanbevolen)', 'en': 'Save only tokens (recommended)'},
-    'save_option_with_credentials': {'nl': 'E-mail en wachtwoord opslaan (niet aanbevolen)', 'en': 'Save email and password (not recommended)'},
-    'tokens_only_info': {'nl': 'Alleen tokens worden opgeslagen. Dit is veiliger. U hoeft alleen in te loggen wanneer het sessietoken verloopt.', 'en': 'Only session tokens are saved. This is safer. You only need to login again when your session expires.'},
-    'credentials_saved_warning': {'nl': 'E-mailadres en wachtwoord opgeslagen. Deze worden gebruikt om tokens automatisch te vernieuwen.', 'en': 'Email and password saved. These will be used to automatically refresh your session.'},
+    'save_option_tokens_only': {'nl': 'Alleen tokens opslaan (aanbevolen, geen auto-login)', 'en': 'Save only tokens (recommended, no auto-login)'},
+    'save_option_with_credentials': {'nl': 'E-mail en wachtwoord opslaan (auto re-login)', 'en': 'Save email and password (auto re-login)'},
+    'tokens_only_info': {'nl': 'Alleen sessietokens worden opgeslagen. Veiliger, maar bij verlopen sessie/token moet u handmatig opnieuw inloggen; automatisch inloggen is dan niet mogelijk.', 'en': 'Only session tokens are saved. Safer, but when the session/token expires you must log in again manually; automatic re-login is not possible.'},
+    'credentials_saved_warning': {'nl': 'E-mailadres en wachtwoord opgeslagen. De add-on kan automatisch opnieuw inloggen en uw sessie vernieuwen wanneer deze verloopt.', 'en': 'Email and password saved. The addon can automatically log in again and refresh your session when it expires.'},
     'session_token_obtained': {'nl': 'Sessietoken verkregen. U bent aangemeld.', 'en': 'Session token obtained. You are logged in.'},
     'manage_profiles': {'nl': 'Profielen beheren', 'en': 'Manage profiles'},
     'search': {'nl': 'Zoeken', 'en': 'Search'},
@@ -1549,7 +1549,9 @@ def _check_and_handle_token_expiry():
             return True
         
         # Token is expired and refresh failed - user needs to re-login
-        save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
+        saved_username = ADDON.getSetting('username')
+        saved_password = ADDON.getSetting('password')
+        save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True) or bool(saved_username and saved_password)
         if not save_creds:
             # No saved credentials, notify user to login
             try:
@@ -3461,17 +3463,26 @@ def show_login_dialog(preset_email='', preset_password=''):
 
 def do_login():
     """Handle login via dialog or saved credentials with retry support."""
-    save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
-    
-    # Check if we have saved credentials
+    # Check if we have saved credentials. Treat the presence of a stored
+    # username/password pair as "saved credentials" even when the
+    # save_credentials flag is missing (e.g. data written by an older
+    # version or a migration), so a previously stored login can be reused
+    # instead of forcing the user to type their credentials again.
     saved_username = ADDON.getSetting('username')
     saved_password = ADDON.getSetting('password')
-    
+    save_creds = ADDON.getSetting('save_credentials') in ('true', '1', 'yes', True)
+    if (not save_creds) and saved_username and saved_password:
+        save_creds = True
+        try:
+            ADDON.setSetting('save_credentials', 'true')
+        except Exception:
+            pass
+
     email = None
     password = None
-    
-    # If credentials are saved and save_credentials is enabled, use them
-    if save_creds and saved_username and saved_password:
+
+    # If credentials are saved, use them
+    if saved_username and saved_password:
         email = saved_username
         password = saved_password
         use_saved = True
@@ -7589,9 +7600,11 @@ def play_item(content_id, fmt=None, **kwargs):
             def _seek_replay_to_start():
                 # If something is already playing (e.g. the live broadcast the
                 # user is currently watching), wait for that playback to stop
-                # first. Otherwise the speed check below would succeed against
-                # the *old* player and we would seek before the new stream has
-                # loaded, leaving playback at the live edge.
+                # first. Otherwise we would seek before the new stream has
+                # loaded, leaving playback at the live edge. Use the lightweight
+                # Player API instead of JSON-RPC here: issuing JSON-RPC from a
+                # background thread while Kodi is busy opening the new stream can
+                # trigger a "two concurrent busydialogs" crash.
                 for _ in range(10):
                     try:
                         if not xbmc.Player().isPlaying():
@@ -7602,13 +7615,7 @@ def play_item(content_id, fmt=None, **kwargs):
                 # Wait for the new (replay) playback to actually start.
                 for _ in range(60):
                     try:
-                        state = xbmc.executeJSONRPC(_json.dumps({
-                            'jsonrpc': '2.0', 'method': 'Player.GetProperties',
-                            'params': {'playerid': 1, 'properties': ['speed']},
-                            'id': 1,
-                        }))
-                        res = _json.loads(state).get('result', {})
-                        if res.get('speed', 0) != 0:
+                        if xbmc.Player().isPlaying():
                             break
                     except Exception:
                         pass
@@ -7618,11 +7625,7 @@ def play_item(content_id, fmt=None, **kwargs):
                 # Give the stream a moment to buffer so the seek is not dropped.
                 time.sleep(2)
                 try:
-                    xbmc.executeJSONRPC(_json.dumps({
-                        'jsonrpc': '2.0', 'method': 'Player.Seek',
-                        'params': {'playerid': 1, 'value': {'percentage': 0}},
-                        'id': 1,
-                    }))
+                    xbmc.Player().seekTime(0)
                     xbmc.log('NLZiet replay seek to 0:00:00 done', xbmc.LOGDEBUG)
                 except Exception as exc:
                     xbmc.log(f'NLZiet replay seek failed: {exc}', xbmc.LOGWARNING)
