@@ -4,6 +4,7 @@ The full technical details always go to the Kodi log; the user sees one
 sentence that says what happened and what to do next.
 """
 
+import http.client
 import socket
 import ssl
 import traceback
@@ -64,12 +65,29 @@ def classify(exc):
     if reason is not None:
         chain.append(reason)
     for item in chain:
+        if item is None:
+            continue
         if isinstance(item, (socket.timeout, TimeoutError)):
             return 'timeout'
-        if isinstance(item, (urllib.error.URLError, ConnectionError, socket.gaierror, ssl.SSLError, OSError)) \
-                and not isinstance(item, (FileNotFoundError, PermissionError)):
-            return 'offline'
+        if isinstance(item, (urllib.error.URLError, ConnectionError, socket.gaierror,
+                             socket.herror, ssl.SSLError, OSError, IOError,
+                             http.client.HTTPException, Exception)) and not isinstance(item, (FileNotFoundError, PermissionError, ValueError, TypeError)):
+            # Only treat network/connection related exceptions as offline.
+            if isinstance(item, (urllib.error.URLError, ConnectionError, socket.gaierror,
+                                 socket.herror, ssl.SSLError, OSError, IOError,
+                                 http.client.HTTPException)):
+                name = type(item).__name__
+                if 'Timeout' in name or 'timeout' in str(item).lower():
+                    return 'timeout'
+                return 'offline'
         name = type(item).__name__ if item is not None else ''
+        lowered_name = name.lower()
+        if 'timeout' in lowered_name:
+            return 'timeout'
+        if any(token in lowered_name for token in ('connection', 'network', 'ssl', 'certificate',
+                                                   'proxy', 'gai', 'reset', 'brokenpipe',
+                                                   'incompleteread', 'protocol', 'maxretry')):
+            return 'offline'
         if name in ('ConnectionError', 'ConnectTimeout', 'ReadTimeout', 'Timeout'):
             return 'timeout' if 'Timeout' in name else 'offline'
     return 'unknown'

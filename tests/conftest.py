@@ -60,6 +60,10 @@ class FakeDialog:
     def ok(self, heading, message):
         return True
 
+    def select(self, heading, options, preselect=0, *args, **kwargs):
+        RECORDER.notifications.append(('select', heading, preselect))
+        return preselect
+
 
 class FakeListItem:
     def __init__(self, label='', path='', offscreen=False):

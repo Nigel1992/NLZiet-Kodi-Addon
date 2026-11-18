@@ -1,6 +1,17 @@
 # Changelog
 
-> **Latest Version:** v2.0.4 (November 18, 2026)
+> **Latest Version:** v2.0.5 (November 19, 2026)
+
+## [2.0.5] - 2026-11-19
+
+### Toegevoegd
+- **Betere omgang met onstabiele verbinding (Issue #50)**: bij een mislukte handshake/stream-start wordt nu een duidelijke melding getoond ("Geen verbinding met NLZiet. Controleer je internet...") in plaats van een kale fout; de afspeelpoging wordt netjes afgebroken.
+- **Foutclassificatie uitgebreid**: meer netwerkfouten (requests/urllib3, SSL-certificaatfouten, broken pipe, etc.) worden herkend als offline/timeout.
+- **TV-gids**: programma-omschrijving toont nu een thumbnail van het programma.
+
+### Gewijzigd
+- Onverwachte netwerkfouten tijdens het starten van de weergave worden afgehandeld zonder crash.
+- InputStream Adaptive wordt niet meer geforceerd op `adaptive`; de instelling van de gebruiker in InputStream Adaptive wordt gerespecteerd.
 
 ## [2.0.4] - 2026-11-18
 

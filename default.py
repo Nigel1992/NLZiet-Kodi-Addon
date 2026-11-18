@@ -6608,12 +6608,19 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
                 start.strftime('%H:%M'), end.strftime('%H:%M'), pgm.get('title') or '', channel_title,
             )
             description = _epg_program_description(pgm) or 'Geen beschrijving beschikbaar.'
+            image = pgm.get('image') or pgm.get('thumb') or pgm.get('posterUrl') or ''
         else:
             header = 'Geen EPG beschikbaar'
             description = 'Voor dit kanaal zijn geen programma\'s gevonden.'
+            image = ''
         try:
             self.getControl(204).setLabel(header)
             self.getControl(205).setText(description)
+        except Exception:
+            pass
+        try:
+            self.getControl(208).setImage(image)
+            self.getControl(208).setVisible(bool(image))
         except Exception:
             pass
 
@@ -6732,7 +6739,7 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
                 else:
                     options.append(d.strftime('%a %d-%m'))
             # offset in options corresponds to i+EPG_DAY_BACK
-            choice = xbmcgui.Dialog().select('Selecteer dag', options)
+            choice = xbmcgui.Dialog().select('Selecteer dag', options, preselect=EPG_DAY_BACK)
             if choice < 0:
                 return
             self._selected_day = choice - EPG_DAY_BACK
@@ -7462,6 +7469,27 @@ def mark_series_watched_route(series_id):
 
 
 
+def _play_item_failed(exc):
+    """Log a playback failure and show one clear sentence to the user."""
+    try:
+        xbmc.log('NLZiet: playback failed\n' + errors_mod.log_text(exc), xbmc.LOGERROR)
+    except Exception:
+        pass
+    try:
+        xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
+    except Exception:
+        pass
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1) or 'nl'
+    except Exception:
+        language = 'nl'
+    try:
+        xbmcgui.Dialog().notification('NLZiet', errors_mod.user_message(exc, 'NLZiet', language),
+                                      xbmcgui.NOTIFICATION_ERROR)
+    except Exception:
+        pass
+
+
 def play_item(content_id, fmt=None, **kwargs):
     # inlib=1 marks playback that started from a library .strm; there Kodi (and
     # the skin) own the resume prompt, so the add-on stays out of it.
@@ -7476,7 +7504,11 @@ def play_item(content_id, fmt=None, **kwargs):
         api = get_api_instance()
     except Exception:
         # Fallback to creating a new instance if cache fails
-        api = NLZietAPI(username=username, password=password)
+        try:
+            api = NLZietAPI(username=username, password=password)
+        except Exception as exc:
+            _play_item_failed(exc)
+            return
     xbmc.log(f"NLZiet play_item called: id={content_id} fmt={fmt}", xbmc.LOGDEBUG)
     # Stored list items (Watch Later / My List) are played by id only, so look
     # their title, description and artwork up from the local lists so the OSD
@@ -7507,7 +7539,11 @@ def play_item(content_id, fmt=None, **kwargs):
         # Kodi stores a resume bookmark (live streams look like VOD). Remove
         # it so playback never offers "Resume from …" and starts at 0:00:00.
         _clear_resume_bookmark(content_id)
-        info = api.get_stream_info(content_id, context='Live')
+        try:
+            info = api.get_stream_info(content_id, context='Live')
+        except Exception as exc:
+            _play_item_failed(exc)
+            return
         try:
             # Look up the current programme's description so the OSD can show it.
             epg_map = api.get_current_programs([content_id]) or {}
@@ -7565,7 +7601,11 @@ def play_item(content_id, fmt=None, **kwargs):
         # Replay must also start at 0:00:00 without a resume prompt.
         _clear_resume_bookmark(content_id)
         stream_kwargs = {k: v for k, v in (kwargs or {}).items() if k in ('asset_id', 'channel')}
-        info = api.get_stream_info(content_id, context='Epg', **stream_kwargs)
+        try:
+            info = api.get_stream_info(content_id, context='Epg', **stream_kwargs)
+        except Exception as exc:
+            _play_item_failed(exc)
+            return
         # Use the programme icon/title passed from the EPG when available.
         try:
             if not kwargs.get('title'):
@@ -7580,7 +7620,11 @@ def play_item(content_id, fmt=None, **kwargs):
         except Exception:
             pass
     else:
-        info = api.get_stream_info(content_id)
+        try:
+            info = api.get_stream_info(content_id)
+        except Exception as exc:
+            _play_item_failed(exc)
+            return
         xbmc.log(f"NLZiet REGULAR content: id={content_id} (not live)", xbmc.LOGINFO)
     manifest = info.get('manifest')
     playback_metadata = _merge_playback_metadata(
