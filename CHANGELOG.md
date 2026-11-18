@@ -11,7 +11,6 @@
 
 ### Gewijzigd
 - Onverwachte netwerkfouten tijdens het starten van de weergave worden afgehandeld zonder crash.
-- InputStream Adaptive wordt niet meer geforceerd op `adaptive`; de instelling van de gebruiker in InputStream Adaptive wordt gerespecteerd.
 
 ## [2.0.4] - 2026-11-18
 
