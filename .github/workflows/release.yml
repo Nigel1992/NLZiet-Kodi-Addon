@@ -22,7 +22,7 @@ jobs:
           test "v${VERSION}" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} does not match addon.xml version ${VERSION}"; exit 1; }
       - name: Run tests
         run: |
-          python -m pip install --upgrade pip pytest
+          python -m pip install --upgrade pip pytest requests
           python -m pytest -q
       - name: Build add-on zip
         run: python scripts/build-release.py
