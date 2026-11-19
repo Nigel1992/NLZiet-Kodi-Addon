@@ -3614,12 +3614,10 @@ class NLZietAPI:
         except Exception as e:
             xbmc.log(f"NLZiet get_stream_info error for id={content_id}: {e}", xbmc.LOGERROR)
             xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
-            return {
-                'manifest': None,
-                'is_drm': False,
-                'license_url': None,
-                'license_headers': {},
-            }
+            # Re-raise so callers (e.g. play_item) can classify the failure and
+            # show a meaningful message instead of silently treating it as a
+            # missing manifest. Network errors must propagate to _play_item_failed.
+            raise
 
     def get_channels(self):
         """Return the EPG channel list from /v9/epg/channels as a list of dicts.

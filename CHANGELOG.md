@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.0.5 (November 19, 2026)
+> **Latest Version:** v2.0.6 (November 19, 2026)
+
+## [2.0.6] - 2026-11-19
+
+### Gefixt
+- **Issue #50**: netwerkfouten tijdens de stream-handshake worden nu doorgegeven zodat de duidelijke melding "Geen verbinding met NLZiet. Controleer je internet..." wordt getoond in plaats van een kale "Geen manifest beschikbaar".
 
 ## [2.0.5] - 2026-11-19
 
