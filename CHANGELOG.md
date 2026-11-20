@@ -1,6 +1,11 @@
 # Changelog
 
-> **Latest Version:** v2.0.6 (November 19, 2026)
+> **Latest Version:** v2.0.7 (November 21, 2026)
+
+## [2.0.7] - 2026-11-21
+
+### Gefixt
+- **Series-afleveringen tonen serienaam**: bij series waar NLZiet de serienaam in `title` zet en het afleveringsnummer in `subtitle` (bijv. Sluipschutters), toonde de lijst voor elke aflevering de serienaam in plaats van het afleveringsnummer. De info-titel van elk item is nu het berekende afleveringslabel.
 
 ## [2.0.6] - 2026-11-19
 

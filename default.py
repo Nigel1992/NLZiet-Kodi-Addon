@@ -1935,6 +1935,16 @@ def show_series_season(series_id, season_id, episodes_url=None, series_title=Non
             playback_content['season_number'] = season_number
         if playback_content.get('season_number') is None and str(season_id or '').isdigit():
             playback_content['season_number'] = season_id
+        # Ensure the displayed list title (and its info title) reflects the
+        # computed episode label rather than the series title. NLZiet commonly
+        # uses the series title in `title` and the episode number in `subtitle`
+        # (e.g. title="Sluipschutters", subtitle="Afl. 8"); without this the
+        # UI shows the series name for every episode.
+        if not isinstance(info, dict):
+            info = {}
+        info['title'] = label
+        if series_title:
+            info.setdefault('tvshowtitle', series_title)
         add_directory_item(label, {'mode': 'play', 'id': ep.get('id')}, is_folder=False, thumb=_pick_landscape_thumb(ep), info=info, content=playback_content)
     _end_directory()
 
