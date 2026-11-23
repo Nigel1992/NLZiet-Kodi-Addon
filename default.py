@@ -8542,10 +8542,11 @@ def favourite_channels():
     except Exception:
         channels = []
     enabled = read_enabled_channels(api)
-    ids = set(enabled) if enabled else None
-    favourites = [c for c in channels if ids is None or c.get('id') in ids]
-    if not favourites:
-        favourites = channels
+    if enabled is None:
+        favourites = []
+    else:
+        ids = set(str(x) for x in (enabled or []))
+        favourites = [c for c in channels if str(c.get('id')) in ids]
     for channel in favourites:
         title = channel.get('title') or channel.get('name') or ''
         thumb = _pick_landscape_thumb(channel) or channel.get('logo') or channel.get('image')
@@ -8571,7 +8572,7 @@ def _is_favourite_channel(channel_id):
         api = get_api_instance()
         enabled = read_enabled_channels(api)
         if enabled is None:
-            return True
+            return False
         return str(channel_id) in {str(x) for x in (enabled or [])}
     except Exception:
         return False
@@ -8588,7 +8589,7 @@ def toggle_favourite_channel(channel_id=None):
         all_ids = [str(c.get('id')) for c in channels if c.get('id')]
         enabled = read_enabled_channels(api)
         if enabled is None:
-            enabled = list(all_ids)
+            enabled = []
         enabled = [str(x) for x in (enabled or [])]
         cid = str(channel_id or '')
         if cid in enabled:
