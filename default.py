@@ -4422,6 +4422,7 @@ def add_series_watch_later(series_id=None, title=None, from_now=None):
             state[key] = {
                 'id': str(sid or series_title),
                 'seen': [str(ep['id']) for ep in episodes if ep.get('id')],
+                'enabled': True,
             }
             ADDON.setSetting('auto_add_new_episodes', 'true')
             os.makedirs(os.path.dirname(state_path), exist_ok=True)
@@ -4569,7 +4570,7 @@ def _mark_auto_add(api):
 def _auto_add_sources(api):
     """Series for which auto-add has been explicitly enabled, keyed by title."""
     state = _load_auto_add_state(api)
-    enabled_keys = {k for k, v in state.items() if isinstance(v, dict) and v.get('enabled', True) is not False}
+    enabled_keys = {k for k, v in state.items() if isinstance(v, dict) and v.get('enabled') is True}
     sources = {}
     for series in api.get_my_series() or []:
         if isinstance(series, dict) and series.get('id') and _item_title(series):
@@ -4631,7 +4632,8 @@ def _run_auto_add(api):
             new = [ep for ep in episodes if str(ep['id']) not in seen]
             if new:
                 added += api.add_series_to_watch_later(sid, series_title or title, new)
-        state[key] = {'id': sid, 'seen': [str(ep['id']) for ep in episodes]}
+        prev_enabled = entry.get('enabled', True) if isinstance(entry, dict) else True
+        state[key] = {'id': sid, 'seen': [str(ep['id']) for ep in episodes], 'enabled': prev_enabled}
 
     try:
         os.makedirs(os.path.dirname(state_path), exist_ok=True)

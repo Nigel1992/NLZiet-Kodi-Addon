@@ -831,7 +831,7 @@ def test_add_series_watch_later_from_now_stores_baseline(monkeypatch, tmp_path, 
 
     state_path = tmp_path / 'auto_add_state.json'
     state = json.loads(state_path.read_text(encoding='utf-8'))
-    assert state['title:show'] == {'id': 's1', 'seen': ['e1', 'e2']}
+    assert state['title:show'] == {'id': 's1', 'seen': ['e1', 'e2'], 'enabled': True}
     assert default.ADDON.getSetting('auto_add_new_episodes') == 'true'
 
 
@@ -1042,6 +1042,9 @@ def test_auto_add_first_run_records_then_adds_only_new_episodes(monkeypatch, tmp
             return len(new_eps)
 
     monkeypatch.setattr(default, '_collect_series_episodes', lambda api, sid: ('Show', list(episodes)))
+    monkeypatch.setattr(default, 'get_api_instance', lambda: FakeApi())
+
+    default.enable_auto_add_series('ser1', 'Show')
 
     api = FakeApi()
     assert default._run_auto_add(api) == 0
