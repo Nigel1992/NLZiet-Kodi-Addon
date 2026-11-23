@@ -96,3 +96,12 @@ I build this project in my free time and don't need donations for myself. If you
 
 [![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/nigel1992)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=KYV9ARF99ZSCE)
+
+---
+
+## 💖 Steun het project
+
+Ik maak dit project in mijn vrije tijd en heb zelf geen donaties nodig. Wil je toch iets terugdoen, dan vraag ik je vriendelijk om in plaats daarvan te doneren aan een goed doel naar keuze — zij hebben het veel harder nodig dan ik. Wil je me toch persoonlijk steunen in privé, dan heel erg bedankt; dat wordt oprecht gewaardeerd, en ik vermeld je graag als donor op GitHub en, waar van toepassing, in een donorsectie van het project, als klein bedankje.
+
+[![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/nigel1992)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=KYV9ARF99ZSCE)
