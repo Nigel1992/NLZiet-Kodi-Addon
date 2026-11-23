@@ -6361,8 +6361,9 @@ def _epg_channels():
             enabled_ids = [str(x) for x in enabled]
             by_id = {str(c.get('id')): c for c in channels if c.get('id')}
             ordered = [by_id[cid] for cid in enabled_ids if cid in by_id]
-            if ordered:
-                channels = ordered
+            rest = [c for c in channels if str(c.get('id')) not in set(enabled_ids)]
+            if ordered or rest:
+                channels = ordered + rest
     except Exception:
         pass
     return channels
