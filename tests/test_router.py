@@ -10,7 +10,7 @@ EXPECTED_HANDLER_NAMES = {
     
     'browse_watch_later', 
     'toggle_watch_later', 'sync_watch_later',
-    'browse_watch_later_collection', 'add_series_watch_later',
+    'browse_watch_later_collection', 'add_series_watch_later', 'toggle_auto_add_series',
     'browse_my_series', 'toggle_my_series', 'sync_my_series',
     'select_profile', 'apply_profile', 'browse_series', 'do_logout',
     'confirm_logout', 'refresh_account_info', 'export_diagnostics',

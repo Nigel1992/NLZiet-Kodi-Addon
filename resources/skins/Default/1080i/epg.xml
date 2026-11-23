@@ -41,19 +41,138 @@
             <texturefocus colordiffuse="00000000">white.png</texturefocus>
             <texturenofocus colordiffuse="00000000">white.png</texturenofocus>
         </control>
-        <control type="label" id="300">
+        <control type="button" id="301">
             <posx>110</posx>
             <posy>1010</posy>
-            <width>900</width>
+            <width>180</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3366CC">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF15305A">white.png</texturenofocus>
+            <label>&lt; Vorige</label>
+            <align>center</align>
+            <aligny>center</aligny>
+        </control>
+        <control type="button" id="303">
+            <posx>300</posx>
+            <posy>1010</posy>
+            <width>150</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3366CC">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF15305A">white.png</texturenofocus>
+            <label>Kies dag</label>
+            <align>center</align>
+            <aligny>center</aligny>
+        </control>
+        <control type="button" id="302">
+            <posx>460</posx>
+            <posy>1010</posy>
+            <width>190</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3366CC">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF15305A">white.png</texturenofocus>
+            <label>Volgende &gt;</label>
+            <align>center</align>
+            <aligny>center</aligny>
+        </control>
+        <control type="label" id="300">
+            <posx>660</posx>
+            <posy>1010</posy>
+            <width>480</width>
             <height>60</height>
             <font>font13</font>
             <textcolor>FFFFFFFF</textcolor>
             <label>Dag: Vandaag   (I)</label>
+            <align>left</align>
+            <aligny>center</aligny>
+        </control>
+        <control type="button" id="304">
+            <posx>1150</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_up_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_up_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+                    <aspectratio>keep</aspectratio>
+        </control>
+        <control type="button" id="305">
+            <posx>1220</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_down_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_down_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+                    <aspectratio>keep</aspectratio>
+        </control>
+        <control type="button" id="306">
+            <posx>1290</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_left_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_left_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+                    <aspectratio>keep</aspectratio>
+        </control>
+        <control type="button" id="307">
+            <posx>1360</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_right_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_right_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+                    <aspectratio>keep</aspectratio>
+        </control>
+        <control type="button" id="308">
+            <posx>1430</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_ok_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_ok_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+                    <aspectratio>keep</aspectratio>
         </control>
         <control type="label" id="206">
-            <posx>1645</posx>
+            <posx>1620</posx>
             <posy>0</posy>
-            <width>200</width>
+            <width>260</width>
             <height>84</height>
             <font>font_clock</font>
             <textcolor>FFFFFFFF</textcolor>
@@ -61,7 +180,7 @@
             <label>$INFO[System.Time]</label>
         </control>
         <control type="label" id="207">
-            <posx>1645</posx>
+            <posx>1620</posx>
             <posy>86</posy>
             <width>260</width>
             <height>30</height>
@@ -69,6 +188,15 @@
             <textcolor>99FFFFFF</textcolor>
             <align>left</align>
             <label>$INFO[System.Date(DDD d mmm)]</label>
+        </control>
+        <control type="label" id="310">
+            <posx>110</posx>
+            <posy>130</posy>
+            <width>1200</width>
+            <height>30</height>
+            <font>font12</font>
+            <textcolor>99FFFFFF</textcolor>
+            <label>Tip: druk omhoog/omlaag aan de rand om de knoppenbalk te openen</label>
         </control>
         <control type="label" id="201">
             <posx>110</posx>
@@ -79,8 +207,23 @@
             <textcolor>FF3366CC</textcolor>
             <label></label>
         </control>
+        <control type="button" id="309">
+            <posx>1500</posx>
+            <posy>1010</posy>
+            <width>60</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FFFFFFFF">icons/btn_help_focus.png</texturefocus>
+            <texturenofocus colordiffuse="FFFFFFFF">icons/btn_help_normal.png</texturenofocus>
+            <label></label>
+            <align>center</align>
+            <aligny>center</aligny>
+            <aspectratio>keep</aspectratio>
+        </control>
         <control type="label" id="203">
-            <posx>1655</posx>
+            <posx>1570</posx>
             <posy>1010</posy>
             <width>200</width>
             <height>60</height>

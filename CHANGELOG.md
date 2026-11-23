@@ -1,6 +1,15 @@
 # Changelog
 
-> **Latest Version:** v2.0.7 (November 21, 2026)
+> **Latest Version:** v2.1.0 (November 23, 2026)
+
+## [2.1.0] - 2026-11-23
+
+### Toegevoegd
+- **EPG touch/remote-ondersteuning (Issue #36)**: on-screen knoppenbalk onderaan de TV-gids (Vorige/Volgende dag, Kies dag, pijlen, OK, HELP) voor touchscreen en afstandsbedieningen zonder Info-knop (o.a. Chromecast). Help-dialog met uitleg.
+- **Auto-add per serie (Issue #51)**: auto-add is nu per serie in-/uitschakelbaar via het contextmenu in Kijk Later; globale schakelaar verwijderd.
+
+### Gewijzigd
+- Diverse UI-verbeteringen in de EPG en help-dialog.
 
 ## [2.0.7] - 2026-11-21
 

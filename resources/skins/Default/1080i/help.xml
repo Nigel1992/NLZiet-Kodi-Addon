@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog" id="1101">
+    <defaultcontrol>1</defaultcontrol>
+    <coordinates>
+        <system>1</system>
+        <posx>0</posx>
+        <posy>0</posy>
+        <width>1920</width>
+        <height>1080</height>
+    </coordinates>
+    <controls>
+        <control type="image">
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1920</width>
+            <height>1080</height>
+            <texture>epg_background.png</texture>
+        </control>
+        <control type="image">
+            <posx>0</posx>
+            <posy>0</posy>
+            <width>1920</width>
+            <height>1080</height>
+            <texture colordiffuse="CC000000">white.png</texture>
+        </control>
+        <control type="image" id="7">
+            <posx>80</posx>
+            <posy>30</posy>
+            <width>80</width>
+            <height>80</height>
+            <aspectratio>keep</aspectratio>
+            <texture>special://home/addons/plugin.video.nlziet/icon.png</texture>
+        </control>
+        <control type="label" id="2">
+            <posx>180</posx>
+            <posy>40</posy>
+            <width>1640</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FF6699FF</textcolor>
+            <align>left</align>
+            <label>NLZiet TV Gids - Handleiding</label>
+        </control>
+        <control type="image">
+            <posx>100</posx>
+            <posy>110</posy>
+            <width>1720</width>
+            <height>2</height>
+            <texture colordiffuse="FF3366CC">white.png</texture>
+        </control>
+        <control type="textbox" id="3">
+            <posx>100</posx>
+            <posy>160</posy>
+            <width>1200</width>
+            <height>820</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <wrapmultiline>true</wrapmultiline>
+            <pagecontrol>6</pagecontrol>
+            <label></label>
+        </control>
+        <control type="scrollbar" id="6">
+            <posx>1310</posx>
+            <posy>160</posy>
+            <width>25</width>
+            <height>820</height>
+            <texturesliderbackground colordiffuse="FF333333">white.png</texturesliderbackground>
+            <texturesliderbar colordiffuse="FF3366CC">white.png</texturesliderbar>
+            <texturesliderbarfocus colordiffuse="FF6699FF">white.png</texturesliderbarfocus>
+            <orientation>vertical</orientation>
+        </control>
+        <control type="image" id="4">
+            <posx>1350</posx>
+            <posy>180</posy>
+            <width>460</width>
+            <height>460</height>
+            <aspectratio>keep</aspectratio>
+            <texture>special://home/addons/plugin.video.nlziet/icon.png</texture>
+        </control>
+        <control type="label" id="5">
+            <posx>1350</posx>
+            <posy>660</posy>
+            <width>460</width>
+            <height>200</height>
+            <font>font12</font>
+            <textcolor>99FFFFFF</textcolor>
+            <wrapmultiline>true</wrapmultiline>
+            <label>Tip: gebruik de D-pad en OK-knop van je afstandsbediening, of tik op de knoppen op een touchscreen.</label>
+        </control>
+        <control type="button" id="1">
+            <posx>860</posx>
+            <posy>1000</posy>
+            <width>200</width>
+            <height>60</height>
+            <font>font13</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>FFFFFFFF</focusedcolor>
+            <texturefocus colordiffuse="FF3366CC">white.png</texturefocus>
+            <texturenofocus colordiffuse="FF15305A">white.png</texturenofocus>
+            <label>Sluiten</label>
+            <align>center</align>
+            <aligny>center</aligny>
+        </control>
+    </controls>
+</window>

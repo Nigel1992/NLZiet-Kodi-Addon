@@ -301,6 +301,10 @@ TRANSLATIONS = {
     'season_folder': {'nl': 'Seizoen {}', 'en': 'Season {}'},
     'episode_number_prefix': {'nl': 'Aflevering {}', 'en': 'Episode {}'},
     'auto_added_episodes': {'nl': '{} nieuwe afleveringen toegevoegd aan Kijk Later', 'en': '{} new episodes added to Watch Later'},
+    'auto_add_enable': {'nl': 'Automatisch toevoegen inschakelen voor deze serie', 'en': 'Enable automatic adding for this series'},
+    'auto_add_disable': {'nl': 'Automatisch toevoegen uitschakelen voor deze serie', 'en': 'Disable automatic adding for this series'},
+    'auto_add_enabled': {'nl': 'Automatisch toevoegen ingeschakeld', 'en': 'Automatic adding enabled'},
+    'auto_add_disabled': {'nl': 'Automatisch toevoegen uitgeschakeld', 'en': 'Automatic adding disabled'},
     'expiry_soon': {'nl': 'Verloopt binnenkort: {}', 'en': 'Expiring soon: {}'},
     'my_series': {'nl': 'Mijn Series', 'en': 'My Series'},
     'add_to_my_series': {'nl': 'Toevoegen aan Mijn Series', 'en': 'Add to My Series'},
@@ -605,6 +609,10 @@ STRING_IDS = {
     'season_folder': 33142,
     'episode_number_prefix': 33143,
     'auto_added_episodes': 33147,
+    'auto_add_enable': 33148,
+    'auto_add_disable': 33149,
+    'auto_add_enabled': 33150,
+    'auto_add_disabled': 33151,
     'expiry_soon': 33154,
     'programs': 33169,
     'epg_title': 33170,
@@ -4094,7 +4102,7 @@ def _order_watch_later(items):
 
 def _render_list_items(
     items, enrich=False, api=None, episode_label_only=False, episode_numbers=None,
-    highlight_ids=None, sync_mode=None,
+    highlight_ids=None, sync_mode=None, auto_add_toggle=False,
 ):
     """Render stored list items, linking series to their detail page.
 
@@ -4180,7 +4188,24 @@ def _render_list_items(
                         info['season'] = season_episode[0]
                         info['episode'] = season_episode[1]
             group = _content_group(itm)
-            extra_ctx = [(get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': sync_mode})))] if sync_mode else None
+            extra_ctx = []
+            if sync_mode:
+                extra_ctx.append((get_string('sync_now'), 'RunPlugin({})'.format(build_url({'mode': sync_mode}))))
+            if auto_add_toggle:
+                series_id = None
+                if isinstance(content, dict):
+                    series_id = content.get('seriesId') or content.get('series_id')
+                if not series_id and isinstance(itm, dict):
+                    series_id = itm.get('seriesId') or itm.get('series_id')
+                enabled = is_auto_add_enabled_for(title, api)
+                auto_label = get_string('auto_add_disable' if enabled else 'auto_add_enable')
+                q = {'mode': 'toggle_auto_add_series', 'series_id': str(series_id or ''), 'title': title, 'enable': 'false' if enabled else 'true'}
+                try:
+                    extra_ctx.append((auto_label, 'RunPlugin({})'.format(build_url(q))))
+                except Exception:
+                    pass
+            if not extra_ctx:
+                extra_ctx = None
             if group in ('series', 'tvshows', 'documentary'):
                 add_directory_item(label, {'mode': 'series_detail', 'series_id': itm.get('id')}, is_folder=True, thumb=thumb, info=info, content=content, extra_context_items=extra_ctx)
             else:
@@ -4398,6 +4423,7 @@ def add_series_watch_later(series_id=None, title=None, from_now=None):
                 'id': str(sid or series_title),
                 'seen': [str(ep['id']) for ep in episodes if ep.get('id')],
             }
+            ADDON.setSetting('auto_add_new_episodes', 'true')
             os.makedirs(os.path.dirname(state_path), exist_ok=True)
             with open(state_path, 'w', encoding='utf-8') as handle:
                 json.dump(state, handle)
@@ -4419,9 +4445,106 @@ AUTO_ADD_INTERVAL = 6 * 3600
 
 def _auto_add_enabled():
     try:
-        return ADDON.getSetting('auto_add_new_episodes') in ('true', '1', 'yes', True)
+        if ADDON.getSetting('auto_add_new_episodes') in ('true', '1', 'yes', True):
+            return True
+    except Exception:
+        pass
+    try:
+        api = get_api_instance()
+        state = _load_auto_add_state(api)
+        if any(isinstance(v, dict) and v.get('enabled', True) is not False for v in state.values()):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _auto_add_state_path(api):
+    try:
+        return os.path.join(os.path.dirname(api.watchlater_sync_file), 'auto_add_state.json')
+    except Exception:
+        return os.path.join(xbmcvfs.translatePath(ADDON.getAddonInfo('profile')), 'auto_add_state.json')
+
+
+def _load_auto_add_state(api):
+    path = _auto_add_state_path(api)
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            return json.load(handle) or {}
+    except Exception:
+        return {}
+
+
+def _save_auto_add_state(api, state):
+    path = _auto_add_state_path(api)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as handle:
+            json.dump(state, handle)
+    except Exception:
+        pass
+
+
+def _auto_add_key(title):
+    return 'title:' + (title or '').casefold()
+
+
+def is_auto_add_enabled_for(title, api=None):
+    try:
+        if api is None:
+            api = get_api_instance()
+        state = _load_auto_add_state(api)
+        entry = state.get(_auto_add_key(title))
+        return bool(isinstance(entry, dict) and entry.get('enabled'))
     except Exception:
         return False
+
+
+def enable_auto_add_series(series_id=None, title=None):
+    try:
+        api = get_api_instance()
+        sid = series_id or _find_series_id_by_title(api, title)
+        series_title, episodes = '', []
+        if sid:
+            series_title, episodes = _collect_series_episodes(api, sid)
+        if not episodes:
+            episodes = _find_episodes_by_title(api, title)
+        series_title = series_title or title or str(sid or '')
+        episodes = [ep for ep in (episodes or []) if isinstance(ep, dict) and ep.get('id')]
+        state = _load_auto_add_state(api)
+        key = _auto_add_key(series_title)
+        entry = state.get(key) if isinstance(state.get(key), dict) else {}
+        entry = dict(entry or {})
+        entry['id'] = str(sid or series_title)
+        entry['seen'] = [str(ep.get('id')) for ep in episodes]
+        entry['enabled'] = True
+        state[key] = entry
+        _save_auto_add_state(api, state)
+        xbmcgui.Dialog().notification('NLZiet', get_string('auto_add_enabled'), xbmcgui.NOTIFICATION_INFO, 3000)
+    except Exception as exc:
+        xbmc.log(f"NLZiet enable_auto_add_series failed: {exc}", xbmc.LOGWARNING)
+        xbmcgui.Dialog().notification('NLZiet', get_string('watchlater_action_failed'), xbmcgui.NOTIFICATION_ERROR)
+
+
+def disable_auto_add_series(series_id=None, title=None):
+    try:
+        api = get_api_instance()
+        state = _load_auto_add_state(api)
+        key = _auto_add_key(title)
+        if key in state and isinstance(state.get(key), dict):
+            state[key]['enabled'] = False
+            _save_auto_add_state(api, state)
+        xbmcgui.Dialog().notification('NLZiet', get_string('auto_add_disabled'), xbmcgui.NOTIFICATION_INFO, 3000)
+    except Exception as exc:
+        xbmc.log(f"NLZiet disable_auto_add_series failed: {exc}", xbmc.LOGWARNING)
+
+
+def toggle_auto_add_series(series_id=None, title=None, enable=None):
+    enabled = str(enable).lower() in ('true', '1', 'yes')
+    if enabled:
+        enable_auto_add_series(series_id, title)
+    else:
+        disable_auto_add_series(series_id, title)
 
 
 def _auto_add_due(api):
@@ -4444,22 +4567,23 @@ def _mark_auto_add(api):
 
 
 def _auto_add_sources(api):
-    """Followed series plus every series that has episodes in Kijk Later, keyed by title."""
+    """Series for which auto-add has been explicitly enabled, keyed by title."""
+    state = _load_auto_add_state(api)
+    enabled_keys = {k for k, v in state.items() if isinstance(v, dict) and v.get('enabled', True) is not False}
     sources = {}
     for series in api.get_my_series() or []:
         if isinstance(series, dict) and series.get('id') and _item_title(series):
-            sources['title:' + _item_title(series).casefold()] = (str(series['id']), _item_title(series))
+            key = 'title:' + _item_title(series).casefold()
+            if key in enabled_keys:
+                sources[key] = (str(series['id']), _item_title(series))
     for item in api.get_watch_later() or []:
         key = _watch_later_collection_id(item)
         if not key and isinstance(item, dict):
-            # BBCNL and other "programme" entries are not always typed as
-            # episodes, but still represent a followed title whose new episodes
-            # we want to pick up. Group them by title (excluding movies/channels).
             if _content_group(item) not in ('movies', 'channels'):
                 title = _item_title(item)
                 if title:
                     key = 'title:' + title.casefold()
-        if key and key not in sources:
+        if key and key in enabled_keys and key not in sources:
             sources[key] = (None, _item_title(item))
     return sources
 
@@ -4668,7 +4792,7 @@ def _render_watch_later_top(items, api):
         add_directory_item(
             label, {'mode': 'watch_later_collection', 'collection_id': cid},
             is_folder=True, thumb=_pick_landscape_thumb(members[0]))
-    _render_list_items(standalone, enrich=True, api=api, sync_mode='sync_watch_later' if _watch_later_sync_enabled() else None)
+    _render_list_items(standalone, enrich=True, api=api, sync_mode='sync_watch_later' if _watch_later_sync_enabled() else None, auto_add_toggle=True)
 
 
 def browse_watch_later():
@@ -6313,6 +6437,43 @@ def _epg_floor_half_hour(moment):
     return moment.replace(minute=30 if moment.minute >= 30 else 0, second=0, microsecond=0)
 
 
+class _HelpDialog(xbmcgui.WindowXMLDialog):
+    def __init__(self, *args, **kwargs):
+        self._text = kwargs.pop('text', '')
+        super().__init__(*args, **kwargs)
+
+    def onInit(self):
+        try:
+            self.getControl(3).setText(self._text)
+        except Exception:
+            pass
+        try:
+            self.getControl(2).setLabel('NLZiet TV Gids - Handleiding')
+        except Exception:
+            pass
+
+    def onClick(self, controlID):
+        try:
+            if int(controlID) == 1:
+                self.close()
+        except Exception:
+            pass
+
+    def onAction(self, action):
+        try:
+            aid = action.getId()
+        except Exception:
+            aid = 0
+        if aid in (9, 10, 92):
+            self.close()
+        elif aid == 7:
+            try:
+                if self.getFocusId() == 1:
+                    self.close()
+            except Exception:
+                self.close()
+
+
 class _EPGDialog(xbmcgui.WindowXMLDialog):
     """EPG window: channels down the left, programmes on a horizontal timeline."""
 
@@ -6659,9 +6820,21 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
     def _move_row(self, delta):
         if not self._rows:
             return
+        before = self._row_index
         self._row_index = max(0, min(self._row_index + delta, len(self._rows) - 1))
         self._prog_index = self._default_prog_index()
         self._render()
+        # Allow remote users (e.g. Chromecast) to reach the on-screen buttons:
+        # when moving up at the first channel or down past the last channel,
+        # focus the bottom button bar.
+        try:
+            focused = self.getFocusId()
+            if focused not in self._EPG_BOTTOM_BUTTONS:
+                if (delta < 0 and before == 0 and self._row_index == 0) or \
+                   (delta > 0 and self._row_index == len(self._rows) - 1 and before == self._row_index):
+                    self.setFocusId(301)
+        except Exception:
+            pass
 
     def _move_prog(self, delta):
         progs = self._row_programs()
@@ -6674,6 +6847,8 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             self._window_start = _epg_floor_half_hour(start)
         self._render()
 
+    _EPG_BOTTOM_BUTTONS = (301, 303, 302, 304, 305, 306, 307, 308, 309)
+
     def onAction(self, action):
         action_id = action.getId()
         try:
@@ -6681,13 +6856,77 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
         except Exception:
             button_code = 0
         xbmc.log('NLZiet EPG action_id={0} button_code={1}'.format(action_id, button_code), xbmc.LOGINFO)
+        try:
+            focused = self.getFocusId()
+        except Exception:
+            focused = 0
+        bottom = focused in self._EPG_BOTTOM_BUTTONS
+
         if action_id in (11, 192, 18) or button_code in (61508, 0x44, 68):
             self._select_day()
             return
         if action_id in (9, 10, 92):
             self.close()
             return
+        if bottom:
+            ordered = list(self._EPG_BOTTOM_BUTTONS)
+            if action_id == 1:
+                idx = ordered.index(focused) if focused in ordered else 0
+                try:
+                    self.setFocusId(ordered[max(0, idx - 1)])
+                except Exception:
+                    pass
+                return
+            if action_id == 2:
+                idx = ordered.index(focused) if focused in ordered else 0
+                try:
+                    self.setFocusId(ordered[min(len(ordered) - 1, idx + 1)])
+                except Exception:
+                    pass
+                return
+            if action_id == 3:
+                try:
+                    self.setFocusId(399)
+                except Exception:
+                    pass
+                return
+            if action_id == 4:
+                return
+            if action_id == 7:
+                self._handle_control(focused)
+                return
         if action_id == 7:
+            try:
+                focused = self.getFocusId()
+            except Exception:
+                focused = 0
+            if focused in (300, 303):
+                self._select_day()
+                return
+            if focused == 301:
+                self._prev_day()
+                return
+            if focused == 302:
+                self._next_day()
+                return
+            if focused == 304:
+                self._move_row(-1)
+                return
+            if focused == 305:
+                self._move_row(1)
+                return
+            if focused == 306:
+                self._move_prog(-1)
+                return
+            if focused == 307:
+                self._move_prog(1)
+                return
+            if focused == 308:
+                self._activate()
+                return
+            if focused == 309:
+                self._show_help()
+                return
             self._activate()
         elif action_id == 1:
             self._move_prog(-1)
@@ -6701,6 +6940,114 @@ class _EPGDialog(xbmcgui.WindowXMLDialog):
             self._move_row(-EPG_CHANNEL_ROWS)
         elif action_id == 6:
             self._move_row(EPG_CHANNEL_ROWS)
+
+    def onClick(self, controlID):
+        try:
+            controlID = int(controlID)
+        except Exception:
+            try:
+                controlID = int(controlID.getId())
+            except Exception:
+                return
+        self._handle_control(controlID)
+
+    def onControl(self, control):
+        try:
+            controlID = int(control.getId())
+        except Exception:
+            try:
+                controlID = int(control)
+            except Exception:
+                return
+        self._handle_control(controlID)
+
+    def _handle_control(self, controlID):
+        if controlID in (300, 303):
+            self._select_day()
+        elif controlID == 301:
+            self._prev_day()
+        elif controlID == 302:
+            self._next_day()
+        elif controlID == 304:
+            self._move_row(-1)
+        elif controlID == 305:
+            self._move_row(1)
+        elif controlID == 306:
+            self._move_prog(-1)
+        elif controlID == 307:
+            self._move_prog(1)
+        elif controlID == 308:
+            self._activate()
+        elif controlID == 309:
+            self._show_help()
+
+    def _change_day(self, delta=0):
+        try:
+            delta = int(delta)
+        except Exception:
+            delta = 0
+        if delta < 0:
+            self._prev_day()
+        elif delta > 0:
+            self._next_day()
+
+    def _open_day_selector(self):
+        self._select_day()
+
+    def _prev_day(self):
+        if self._selected_day > -EPG_DAY_BACK:
+            self._selected_day -= 1
+            self._reset_window()
+            self._set_day_label()
+            self._ensure_day_loaded(force=True)
+            self._prog_index = self._default_prog_index()
+            self._render()
+
+    def _next_day(self):
+        if self._selected_day < EPG_DAY_FWD:
+            self._selected_day += 1
+            self._reset_window()
+            self._set_day_label()
+            self._ensure_day_loaded(force=True)
+            self._prog_index = self._default_prog_index()
+            self._render()
+
+    def _show_help(self):
+        text = (
+            '[B]NLZiet TV Gids - Handleiding[/B][CR][CR]'
+            '[B]Navigatie[/B][CR]'
+            '- Omhoog/Omlaag: kanaal wisselen[CR]'
+            '- Links/Rechts: programma wisselen[CR]'
+            '- OK/Enter: programma openen (afspelen, herinnering, etc.)[CR][CR]'
+            '[B]Dag wisselen[/B][CR]'
+            '- Druk op Info (I) of de "Kies dag"-knop[CR]'
+            '- Of gebruik de Vorige/Volgende-dag knoppen[CR][CR]'
+            '[B]Chromecast / afstandsbediening zonder Info[/B][CR]'
+            '- De knoppenbalk onderaan is bereikbaar door omhoog te drukken op het eerste kanaal[CR]'
+            '  of omlaag op het laatste kanaal[CR]'
+            '- Met links/rechts beweeg je tussen de knoppen[CR]'
+            '- Met omhoog ga je terug naar de lijst[CR][CR]'
+            '[B]Touchscreen / tablet[/B][CR]'
+            '- Tik op de knoppen onderaan (Vorige, Kies dag, Volgende, pijlen, OK, ?)[CR]'
+            '- De pijltjes verplaatsen de selectie; OK opent het programma[CR][CR]'
+            '[B]Kleuren[/B][CR]'
+            '- Grijs = afgelopen, Blauw = nu live, Groen = later'
+        )
+        try:
+            dialog = _HelpDialog(
+                'help.xml',
+                ADDON.getAddonInfo('path'),
+                'Default',
+                '1080i',
+                text=text,
+            )
+            dialog.doModal()
+            del dialog
+        except Exception:
+            try:
+                xbmcgui.Dialog().ok('NLZiet TV Gids - Help', text)
+            except Exception:
+                pass
 
     def _activate(self):
         progs = self._row_programs()
@@ -8417,6 +8764,7 @@ def get_route_handlers():
         'browse_my_series': browse_my_series,
         'toggle_watch_later': toggle_watch_later,
         'add_series_watch_later': add_series_watch_later,
+        'toggle_auto_add_series': toggle_auto_add_series,
         'browse_watch_later_collection': browse_watch_later_collection,
         'toggle_my_series': toggle_my_series,
         'sync_watch_later': sync_watch_later,

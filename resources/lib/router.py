@@ -88,6 +88,12 @@ class Router:
                 params.get('title'),
                 params.get('from_now')
             )
+        elif mode == 'toggle_auto_add_series':
+            self.handlers['toggle_auto_add_series'](
+                params.get('series_id'),
+                params.get('title'),
+                params.get('enable')
+            )
         elif mode == 'my_series':
             self.handlers['browse_my_series']()
         elif mode == 'sync_watch_later':
