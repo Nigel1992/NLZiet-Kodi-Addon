@@ -5817,6 +5817,19 @@ def browse_category(content_type):
         results = api.get_documentaries()
     elif content_type.lower() == 'channels':
         results, epg_map = get_channels_menu_data(api)
+        # Honour per-profile favourite ordering: favourites first, in saved order.
+        try:
+            from resources.lib.iptvmgr import read_enabled_channels
+            enabled = read_enabled_channels(api)
+            if enabled is not None:
+                enabled_ids = [str(x) for x in enabled]
+                by_id = {str(c.get('id')): c for c in (results or []) if c.get('id')}
+                ordered = [by_id[cid] for cid in enabled_ids if cid in by_id]
+                rest = [c for c in (results or []) if str(c.get('id')) not in set(enabled_ids)]
+                if ordered or rest:
+                    results = ordered + rest
+        except Exception:
+            pass
     else:
         results = api.search(content_type, content_type=content_type)
     for item in results:
@@ -6325,16 +6338,33 @@ def _epg_write_cache(cache):
 
 
 def _epg_channels():
-    """Return the channel list, served from the disk cache while it is fresh."""
+    """Return the channel list, served from the disk cache while it is fresh.
+
+    Honours the per-profile favourite channel selection: when a favourite list
+    has been saved, only those channels are shown, in the saved order.
+    """
     now_ts = time.time()
     cache = _epg_read_cache()
     entry = cache.get('channels')
     if isinstance(entry, dict) and entry.get('data') and (now_ts - entry.get('ts', 0)) < EPG_CHANNELS_TTL:
-        return entry['data']
-    channels = get_api_instance().get_channels() or []
-    if channels:
-        cache['channels'] = {'ts': now_ts, 'data': channels}
-        _epg_write_cache(cache)
+        channels = entry['data']
+    else:
+        channels = get_api_instance().get_channels() or []
+        if channels:
+            cache['channels'] = {'ts': now_ts, 'data': channels}
+            _epg_write_cache(cache)
+    try:
+        from resources.lib.iptvmgr import read_enabled_channels
+        api = get_api_instance()
+        enabled = read_enabled_channels(api)
+        if enabled is not None:
+            enabled_ids = [str(x) for x in enabled]
+            by_id = {str(c.get('id')): c for c in channels if c.get('id')}
+            ordered = [by_id[cid] for cid in enabled_ids if cid in by_id]
+            if ordered:
+                channels = ordered
+    except Exception:
+        pass
     return channels
 
 
