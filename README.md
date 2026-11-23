@@ -90,6 +90,16 @@ Some modules are shared with the Videoland add-on (`metadata.py`, `library_art.p
 
 ---
 
+## 📑 Table of Contents
+
+- [Documentation](#-documentation)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Development](#-development)
+- [Support the Project](#-support-the-project)
+
+---
+
 ## 💖 Support the Project
 
 I build this project in my free time and don't need donations for myself. If you'd like to give something back, I'd kindly ask you to donate to a charity of your choice instead — they need it far more than I do. If you still prefer to support me directly in private, thank you so much; it's genuinely appreciated, and I'll be happy to list you as a donor on GitHub and, where applicable, in a donors section of the project, as a small thank you.
