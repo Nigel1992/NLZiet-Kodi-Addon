@@ -92,7 +92,7 @@ Some modules are shared with the Videoland add-on (`metadata.py`, `library_art.p
 
 ## 💖 Support the Project
 
-I build this add-on in my free time and don't need donations for myself. If you'd like to give something back, I'd kindly ask you to donate to a charity of your choice instead — they need it far more than I do. If you still prefer to support me directly in private, thank you so much; it's genuinely appreciated.
+I build this project in my free time and don't need donations for myself. If you'd like to give something back, I'd kindly ask you to donate to a charity of your choice instead — they need it far more than I do. If you still prefer to support me directly in private, thank you so much; it's genuinely appreciated, and I'll be happy to list you as a donor on GitHub and, where applicable, in a donors section of the project, as a small thank you.
 
 [![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/nigel1992)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=KYV9ARF99ZSCE)
@@ -193,7 +193,7 @@ Enkele modules worden gedeeld met de Videoland-add-on (`metadata.py`, `library_a
 
 ## 💖 Steun het project
 
-Ik maak deze add-on in mijn vrije tijd en heb zelf geen donaties nodig. Wil je toch iets terugdoen, dan vraag ik je vriendelijk om in plaats daarvan te doneren aan een goed doel naar keuze — zij hebben het veel harder nodig dan ik. Wil je me toch persoonlijk steunen in privé, dan heel erg bedankt; dat wordt oprecht gewaardeerd.
+Ik maak dit project in mijn vrije tijd en heb zelf geen donaties nodig. Wil je toch iets terugdoen, dan vraag ik je vriendelijk om in plaats daarvan te doneren aan een goed doel naar keuze — zij hebben het veel harder nodig dan ik. Wil je me toch persoonlijk steunen in privé, dan heel erg bedankt; dat wordt oprecht gewaardeerd, en ik vermeld je graag als donor op GitHub en, waar van toepassing, in een donorsectie van het project, als klein bedankje.
 
 [![Ko-Fi](https://img.shields.io/badge/Ko--Fi-Support%20me-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/nigel1992)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=KYV9ARF99ZSCE)
