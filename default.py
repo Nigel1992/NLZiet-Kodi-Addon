@@ -394,6 +394,10 @@ TRANSLATIONS = {
     'expiring_today': {'nl': 'Verloopt vandaag', 'en': 'Leaves today'},
     'expiring_empty': {'nl': 'Er verloopt binnenkort niets', 'en': 'Nothing is leaving the service soon'},
     'favourite_channels': {'nl': 'Favoriete kanalen', 'en': 'Favourite channels'},
+    'add_to_favourites': {'nl': 'Toevoegen aan favoriete kanalen', 'en': 'Add to favourite channels'},
+    'remove_from_favourites': {'nl': 'Verwijderen uit favoriete kanalen', 'en': 'Remove from favourite channels'},
+    'added_to_favourites': {'nl': 'Toegevoegd aan favoriete kanalen', 'en': 'Added to favourite channels'},
+    'removed_from_favourites': {'nl': 'Verwijderd uit favoriete kanalen', 'en': 'Removed from favourite channels'},
     'both_continue': {'nl': 'Verder kijken (beide diensten)', 'en': 'Continue watching (both services)'},
     'open_videoland_continue': {'nl': 'Open Videoland: Verder kijken', 'en': 'Open Videoland: Continue watching'},
     'set_reminder': {'nl': 'Herinnering instellen', 'en': 'Set a reminder'},
@@ -668,6 +672,10 @@ STRING_IDS = {
     'expiring_today': 33323,
     'expiring_empty': 33324,
     'favourite_channels': 33325,
+    'add_to_favourites': 33371,
+    'remove_from_favourites': 33372,
+    'added_to_favourites': 33373,
+    'removed_from_favourites': 33374,
     'both_continue': 33326,
     'open_videoland_continue': 33327,
     'set_reminder': 33332,
@@ -5922,7 +5930,17 @@ def browse_category(content_type):
             if not item.get('type'):
                 item['type'] = 'channel'
         
-        add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group=add_group)
+        extra_ctx = None
+        if ctype == 'channels' and item.get('id'):
+            cid = str(item.get('id'))
+            fav = _is_favourite_channel(cid)
+            label = get_string('remove_from_favourites' if fav else 'add_to_favourites')
+            q = {'mode': 'toggle_favourite_channel', 'id': cid}
+            try:
+                extra_ctx = [(label, 'RunPlugin({})'.format(build_url(q)))]
+            except Exception:
+                extra_ctx = None
+        add_directory_item(item.get('title'), query, is_folder=is_folder, thumb=_pick_landscape_thumb(item), info=info, content=item, group=add_group, extra_context_items=extra_ctx)
     _end_directory()
 
 
@@ -8503,9 +8521,57 @@ def favourite_channels():
         thumb = _pick_landscape_thumb(channel) or channel.get('logo') or channel.get('image')
         info = {'title': title}
         channel.setdefault('type', 'channel')
+        cid = str(channel.get('id') or '')
+        extra_ctx = None
+        try:
+            label = get_string('remove_from_favourites')
+            q = {'mode': 'toggle_favourite_channel', 'id': cid}
+            extra_ctx = [(label, 'RunPlugin({})'.format(build_url(q)))]
+        except Exception:
+            extra_ctx = None
         add_directory_item(title, {'mode': 'play', 'id': channel.get('id'), 'fmt': 'live'},
-                           is_folder=False, thumb=thumb, info=info, content=channel, group='channels')
+                           is_folder=False, thumb=thumb, info=info, content=channel, group='channels',
+                           extra_context_items=extra_ctx)
     _end_directory()
+
+
+def _is_favourite_channel(channel_id):
+    try:
+        from resources.lib.iptvmgr import read_enabled_channels
+        api = get_api_instance()
+        enabled = read_enabled_channels(api)
+        if enabled is None:
+            return True
+        return str(channel_id) in {str(x) for x in (enabled or [])}
+    except Exception:
+        return False
+
+
+def toggle_favourite_channel(channel_id=None):
+    try:
+        from resources.lib.iptvmgr import read_enabled_channels, save_enabled_channels
+        api = get_api_instance()
+        try:
+            channels = api.get_channels() or []
+        except Exception:
+            channels = []
+        all_ids = [str(c.get('id')) for c in channels if c.get('id')]
+        enabled = read_enabled_channels(api)
+        if enabled is None:
+            enabled = list(all_ids)
+        enabled = [str(x) for x in (enabled or [])]
+        cid = str(channel_id or '')
+        if cid in enabled:
+            enabled = [x for x in enabled if x != cid]
+            msg = get_string('removed_from_favourites')
+        else:
+            if cid and cid not in enabled:
+                enabled.append(cid)
+            msg = get_string('added_to_favourites')
+        save_enabled_channels(api, enabled)
+        xbmcgui.Dialog().notification('NLZiet', msg, xbmcgui.NOTIFICATION_INFO, 2000)
+    except Exception as exc:
+        xbmc.log(f"NLZiet toggle_favourite_channel failed: {exc}", xbmc.LOGWARNING)
 
 
 
@@ -8812,6 +8878,7 @@ def get_route_handlers():
         'browse_expiring': browse_expiring,
         'both_continue': both_continue,
         'favourite_channels': favourite_channels,
+        'toggle_favourite_channel': toggle_favourite_channel,
         'check_reminders': check_reminders,
         'import_trakt_watchlist': import_trakt_watchlist,
         'library_from_lists': library_from_lists,

@@ -69,6 +69,8 @@ class Router:
             self.handlers['both_continue']()
         elif mode == 'favourite_channels':
             self.handlers['favourite_channels']()
+        elif mode == 'toggle_favourite_channel':
+            self.handlers['toggle_favourite_channel'](params.get('id'))
         elif mode == 'check_reminders':
             self.handlers['check_reminders'](params.get('background') == '1')
         elif mode == 'import_trakt':
